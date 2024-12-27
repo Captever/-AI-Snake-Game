@@ -10,6 +10,7 @@ pygame.display.set_caption("My First Pygame Project")
 
 # 색상 정의
 WHITE = (255, 255, 255)
+GRAY = (127, 127, 127)
 
 # 게임 루프
 running = True
@@ -19,7 +20,7 @@ while running:
             running = False
 
     # 화면 그리기
-    screen.fill(WHITE)
+    screen.fill(GRAY)
     
     # 화면 업데이트
     pygame.display.flip()
