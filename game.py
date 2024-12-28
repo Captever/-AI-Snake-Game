@@ -6,7 +6,7 @@ pygame.init()
 
 # 화면 설정
 screen = pygame.display.set_mode((800, 600))
-pygame.display.set_caption("Snake Game")
+pygame.display.set_caption("Snake")
 
 # 색상 정의
 WHITE = (255, 255, 255)
