@@ -10,6 +10,7 @@ BLACK = (0, 0, 0)
 
 # define h-param
 GRID_NUM = 8
+GRID_ALPHA = 128
 FEED_NUM = 1
 MOVE_DELAY = 30 # frame
 INIT_LENGTH = 3 # initial length of snake
@@ -27,8 +28,8 @@ class Game:
 
         # initialize map
         map_length = self.screen.get_width() // 2
-        self.map = Map(map_length, GRID_NUM, WHITE, OUTLINE_THICKNESS)
-        self.map.draw_by_center(self.screen, (self.screen.get_width() // 2, self.screen.get_height() // 2))
+        self.map = Map(map_length, GRID_NUM, WHITE + (GRID_ALPHA,), OUTLINE_THICKNESS)
+        self.map.render_by_center(self.screen, (self.screen.get_width() // 2, self.screen.get_height() // 2))
 
         # initialize clock
         self.clock = pygame.time.Clock()
