@@ -9,7 +9,10 @@ GRAY = (127, 127, 127)
 BLACK = (0, 0, 0)
 
 # define h-param
-GRID_NUM = 8
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
+
+GRID_NUM = 20
 GRID_ALPHA = 128
 FEED_NUM = 1
 MOVE_DELAY = 30 # frame
@@ -18,29 +21,36 @@ OUTLINE_THICKNESS = 3 # outline thickness of map
 
 class Game:
     def __init__(self):
-        # initialize Pygame
         pygame.init()
 
-        # initialize screen
         pygame.display.set_caption("Snake")
-        self.screen = pygame.display.set_mode((1280, 720))
-        self.screen.fill(BLACK)
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
-        # initialize map
-        map_length = self.screen.get_width() // 2
-        self.map = Map(map_length, GRID_NUM, WHITE + (GRID_ALPHA,), OUTLINE_THICKNESS)
-        self.map.render_by_center(self.screen, (self.screen.get_width() // 2, self.screen.get_height() // 2))
-
-        # initialize clock
         self.clock = pygame.time.Clock()
+
+        if SCREEN_WIDTH > SCREEN_HEIGHT: # case: landscape
+            self.origin = (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 2 - SCREEN_WIDTH // 4)
+            map_size = SCREEN_WIDTH // 2
+        else: # case: portrait
+            self.origin = (0, SCREEN_HEIGHT // 2 - SCREEN_WIDTH // 2)
+            map_size = SCREEN_WIDTH
+
+        self.map = Map(self, map_size, GRID_NUM, WHITE + (GRID_ALPHA,), OUTLINE_THICKNESS)
 
     def run(self):
         running = True
         while running:
+            self.screen.fill(BLACK + (0,))
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
-                    
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_a:
+                        pass # TODO: add feed to a cell
+            
+            self.map.render(self.screen, self.origin)
+
             pygame.display.flip()
             self.clock.tick(60)
 

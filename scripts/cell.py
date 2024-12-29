@@ -1,7 +1,9 @@
 import pygame
 
 class Cell:
-    def __init__(self, side_length, outline_thickness, outline_color=(255, 255, 255, 128)):
+    def __init__(self, game, side_length, outline_thickness, outline_color=(255, 255, 255, 128)):
+        self.game = game
+
         self.length = side_length
 
         self.surf = pygame.Surface((side_length, side_length), pygame.SRCALPHA)
