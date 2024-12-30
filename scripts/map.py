@@ -18,7 +18,12 @@ class Map:
 
         for y in range(self.grid_num):
             for x in range(self.grid_num):
-                curr_cell = Cell(self.game, self.cell_side_length, self.inline_thickness)
+                curr_type = 'none'
+                if (x, y) in self.game.bodies:
+                    curr_type = 'body'
+                if (x, y) in self.game.feeds:
+                    curr_type = 'feed'
+                curr_cell = Cell(self.game, self.cell_side_length, curr_type, self.inline_thickness)
                 offset = (x * self.cell_side_length, y * self.cell_side_length)
                 curr_cell.render(self.surf, offset)
                 
