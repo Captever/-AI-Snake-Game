@@ -3,7 +3,7 @@ import sys
 
 import random
 
-from scripts.map import Map
+from scripts.map_structure import Map
 
 # define color
 WHITE = (255, 255, 255)
