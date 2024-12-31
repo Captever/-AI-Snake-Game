@@ -1,9 +1,8 @@
 import pygame
 import sys
 
-import random
-
 from scripts.map_structure import Map
+from scripts.game_entities import Player, Feed
 
 # define color
 WHITE = (255, 255, 255)
@@ -38,47 +37,19 @@ class Game:
             map_size = SCREEN_WIDTH
 
         self.map = Map(self, map_size, GRID_NUM, WHITE + (GRID_ALPHA,), OUTLINE_THICKNESS)
+        self.grid_num = GRID_NUM
 
-        # values in game
+        self.player = Player(self, INIT_LENGTH)
         self.direction = 'E'
-        self.bodies = []
-        self.feeds = {}
+
+        self.feeds = []
+        for _ in range(FEED_NUM):
+            self.feeds.append(Feed(self))
 
     def run(self):
         running = True
         while running:
             self.screen.fill(BLACK + (0,))
-          
-            if not len(self.bodies):
-                rand_pos_value = random.randint(0, pow(GRID_NUM, 2) - 1)
-                start_pos = (rand_pos_value // GRID_NUM, rand_pos_value % GRID_NUM)
-                
-                self.bodies.append(start_pos)
-                
-                pos_possibilities = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-                for _ in range(INIT_LENGTH - 1):
-                    prev_body_pos = self.bodies[-1]
-                    while True:
-                        possibilities = pos_possibilities.copy()
-                        curr_poss = possibilities[random.randint(0, len(possibilities) - 1)]
-                        curr_body_pos = (prev_body_pos[0] + curr_poss[0], prev_body_pos[1] + curr_poss[1])
-                        # validation
-                        if 0 <= curr_body_pos[0] < GRID_NUM and 0 <= curr_body_pos[1] < GRID_NUM and curr_body_pos not in self.bodies:
-                            self.bodies.append(curr_body_pos)
-                            break
-                        else:
-                            possibilities.remove(curr_poss)
-                
-            if not len(self.feeds):
-                for _ in range(FEED_NUM):
-                    while True:
-                        rand_pos_value = random.randint(0, pow(GRID_NUM, 2) - 1)
-                        curr_feed_pos = (rand_pos_value // GRID_NUM, rand_pos_value % GRID_NUM)
-                        # validation
-                        if 0 <= curr_feed_pos[0] < GRID_NUM and 0 <= curr_feed_pos[1] < GRID_NUM and curr_feed_pos not in self.bodies:
-                            self.feeds[curr_feed_pos] = 'normal'
-                            break
-                print(self.feeds)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:

@@ -50,19 +50,22 @@ class Map:
     def render(self, surf, pos=(0, 0)):
         self.surf = pygame.Surface((self.length, self.length))
 
-        head = self.game.bodies[0]
+        head = self.game.player.bodies[0]
         dir_offset = DIR_OFFSET_DICT[self.game.direction]
         dir_render_pos = (head[0] + dir_offset[0], head[1] + dir_offset[1])
         for y in range(self.grid_num):
             for x in range(self.grid_num):
                 curr_type = []
-                if (x, y) in self.game.bodies:
+                curr_pos = (x, y)
+                if curr_pos in self.game.player.bodies:
                     curr_type = 'body'
-                if (x, y) in self.game.feeds:
-                    curr_type = 'feed'
+                for feed in self.game.feeds:
+                    if curr_pos == feed.pos:
+                        curr_type = 'feed'
+                        break
                 curr_cell = Cell(self.game, self.cell_side_length, curr_type, self.inline_thickness)
 
-                if (x, y) == dir_render_pos:
+                if curr_pos == dir_render_pos:
                     curr_cell.render_dir(self.game.direction)
                 offset = (x * self.cell_side_length, y * self.cell_side_length)
                 curr_cell.render(self.surf, offset)
