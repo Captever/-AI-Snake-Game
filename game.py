@@ -40,6 +40,7 @@ class Game:
         self.map = Map(self, map_size, GRID_NUM, WHITE + (GRID_ALPHA,), OUTLINE_THICKNESS)
 
         # values in game
+        self.direction = 'E'
         self.bodies = []
         self.feeds = {}
 
@@ -56,14 +57,14 @@ class Game:
                 
                 pos_possibilities = [(-1, 0), (1, 0), (0, -1), (0, 1)]
                 for _ in range(INIT_LENGTH - 1):
-                    prev_body_pos = self.bodies[0]
+                    prev_body_pos = self.bodies[-1]
                     while True:
                         possibilities = pos_possibilities.copy()
                         curr_poss = possibilities[random.randint(0, len(possibilities) - 1)]
                         curr_body_pos = (prev_body_pos[0] + curr_poss[0], prev_body_pos[1] + curr_poss[1])
                         # validation
                         if 0 <= curr_body_pos[0] < GRID_NUM and 0 <= curr_body_pos[1] < GRID_NUM and curr_body_pos not in self.bodies:
-                            self.bodies.insert(0, curr_body_pos)
+                            self.bodies.append(curr_body_pos)
                             break
                         else:
                             possibilities.remove(curr_poss)
@@ -83,8 +84,14 @@ class Game:
                 if event.type == pygame.QUIT:
                     running = False
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_a:
-                        pass # TODO: add feed to a cell
+                    if event.key == pygame.K_UP:
+                        self.direction = 'N'
+                    if event.key == pygame.K_DOWN:
+                        self.direction = 'S'
+                    if event.key == pygame.K_LEFT:
+                        self.direction = 'W'
+                    if event.key == pygame.K_RIGHT:
+                        self.direction = 'E'
             
             self.map.render(self.screen, self.origin)
 
