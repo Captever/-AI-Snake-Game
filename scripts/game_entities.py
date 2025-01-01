@@ -6,12 +6,11 @@ class Player:
         self.game = game
         self.length = initial_length
         
-        rand_pos_value = random.randint(0, pow(self.game.grid_num, 2) - 1)
-        start_pos = (rand_pos_value // self.game.grid_num, rand_pos_value % self.game.grid_num)
+        rand_pos = (random.randint(0, self.game.grid_num[0]), random.randint(0, self.game.grid_num[1]))
 
         self.bodies = []
         
-        self.bodies.append(start_pos)
+        self.bodies.append(rand_pos)
         
         pos_possibilities = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         for _ in range(initial_length - 1):
@@ -21,7 +20,7 @@ class Player:
                 curr_poss = possibilities[random.randint(0, len(possibilities) - 1)]
                 curr_body_pos = (prev_body_pos[0] + curr_poss[0], prev_body_pos[1] + curr_poss[1])
                 # validation
-                if 0 <= curr_body_pos[0] < self.game.grid_num and 0 <= curr_body_pos[1] < self.game.grid_num and curr_body_pos not in self.bodies:
+                if 0 <= curr_body_pos[0] < self.game.grid_num[0] and 0 <= curr_body_pos[1] < self.game.grid_num[1] and curr_body_pos not in self.bodies:
                     self.bodies.append(curr_body_pos)
                     break
                 else:
@@ -36,10 +35,9 @@ class Feed:
 
         # generate randomly
         while True:
-            rand_pos_value = random.randint(0, pow(self.game.grid_num, 2) - 1)
-            curr_feed_pos = (rand_pos_value // self.game.grid_num, rand_pos_value % self.game.grid_num)
+            rand_pos = (random.randint(0, self.game.grid_num[0]), random.randint(0, self.game.grid_num[1]))
             # validation
-            if 0 <= curr_feed_pos[0] < self.game.grid_num and 0 <= curr_feed_pos[1] < self.game.grid_num and curr_feed_pos not in self.game.player.bodies:
-                self.pos = curr_feed_pos
+            if 0 <= rand_pos[0] < self.game.grid_num[0] and 0 <= rand_pos[1] < self.game.grid_num[1] and rand_pos not in self.game.player.bodies:
+                self.pos = rand_pos
                 self.type = 'normal'
                 break

@@ -1,6 +1,8 @@
 import pygame
 import math
 
+from typing import Tuple, List
+
 # define type
 NONE = 0
 BODY = 1
@@ -36,25 +38,38 @@ DIR_OFFSET_DICT = {
     'N': (0, -1),
 }
 
-class Map:
-    def __init__(self, game, side_length, grid_num, grid_color=(255, 255, 255, 128), outline_thickness=3, inline_thickness=1):
-        self.game = game
-        self.length = side_length
-        self.grid_num = grid_num
-        self.grid_color = grid_color
-        self.outline_thickness = outline_thickness
-        self.inline_thickness = inline_thickness
+class Outerline:
+    def __init__(self, size: Tuple[int, int], thickness: int = 1, color=(255, 255, 255)):
+        self.thickness = thickness
 
-        self.cell_side_length = side_length // grid_num
+        outer_rect = pygame.Rect(0, 0, size[0], size[1]).inflate(thickness * 2, thickness * 2)
+
+        self.surf = pygame.Surface((outer_rect.width, outer_rect.height))
+        pygame.draw.rect(self.surf, color, outer_rect, max(1, thickness)) # minimum value of width: 1
 
     def render(self, surf, pos=(0, 0)):
-        self.surf = pygame.Surface((self.length, self.length))
+        adjusted_pos = (pos[0] - self.thickness, pos[1] - self.thickness)
+
+        surf.blit(self.surf, adjusted_pos)
+
+class Map:
+    def __init__(self, game, size: Tuple[int, int], grid_num: Tuple[int, int], grid_color=(255, 255, 255, 128), grid_thickness: int = 1):
+        self.game = game
+        self.size = size
+        self.grid_num = grid_num
+        self.grid_color = grid_color
+        self.grid_thickness = grid_thickness
+
+        self.cell_size = (size[0] // grid_num[0], size[1] // grid_num[1])
+
+    def render(self, surf, pos=(0, 0)):
+        self.surf = pygame.Surface(self.size)
 
         head = self.game.player.bodies[0]
         dir_offset = DIR_OFFSET_DICT[self.game.direction]
         dir_render_pos = (head[0] + dir_offset[0], head[1] + dir_offset[1])
-        for y in range(self.grid_num):
-            for x in range(self.grid_num):
+        for y in range(self.grid_num[0]):
+            for x in range(self.grid_num[1]):
                 curr_type = []
                 curr_pos = (x, y)
                 if curr_pos in self.game.player.bodies:
@@ -63,22 +78,19 @@ class Map:
                     if curr_pos == feed.pos:
                         curr_type = 'feed'
                         break
-                curr_cell = Cell(self.game, self.cell_side_length, curr_type, self.inline_thickness)
+                curr_cell = Cell(self.game, self.cell_size, curr_type, self.grid_thickness)
 
                 if curr_pos == dir_render_pos:
                     curr_cell.render_dir(self.game.direction)
-                offset = (x * self.cell_side_length, y * self.cell_side_length)
+                offset = (x * self.cell_size[0], y * self.cell_size[1])
                 curr_cell.render(self.surf, offset)
-                
-        # draw outline
-        pygame.draw.rect(self.surf, self.grid_color[:3], self.surf.get_rect(), self.outline_thickness)
 
         surf.blit(self.surf, pos)
 
 class Cell:
-    def __init__(self, game, side_length, cell_type=[], outline_thickness=1, outline_color=(255, 255, 255, 128)):
+    def __init__(self, game, size: Tuple[int, int], cell_type: List[str] = [], outline_thickness: int = 1, outline_color=(255, 255, 255, 128)):
         self.game = game
-        self.length = side_length
+        self.size = size
         self.type = cell_type
         self.outline_thickness = outline_thickness
         self.outline_color = outline_color
@@ -86,15 +98,15 @@ class Cell:
         self.layer_dir = None
 
     def render(self, surf, pos=(0, 0)):
-        self.surf = pygame.Surface((self.length, self.length), pygame.SRCALPHA)
+        self.surf = pygame.Surface(self.size, pygame.SRCALPHA)
 
         feature_outline_thickness = 7
         if self.type == 'body':
             pygame.draw.rect(self.surf, BODY_OUTLINE_COLOR, self.surf.get_rect())
-            pygame.draw.rect(self.surf, BODY_COLOR, pygame.Rect(feature_outline_thickness, feature_outline_thickness, self.length - feature_outline_thickness * 2, self.length - feature_outline_thickness * 2))
+            pygame.draw.rect(self.surf, BODY_COLOR, pygame.Rect(feature_outline_thickness, feature_outline_thickness, self.size[0] - feature_outline_thickness * 2, self.size[1] - feature_outline_thickness * 2))
         elif self.type == 'feed':
             pygame.draw.rect(self.surf, FEED_OUTLINE_COLOR, self.surf.get_rect())
-            pygame.draw.rect(self.surf, FEED_COLOR, pygame.Rect(feature_outline_thickness, feature_outline_thickness, self.length - feature_outline_thickness * 2, self.length - feature_outline_thickness * 2))
+            pygame.draw.rect(self.surf, FEED_COLOR, pygame.Rect(feature_outline_thickness, feature_outline_thickness, self.size[0] - feature_outline_thickness * 2, self.size[1] - feature_outline_thickness * 2))
 
         # draw outline
         if self.layer_dir is not None:
@@ -105,7 +117,7 @@ class Cell:
     
     # dir: type(str)
     def render_dir(self, dir):
-        self.layer_dir = pygame.Surface((self.length, self.length), pygame.SRCALPHA)
+        self.layer_dir = pygame.Surface(self.size, pygame.SRCALPHA)
         self.layer_dir.fill((0, 0, 0, 0))
 
         self.center_pos = self.layer_dir.get_rect().center

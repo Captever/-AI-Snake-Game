@@ -1,7 +1,7 @@
 import pygame
 import sys
 
-from scripts.map_structure import Map
+from scripts.map_structure import Outerline, Map
 from scripts.game_entities import Player, Feed
 
 # define color
@@ -13,12 +13,12 @@ BLACK = (0, 0, 0)
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 
-GRID_NUM = 20
+GRID_NUM = (20, 20)
 GRID_ALPHA = 128
 FEED_NUM = 1
 MOVE_DELAY = 30 # frame
 INIT_LENGTH = 3 # initial length of snake
-OUTLINE_THICKNESS = 3 # outline thickness of map
+OUTERLINE_THICKNESS = 3 # outline thickness of map
 
 class Game:
     def __init__(self):
@@ -31,13 +31,15 @@ class Game:
 
         if SCREEN_WIDTH > SCREEN_HEIGHT: # case: landscape
             self.origin = (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 2 - SCREEN_WIDTH // 4)
-            map_size = SCREEN_WIDTH // 2
+            map_size = (SCREEN_WIDTH // 2, SCREEN_WIDTH // 2)
         else: # case: portrait
             self.origin = (0, SCREEN_HEIGHT // 2 - SCREEN_WIDTH // 2)
-            map_size = SCREEN_WIDTH
+            map_size = (SCREEN_WIDTH, SCREEN_WIDTH)
 
-        self.map = Map(self, map_size, GRID_NUM, WHITE + (GRID_ALPHA,), OUTLINE_THICKNESS)
+        self.map = Map(self, map_size, GRID_NUM, WHITE + (GRID_ALPHA,), OUTERLINE_THICKNESS)
         self.grid_num = GRID_NUM
+        
+        self.map_outerline = Outerline(map_size, OUTERLINE_THICKNESS, WHITE)
 
         self.player = Player(self, INIT_LENGTH)
         self.direction = 'E'
