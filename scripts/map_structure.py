@@ -42,9 +42,11 @@ class Outerline:
     def __init__(self, size: Tuple[int, int], thickness: int = 1, color=(255, 255, 255)):
         self.thickness = thickness
 
-        outer_rect = pygame.Rect(0, 0, size[0], size[1]).inflate(thickness * 2, thickness * 2)
+        outer_rect = pygame.Rect(0, 0, size[0] + thickness * 2, size[1] + thickness * 2)
 
-        self.surf = pygame.Surface((outer_rect.width, outer_rect.height))
+        self.surf = pygame.Surface((outer_rect.width, outer_rect.height), pygame.SRCALPHA)
+        self.surf.fill((0, 0, 0, 0))
+
         pygame.draw.rect(self.surf, color, outer_rect, max(1, thickness)) # minimum value of width: 1
 
     def render(self, surf, pos=(0, 0)):
@@ -53,14 +55,19 @@ class Outerline:
         surf.blit(self.surf, adjusted_pos)
 
 class Map:
-    def __init__(self, game, size: Tuple[int, int], grid_num: Tuple[int, int], grid_color=(255, 255, 255, 128), grid_thickness: int = 1):
+    def __init__(self, game, size: Tuple[int, int], grid_num: Tuple[int, int], grid_thickness: int = 1, grid_color=(255, 255, 255, 128)):
         self.game = game
         self.size = size
         self.grid_num = grid_num
         self.grid_color = grid_color
         self.grid_thickness = grid_thickness
 
+        self.outerline = None
+
         self.cell_size = (size[0] // grid_num[0], size[1] // grid_num[1])
+    
+    def add_outerline(self, outline_thickness: int = 3, outline_color=(255, 255, 255)):
+        self.outerline = Outerline(self.size, outline_thickness, outline_color)
 
     def render(self, surf, pos=(0, 0)):
         self.surf = pygame.Surface(self.size)
@@ -68,6 +75,7 @@ class Map:
         head = self.game.player.bodies[0]
         dir_offset = DIR_OFFSET_DICT[self.game.direction]
         dir_render_pos = (head[0] + dir_offset[0], head[1] + dir_offset[1])
+
         for y in range(self.grid_num[0]):
             for x in range(self.grid_num[1]):
                 curr_type = []
@@ -78,7 +86,7 @@ class Map:
                     if curr_pos == feed.pos:
                         curr_type = 'feed'
                         break
-                curr_cell = Cell(self.game, self.cell_size, curr_type, self.grid_thickness)
+                curr_cell = Cell(self.game, self.cell_size, curr_type, self.grid_thickness, self.grid_color)
 
                 if curr_pos == dir_render_pos:
                     curr_cell.render_dir(self.game.direction)
@@ -86,6 +94,8 @@ class Map:
                 curr_cell.render(self.surf, offset)
 
         surf.blit(self.surf, pos)
+        if self.outerline is not None:
+            self.outerline.render(surf, pos)
 
 class Cell:
     def __init__(self, game, size: Tuple[int, int], cell_type: List[str] = [], outline_thickness: int = 1, outline_color=(255, 255, 255, 128)):
@@ -115,8 +125,7 @@ class Cell:
 
         surf.blit(self.surf, pos)
     
-    # dir: type(str)
-    def render_dir(self, dir):
+    def render_dir(self, dir: str):
         self.layer_dir = pygame.Surface(self.size, pygame.SRCALPHA)
         self.layer_dir.fill((0, 0, 0, 0))
 

@@ -15,6 +15,7 @@ SCREEN_HEIGHT = 720
 
 GRID_NUM = (20, 20)
 GRID_ALPHA = 128
+GRID_THICKNESS = 1 # grid line thickness of map
 FEED_NUM = 1
 MOVE_DELAY = 30 # frame
 INIT_LENGTH = 3 # initial length of snake
@@ -36,10 +37,9 @@ class Game:
             self.origin = (0, SCREEN_HEIGHT // 2 - SCREEN_WIDTH // 2)
             map_size = (SCREEN_WIDTH, SCREEN_WIDTH)
 
-        self.map = Map(self, map_size, GRID_NUM, WHITE + (GRID_ALPHA,), OUTERLINE_THICKNESS)
+        self.map = Map(self, map_size, GRID_NUM, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
+        self.map.add_outerline(OUTERLINE_THICKNESS, WHITE)
         self.grid_num = GRID_NUM
-        
-        self.map_outerline = Outerline(map_size, OUTERLINE_THICKNESS, WHITE)
 
         self.player = Player(self, INIT_LENGTH)
         self.direction = 'E'

@@ -6,7 +6,7 @@ class Player:
         self.game = game
         self.length = initial_length
         
-        rand_pos = (random.randint(0, self.game.grid_num[0]), random.randint(0, self.game.grid_num[1]))
+        rand_pos = (random.randint(0, self.game.grid_num[0] - 1), random.randint(0, self.game.grid_num[1] - 1))
 
         self.bodies = []
         
