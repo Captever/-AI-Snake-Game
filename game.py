@@ -48,11 +48,16 @@ class Game:
         self.feeds = []
         for _ in range(FEED_NUM):
             self.feeds.append(Feed(self))
+            
+        self.is_gameover = False
 
     def run(self):
         self.running = True
         while self.running:
             self.start_of_frame()
+
+            if self.is_gameover:
+                self.running = False
 
             self.move()
 
@@ -68,6 +73,29 @@ class Game:
         if self.move_accum >= MOVE_DELAY:
             self.move_accum = 0
             self.player.move()
+    
+    def is_in_bound(self, pos) -> bool:
+        return self.map.is_inside(pos)
+
+    def get_feed(self, pos) -> Feed:
+        for feed in self.feeds:
+            if pos == feed.pos:
+                return feed
+        return None
+
+    def check_entity(self, pos) -> int:
+        if not self.is_in_bound(pos):
+            return 99 # out of bound = collide walls
+        if pos in self.player.bodies:
+            return 0
+        feed = self.get_feed(pos)
+        if feed is not None:
+            return 1
+
+        return -1
+
+    def gameover(self, is_gameover: bool = True):
+        self.is_gameover = is_gameover
 
     def event_handler(self):
         for event in pygame.event.get():

@@ -96,6 +96,11 @@ class Map:
         surf.blit(self.surf, pos)
         if self.outerline is not None:
             self.outerline.render(surf, pos)
+    
+    def is_inside(self, pos) -> bool:
+        is_in_x = 0 <= pos[0] < self.grid_num[0]
+        is_in_y = 0 <= pos[1] < self.grid_num[1]
+        return is_in_x and is_in_y
 
 class Cell:
     def __init__(self, game, size: Tuple[int, int], cell_type: List[str] = [], outline_thickness: int = 1, outline_color=(255, 255, 255, 128)):
