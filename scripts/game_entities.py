@@ -1,6 +1,13 @@
 import pygame
 import random
 
+DIR_OFFSET_DICT = {
+    'E': (1, 0),
+    'W': (-1, 0),
+    'S': (0, 1),
+    'N': (0, -1),
+}
+
 class Player:
     def __init__(self, game, initial_length):
         self.game = game
@@ -25,6 +32,25 @@ class Player:
                     break
                 else:
                     possibilities.remove(curr_poss)
+    
+    def set_direction(self, dir):
+        if dir not in ['E', 'W', 'S', 'N']:
+            raise ValueError("dir must be the one of EWSN")
+        
+    def check_collision(self, target) -> int:
+        return True
+        
+    def move(self):
+        head = self.bodies[0]
+        collision = self.check_collision(head)
+
+        for idx in range(len(self.bodies) - 1, 0, -1):
+            prev_body = self.bodies[idx - 1]
+            self.bodies[idx] = prev_body
+
+        dir_offset = DIR_OFFSET_DICT[self.game.direction]
+        self.bodies[0] = (head[0] + dir_offset[0], head[1] + dir_offset[1])
+        
 
 class Feed:
     def __init__(self, game):

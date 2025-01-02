@@ -1,7 +1,7 @@
 import pygame
 import sys
 
-from scripts.map_structure import Outerline, Map
+from scripts.map_structure import Map
 from scripts.game_entities import Player, Feed
 
 # define color
@@ -42,6 +42,7 @@ class Game:
         self.grid_num = GRID_NUM
 
         self.player = Player(self, INIT_LENGTH)
+        self.move_accum = 0
         self.direction = 'E'
 
         self.feeds = []
@@ -49,29 +50,50 @@ class Game:
             self.feeds.append(Feed(self))
 
     def run(self):
-        running = True
-        while running:
-            self.screen.fill(BLACK + (0,))
+        self.running = True
+        while self.running:
+            self.start_of_frame()
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_UP:
-                        self.direction = 'N'
-                    if event.key == pygame.K_DOWN:
-                        self.direction = 'S'
-                    if event.key == pygame.K_LEFT:
-                        self.direction = 'W'
-                    if event.key == pygame.K_RIGHT:
-                        self.direction = 'E'
+            self.move()
+
+            self.event_handler()
             
             self.map.render(self.screen, self.origin)
 
-            pygame.display.flip()
-            self.clock.tick(60)
+            self.end_of_frame()
 
-        # end of program
+        self.end_of_game()
+    
+    def move(self):
+        if self.move_accum >= MOVE_DELAY:
+            self.move_accum = 0
+            self.player.move()
+
+    def event_handler(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    self.direction = 'N'
+                if event.key == pygame.K_DOWN:
+                    self.direction = 'S'
+                if event.key == pygame.K_LEFT:
+                    self.direction = 'W'
+                if event.key == pygame.K_RIGHT:
+                    self.direction = 'E'
+    
+    def start_of_frame(self):
+        # initialize screen
+        self.screen.fill(BLACK + (0,))
+        
+    def end_of_frame(self):
+        pygame.display.flip()
+        self.clock.tick(60)
+
+        self.move_accum += 1
+
+    def end_of_game(self):
         pygame.quit()
         sys.exit()
 
