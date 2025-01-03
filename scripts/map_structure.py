@@ -1,42 +1,8 @@
 import pygame
-import math
+
+from constants import *
 
 from typing import Tuple, List
-
-# define type
-NONE = 0
-BODY = 1
-FEED = 2
-
-# define color
-BODY_OUTLINE_COLOR = (59, 92, 70)
-BODY_COLOR = (7, 255, 82)
-FEED_OUTLINE_COLOR = (187, 113, 40)
-FEED_COLOR = (255, 255, 15)
-DIR_COLOR = (255, 255, 255)
-
-# define direction
-DIR_ARROW_HEIGHT = 10
-DIR_FILTER_DICT = {
-    'E': 0,
-    'W': 1,
-    'S': 2,
-    'N': 3,
-}
-# E / W / S / N
-DIR_OFFSET = (
-    ((-DIR_ARROW_HEIGHT, DIR_ARROW_HEIGHT / math.sqrt(3)), (-DIR_ARROW_HEIGHT, -DIR_ARROW_HEIGHT / math.sqrt(3))),
-    ((DIR_ARROW_HEIGHT, DIR_ARROW_HEIGHT / math.sqrt(3)), (DIR_ARROW_HEIGHT, -DIR_ARROW_HEIGHT / math.sqrt(3))),
-    ((DIR_ARROW_HEIGHT / math.sqrt(3), -DIR_ARROW_HEIGHT), (-DIR_ARROW_HEIGHT / math.sqrt(3), -DIR_ARROW_HEIGHT)),
-    ((DIR_ARROW_HEIGHT / math.sqrt(3), DIR_ARROW_HEIGHT), (-DIR_ARROW_HEIGHT / math.sqrt(3), DIR_ARROW_HEIGHT)),
-)
-
-DIR_OFFSET_DICT = {
-    'E': (1, 0),
-    'W': (-1, 0),
-    'S': (0, 1),
-    'N': (0, -1),
-}
 
 class Outerline:
     def __init__(self, size: Tuple[int, int], thickness: int = 1, color=(255, 255, 255)):
@@ -73,23 +39,17 @@ class Map:
         self.surf = pygame.Surface(self.size)
 
         head = self.game.player.bodies[0]
-        dir_offset = DIR_OFFSET_DICT[self.game.direction]
+        dir_offset = DIR_OFFSET_DICT[self.game.player.direction]
         dir_render_pos = (head[0] + dir_offset[0], head[1] + dir_offset[1])
 
         for y in range(self.grid_num[0]):
             for x in range(self.grid_num[1]):
-                curr_type = []
                 curr_pos = (x, y)
-                if curr_pos in self.game.player.bodies:
-                    curr_type = 'body'
-                for feed in self.game.feeds:
-                    if curr_pos == feed.pos:
-                        curr_type = 'feed'
-                        break
-                curr_cell = Cell(self.game, self.cell_size, curr_type, self.grid_thickness, self.grid_color)
+                curr_object = self.game.check_collision(curr_pos)
+                curr_cell = Cell(self.game, self.cell_size, OBJECT_DICT[curr_object[0]], self.grid_thickness, self.grid_color)
 
                 if curr_pos == dir_render_pos:
-                    curr_cell.render_dir(self.game.direction)
+                    curr_cell.render_dir(self.game.player.direction)
                 offset = (x * self.cell_size[0], y * self.cell_size[1])
                 curr_cell.render(self.surf, offset)
 
@@ -103,7 +63,7 @@ class Map:
         return is_in_x and is_in_y
 
 class Cell:
-    def __init__(self, game, size: Tuple[int, int], cell_type: List[str] = [], outline_thickness: int = 1, outline_color=(255, 255, 255, 128)):
+    def __init__(self, game, size: Tuple[int, int], cell_type: int = OBJECT_DICT['none'], outline_thickness: int = 1, outline_color=(255, 255, 255, 128)):
         self.game = game
         self.size = size
         self.type = cell_type
@@ -116,10 +76,10 @@ class Cell:
         self.surf = pygame.Surface(self.size, pygame.SRCALPHA)
 
         feature_outline_thickness = 7
-        if self.type == 'body':
+        if self.type == OBJECT_DICT['body']:
             pygame.draw.rect(self.surf, BODY_OUTLINE_COLOR, self.surf.get_rect())
             pygame.draw.rect(self.surf, BODY_COLOR, pygame.Rect(feature_outline_thickness, feature_outline_thickness, self.size[0] - feature_outline_thickness * 2, self.size[1] - feature_outline_thickness * 2))
-        elif self.type == 'feed':
+        elif self.type == OBJECT_DICT['feed']:
             pygame.draw.rect(self.surf, FEED_OUTLINE_COLOR, self.surf.get_rect())
             pygame.draw.rect(self.surf, FEED_COLOR, pygame.Rect(feature_outline_thickness, feature_outline_thickness, self.size[0] - feature_outline_thickness * 2, self.size[1] - feature_outline_thickness * 2))
 
@@ -136,8 +96,8 @@ class Cell:
 
         self.center_pos = self.layer_dir.get_rect().center
 
-        curr_dir_offset = DIR_OFFSET[DIR_FILTER_DICT[dir]]
+        dir_arrow_vertexes = DIR_ARROW_VERTEX_DICT[dir]
         dir_arrow_coord = [self.center_pos]
-        for (offset_x, offset_y) in curr_dir_offset:
+        for (offset_x, offset_y) in dir_arrow_vertexes:
             dir_arrow_coord.append((self.center_pos[0] + offset_x, self.center_pos[1] + offset_y))
         pygame.draw.polygon(self.layer_dir, DIR_COLOR, dir_arrow_coord)
