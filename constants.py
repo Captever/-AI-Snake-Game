@@ -11,6 +11,7 @@ OBJECT_DICT = {
     'body': 2,
     'feed': 3, 
 }
+OBJECT_OUTLINE_THICKNESS = 7
 
 # color
 WHITE = (255, 255, 255)
@@ -24,18 +25,19 @@ FEED_COLOR = (255, 255, 15)
 DIR_COLOR = (255, 255, 255)
 
 # direction
-DIR_ARROW_HEIGHT = 10
-DIR_ARROW_VERTEX_DICT = {
-    'E': ((-DIR_ARROW_HEIGHT, DIR_ARROW_HEIGHT / math.sqrt(3)), (-DIR_ARROW_HEIGHT, -DIR_ARROW_HEIGHT / math.sqrt(3))),
-    'W': ((DIR_ARROW_HEIGHT, DIR_ARROW_HEIGHT / math.sqrt(3)), (DIR_ARROW_HEIGHT, -DIR_ARROW_HEIGHT / math.sqrt(3))),
-    'S': ((DIR_ARROW_HEIGHT / math.sqrt(3), -DIR_ARROW_HEIGHT), (-DIR_ARROW_HEIGHT / math.sqrt(3), -DIR_ARROW_HEIGHT)),
-    'N': ((DIR_ARROW_HEIGHT / math.sqrt(3), DIR_ARROW_HEIGHT), (-DIR_ARROW_HEIGHT / math.sqrt(3), DIR_ARROW_HEIGHT)),
-}
+DIR_ARROW_RATIO = 0.5
 DIR_OFFSET_DICT = {
     'E': (1, 0),
     'W': (-1, 0),
     'S': (0, 1),
-    'N': (0, -1),
+    'N': (0, -1)
+}
+DIR_ANGLE_DICT = {
+# pygame.transform.rotate operates counterclockwise
+    'E': 0,
+    'W': 180,
+    'S': 270,
+    'N': 90
 }
 
 # etc

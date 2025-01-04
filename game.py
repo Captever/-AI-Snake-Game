@@ -26,9 +26,8 @@ class Game:
         self.map.add_outerline(OUTERLINE_THICKNESS, WHITE)
 
         self.player = Player(self, INIT_LENGTH)
-
-        self.feedSystem = FeedSystem(self)
-        self.feedSystem.add_feed_random_pos(FEED_NUM)
+        self.fs = FeedSystem(self)
+        self.fs.add_feed_random_coord(FEED_NUM)
 
         self.is_gameover = False
 
@@ -43,28 +42,26 @@ class Game:
             self.player.move_sequence()
 
             self.event_handler()
-            
-            self.map.render(self.screen, self.origin)
 
             self.end_of_frame()
 
         self.end_of_game()
     
-    def is_in_bound(self, pos) -> bool:
-        return self.map.is_inside(pos)
+    def is_in_bound(self, coord) -> bool:
+        return self.map.is_inside(coord)
 
-    def check_collision(self, pos):
-        if not self.is_in_bound(pos):
+    def check_collision(self, coord):
+        if not self.is_in_bound(coord):
             return 'wall', None
-        if pos in self.player.bodies:
+        if coord in self.player.bodies:
             return 'body', None
-        if pos in self.feedSystem.feeds:
-            feed = self.feedSystem.feeds[pos]
+        if coord in self.fs.feeds:
+            feed = self.fs.feeds[coord]
             return 'feed', feed
         return 'none', None
 
-    def remove_feed(self, pos):
-        self.feedSystem.remove_feed(pos)
+    def remove_feed(self, coord):
+        self.fs.remove_feed(coord)
 
     def gameover(self, is_gameover: bool = True):
         self.is_gameover = is_gameover
@@ -88,6 +85,10 @@ class Game:
         self.screen.fill(BLACK + (0,))
         
     def end_of_frame(self):
+        self.player.render()
+        self.fs.render()
+        self.map.render(self.screen, self.origin)
+
         pygame.display.flip()
         self.clock.tick(60)
 
