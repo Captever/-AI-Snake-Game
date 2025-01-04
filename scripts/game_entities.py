@@ -2,7 +2,7 @@ import random
 
 from constants import *
 
-from typing import Tuple
+from typing import Tuple, Dict
 
 
 class Player:
@@ -26,6 +26,8 @@ class Player:
                 body_pos = (prev_body_pos[0] + dir_offset[0], prev_body_pos[1] + dir_offset[1])
                 # validation
                 if self.game.is_in_bound(body_pos) and body_pos not in self.bodies:
+                    # if the player's direction hasn't yet been set,
+                    #  set it to the opposite direction of the second body part
                     if self.direction == None:
                         if dir == 'E':
                             self.direction = 'W'
@@ -35,6 +37,7 @@ class Player:
                             self.direction = 'N'
                         else:
                             self.direction = 'S'
+                    
                     self.bodies.append(body_pos)
                     break
                 else:
@@ -84,32 +87,47 @@ class Player:
             return
         # length increases when eat feed
         if collision[0] == 'feed':
-            self.bodies.append(self.bodies[-1])
             curr_feed = collision[1]
-            self.game.remove_feed(curr_feed.pos)
+            self.eat_feed(curr_feed)
 
         updated_bodies = [head] + self.bodies[:-1]
         self.bodies = updated_bodies
+    
+    def eat_feed(self, feed: 'Feed'):
+        self.bodies.append(self.bodies[-1])
+        self.game.remove_feed(feed.pos)
 
 class FeedSystem:
     def __init__(self, game):
-        self.feeds = {}
+        self.feeds: Dict[Tuple[int, int], Feed] = {}
         self.game = game
     
-    def add_feed(self, pos: Tuple[int, int], feed_type: str = "normal"):
+    def is_feed_empty(self, feed_type: str = 'normal'):
+        for feed in self.feeds.values():
+            if feed.type == feed_type:
+                return False
+        return True
+    
+    def add_feed(self, pos: Tuple[int, int], feed_type: str = 'normal'):
         self.feeds[pos] = Feed(pos=pos, feed_type=feed_type)
     
-    def add_feed_random_pos(self, num: int, feed_type: str = "normal"):
+    def add_feed_random_pos(self, num: int, feed_type: str = 'normal'):
         for _ in range(num):
             while True:
                 rand_pos = (random.randint(0, GRID_NUM[0] - 1), random.randint(0, GRID_NUM[1] - 1))
                 # validation
-                if rand_pos not in self.game.player.bodies:
+                if rand_pos not in self.game.player.bodies and\
+                     rand_pos not in self.feeds:
                     self.add_feed(pos=rand_pos, feed_type=feed_type)
                     break
     
     def remove_feed(self, pos: Tuple[int, int]):
+        target_type = self.feeds[pos].type
         del self.feeds[pos]
+        
+        # if there is no same type feed, add new feeds
+        if self.is_feed_empty(target_type):
+            self.add_feed_random_pos(FEED_NUM, feed_type=target_type)
 
 class Feed:
     def __init__(self, pos, feed_type):
