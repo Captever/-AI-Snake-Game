@@ -42,8 +42,8 @@ class Map:
         dir_offset = DIR_OFFSET_DICT[self.game.player.direction]
         dir_render_pos = (head[0] + dir_offset[0], head[1] + dir_offset[1])
 
-        for y in range(self.grid_num[0]):
-            for x in range(self.grid_num[1]):
+        for y in range(self.grid_num[1]):
+            for x in range(self.grid_num[0]):
                 curr_pos = (x, y)
                 curr_object = self.game.check_collision(curr_pos)
                 curr_cell = Cell(self.game, self.cell_size, OBJECT_DICT[curr_object[0]], self.grid_thickness, self.grid_color)
