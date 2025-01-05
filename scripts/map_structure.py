@@ -1,9 +1,10 @@
 import pygame
+from random import sample
 
 from constants import *
 
 from queue import Queue
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
 
 class Map:
     def __init__(self, game, map_side_length: Tuple[int, int], grid_num: Tuple[int, int], grid_thickness: int = 1, grid_color=(255, 255, 255, 128)):
@@ -12,6 +13,8 @@ class Map:
         self.grid_num = grid_num
 
         self.outerline = None
+        self.available_cells = set((x, y) for x in range(grid_num[0]) for y in range(grid_num[1]))
+
         # divide by grid height for vertical rect, grid width for horizontal rect
         grid_diff = grid_num[0] - grid_num[1]
         grid_coord_diff = abs(grid_diff) // 2
@@ -21,6 +24,7 @@ class Map:
         else:
             self.cell_side_length = map_side_length // grid_num[1]
             self.grid_offset = (self.cell_side_length * grid_coord_diff, 0)
+        
         self.arrow = Arrow(self.get_cell_size())
         self.arrow_pos = None
 
@@ -34,6 +38,35 @@ class Map:
         self.arrow.set_angle(angle)
         self.arrow_pos = tuple(coord[i] * self.cell_side_length for i in [0, 1])
 
+    # remove coordinate currently in use
+    def mark_cell_used(self, coord: Tuple[int, int]):
+        self.available_cells.discard(coord)
+    
+    # restore coordinate no longer in use
+    def mark_cell_free(self, coord: Tuple[int, int]):
+        self.available_cells.add(coord)
+    
+    def is_inside(self, coord) -> bool:
+        is_in_x = 0 <= coord[0] < self.grid_num[0]
+        is_in_y = 0 <= coord[1] < self.grid_num[1]
+        return is_in_x and is_in_y
+    
+    def get_remaining_cell_num(self):
+        return len(self.available_cells)
+
+    def get_available_cell_coords(self, num: int = 1) -> List[Tuple[int, int]]:
+        remaining_cell_num = self.get_remaining_cell_num()
+        return sample(list(self.available_cells), k=min(remaining_cell_num, num))
+
+    def get_cells(self):
+        return self.grid.cells
+
+    def get_size(self) -> Tuple[int, int]:
+        return (self.side_length, self.side_length)
+
+    def get_cell_size(self) -> Tuple[int, int]:
+        return (self.cell_side_length, self.cell_side_length)
+
     def render(self, surf, offset=(0, 0)):
         self.surf = pygame.Surface(self.get_size())
 
@@ -45,20 +78,6 @@ class Map:
         
         abs_arrow_pos = tuple(offset[i] + self.grid_offset[i] + self.arrow_pos[i] for i in [0, 1])
         surf.blit(self.arrow.surf, abs_arrow_pos)
-    
-    def is_inside(self, coord) -> bool:
-        is_in_x = 0 <= coord[0] < self.grid_num[0]
-        is_in_y = 0 <= coord[1] < self.grid_num[1]
-        return is_in_x and is_in_y
-
-    def get_cells(self):
-        return self.grid.cells
-
-    def get_size(self) -> Tuple[int, int]:
-        return (self.side_length, self.side_length)
-
-    def get_cell_size(self) -> Tuple[int, int]:
-        return (self.cell_side_length, self.cell_side_length)
 
 class Grid:
     def __init__(self, cell_side_length: int, grid_num: Tuple[int, int], cell_outline_thickness: int = 1, cell_outline_color=WHITE):

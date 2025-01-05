@@ -13,12 +13,13 @@ class Player:
         self.direction = None
         self.move_accum = 0
 
-        self.body_surf: pygame.Surface = self.make_surf(OBJECT_OUTLINE_THICKNESS)
+        self.body_surf: pygame.Surface = self.make_surf()
         self.bodies = self.make_bodies()
     
     def make_bodies(self):
         rand_coord = (random.randint(0, GRID_NUM[0] - 1), random.randint(0, GRID_NUM[1] - 1))
         ret = [rand_coord]
+        self.game.map.mark_cell_used(rand_coord)
         
         dirs = ['E', 'W', 'S', 'N']
         for _ in range(self.length - 1):
@@ -31,6 +32,7 @@ class Player:
                 # validation
                 if self.game.is_in_bound(body_coord) and body_coord not in ret:
                     ret.append(body_coord)
+                    self.game.map.mark_cell_used(body_coord)
 
                     # set the player's initial direction to
                     #  the opposite direction of the second body part
@@ -50,8 +52,9 @@ class Player:
         
         return ret
 
-    def make_surf(self, outline_thickness) -> pygame.Surface:
+    def make_surf(self) -> pygame.Surface:
         size = self.game.map.get_cell_size()
+        outline_thickness = round(size[0] * OBJECT_OUTLINE_RATIO)
         ret = pygame.Surface(size)
         pygame.draw.rect(ret, BODY_OUTLINE_COLOR, ret.get_rect())
         pygame.draw.rect(ret, BODY_COLOR, pygame.Rect(outline_thickness, outline_thickness, size[0] - outline_thickness * 2, size[1] - outline_thickness * 2))
@@ -96,8 +99,7 @@ class Player:
         dir_offset = DIR_OFFSET_DICT[self.direction]
         new_head = (head[0] + dir_offset[0], head[1] + dir_offset[1])
 
-        new_bodies = [new_head] + self.bodies[:-1]
-        self.bodies = new_bodies
+        self.bodies = [new_head] + self.bodies[:-1]
 
         collision = self.check_collision(new_head)
         # game over when colliding with walls or the player's own body
@@ -108,8 +110,12 @@ class Player:
         if collision[0] == 'feed':
             curr_feed = collision[1]
             self.eat_feed(tail, curr_feed)
+        else:
+            self.game.map.mark_cell_free(tail)
+        self.game.map.mark_cell_used(new_head)
     
     def eat_feed(self, tail_coord: Tuple[int, int], feed: 'Feed'):
+        self.game.update_score(1)
         self.bodies.append(tail_coord)
         self.game.remove_feed(feed.coord)
     
@@ -128,10 +134,11 @@ class FeedSystem:
         self.feeds: Dict[Tuple[int, int], Feed] = {}
         self.game = game
         
-        self.feed_surf: pygame.Surface = self.make_surf(OBJECT_OUTLINE_THICKNESS)
+        self.feed_surf: pygame.Surface = self.make_surf()
 
-    def make_surf(self, outline_thickness) -> pygame.Surface:
+    def make_surf(self) -> pygame.Surface:
         size = self.game.map.get_cell_size()
+        outline_thickness = round(size[0] * OBJECT_OUTLINE_RATIO)
         ret = pygame.Surface(size)
         pygame.draw.rect(ret, FEED_OUTLINE_COLOR, ret.get_rect())
         pygame.draw.rect(ret, FEED_COLOR, pygame.Rect(outline_thickness, outline_thickness, size[0] - outline_thickness * 2, size[1] - outline_thickness * 2))
@@ -145,16 +152,16 @@ class FeedSystem:
     
     def add_feed(self, coord: Tuple[int, int], feed_type: str = 'normal'):
         self.feeds[coord] = Feed(coord=coord, feed_type=feed_type)
+        self.game.map.mark_cell_used(coord)
     
     def add_feed_random_coord(self, num: int, feed_type: str = 'normal'):
-        for _ in range(num):
-            while True:
-                rand_coord = (random.randint(0, GRID_NUM[0] - 1), random.randint(0, GRID_NUM[1] - 1))
-                # validation
-                if rand_coord not in self.game.player.bodies and\
-                     rand_coord not in self.feeds:
-                    self.add_feed(coord=rand_coord, feed_type=feed_type)
-                    break
+        random_cell_coords = self.game.map.get_available_cell_coords(num)
+
+        if not len(random_cell_coords):
+            self.game.clear()
+
+        for rand_coord in random_cell_coords:
+            self.add_feed(rand_coord, feed_type)
     
     def remove_feed(self, coord: Tuple[int, int]):
         target_type = self.feeds[coord].type
@@ -163,6 +170,8 @@ class FeedSystem:
         # if there is no same type feed, add new feeds
         if self.is_feed_empty(target_type):
             self.add_feed_random_coord(FEED_NUM, feed_type=target_type)
+
+        self.game.map.mark_cell_free(coord)
     
     def render(self):
         for feed_coord, feed in self.feeds.items():

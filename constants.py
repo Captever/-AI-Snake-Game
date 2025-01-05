@@ -11,7 +11,7 @@ OBJECT_DICT = {
     'body': 2,
     'feed': 3, 
 }
-OBJECT_OUTLINE_THICKNESS = 7
+OBJECT_OUTLINE_RATIO = 0.2
 
 # color
 WHITE = (255, 255, 255)
@@ -49,3 +49,4 @@ MOVE_DELAY = 30 # frame
 INIT_LENGTH = 3 # initial length of snake
 MAP_OUTERLINE_THICKNESS = 1
 GRID_OUTERLINE_THICKNESS = 3
+FONT_SIZE_RATIO = 0.075

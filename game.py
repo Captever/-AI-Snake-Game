@@ -5,6 +5,7 @@ from constants import *
 
 from scripts.map_structure import Map
 from scripts.game_entities import Player, FeedSystem
+from scripts.game_manager import ScoreManager
 
 class Game:
     def __init__(self):
@@ -15,18 +16,34 @@ class Game:
 
         self.clock = pygame.time.Clock()
 
-        screen_rect = self.screen.get_rect()
-        map_side_length = (SCREEN_WIDTH // 2) if SCREEN_WIDTH > SCREEN_HEIGHT else SCREEN_WIDTH
-        self.origin = (screen_rect.centerx - map_side_length // 2, screen_rect.centery - map_side_length // 2)
-
-        self.map = Map(self, map_side_length, GRID_NUM, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
-        self.map.add_outerline(MAP_OUTERLINE_THICKNESS, WHITE)
+        self.init_ui()
 
         self.player = Player(self, INIT_LENGTH)
         self.fs = FeedSystem(self)
         self.fs.add_feed_random_coord(FEED_NUM)
 
+        self.score: int = 0
+
         self.is_gameover = False
+        self.is_paused = False
+
+    def init_ui(self):
+        screen_rect = self.screen.get_rect()
+        self.is_landscape: bool = SCREEN_WIDTH > SCREEN_HEIGHT
+
+        if self.is_landscape:
+            map_side_length = (SCREEN_WIDTH // 2)
+            self.sm = ScoreManager(self, (SCREEN_WIDTH // 4, SCREEN_HEIGHT), map_side_length * FONT_SIZE_RATIO, WHITE)
+            self.score_offset = (SCREEN_WIDTH * 0.75, 0)
+        else:
+            map_side_length = SCREEN_WIDTH
+            self.sm = ScoreManager(self, (SCREEN_WIDTH, SCREEN_HEIGHT // 4), map_side_length * FONT_SIZE_RATIO, WHITE)
+            self.score_offset = (0, SCREEN_HEIGHT * 0.75)
+        self.sm.set_clear_condition(round(GRID_NUM[0] * GRID_NUM[1] * 0.7) - INIT_LENGTH)
+        self.origin = (screen_rect.centerx - map_side_length // 2, screen_rect.centery - map_side_length // 2)
+
+        self.map = Map(self, map_side_length, GRID_NUM, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
+        self.map.add_outerline(MAP_OUTERLINE_THICKNESS, WHITE)
 
     def run(self):
         self.running = True
@@ -36,7 +53,8 @@ class Game:
             if self.is_gameover:
                 self.running = False
 
-            self.player.move_sequence()
+            if not self.is_paused:
+                self.player.move_sequence()
 
             self.event_handler()
 
@@ -61,6 +79,12 @@ class Game:
     def remove_feed(self, coord):
         self.fs.remove_feed(coord)
 
+    def update_score(self, amount: int = 1):
+        self.sm.update_score(amount)
+
+    def clear(self):
+        self.is_paused = True
+
     def gameover(self, is_gameover: bool = True):
         self.is_gameover = is_gameover
         self.end_of_game()
@@ -78,6 +102,8 @@ class Game:
                     self.player.set_direction('W')
                 if event.key == pygame.K_RIGHT:
                     self.player.set_direction('E')
+                if event.key == pygame.K_p:
+                    self.is_paused = not self.is_paused
     
     def start_of_frame(self):
         # initialize screen
@@ -87,6 +113,7 @@ class Game:
         self.player.render()
         self.fs.render()
         self.map.render(self.screen, self.origin)
+        self.sm.render(self.screen, self.score_offset)
 
         pygame.display.flip()
         self.clock.tick(60)
