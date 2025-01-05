@@ -47,4 +47,5 @@ GRID_THICKNESS = 1 # grid line thickness of map
 FEED_NUM = 3
 MOVE_DELAY = 30 # frame
 INIT_LENGTH = 3 # initial length of snake
-OUTERLINE_THICKNESS = 3 # outline thickness of map
+MAP_OUTERLINE_THICKNESS = 1
+GRID_OUTERLINE_THICKNESS = 3

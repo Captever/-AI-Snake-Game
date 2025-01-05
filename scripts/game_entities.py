@@ -51,7 +51,7 @@ class Player:
         return ret
 
     def make_surf(self, outline_thickness) -> pygame.Surface:
-        size = self.game.map.cell_size
+        size = self.game.map.get_cell_size()
         ret = pygame.Surface(size)
         pygame.draw.rect(ret, BODY_OUTLINE_COLOR, ret.get_rect())
         pygame.draw.rect(ret, BODY_COLOR, pygame.Rect(outline_thickness, outline_thickness, size[0] - outline_thickness * 2, size[1] - outline_thickness * 2))
@@ -115,7 +115,7 @@ class Player:
     
     def render(self):
         for body_coord in self.bodies:
-            self.game.map.cells[body_coord].put_surf(self.body_surf)
+            self.game.map.get_cells()[body_coord].put_surf(self.body_surf)
 
         head = self.bodies[0]
         dir_offset = DIR_OFFSET_DICT[self.direction]
@@ -131,7 +131,7 @@ class FeedSystem:
         self.feed_surf: pygame.Surface = self.make_surf(OBJECT_OUTLINE_THICKNESS)
 
     def make_surf(self, outline_thickness) -> pygame.Surface:
-        size = self.game.map.cell_size
+        size = self.game.map.get_cell_size()
         ret = pygame.Surface(size)
         pygame.draw.rect(ret, FEED_OUTLINE_COLOR, ret.get_rect())
         pygame.draw.rect(ret, FEED_COLOR, pygame.Rect(outline_thickness, outline_thickness, size[0] - outline_thickness * 2, size[1] - outline_thickness * 2))
@@ -166,7 +166,7 @@ class FeedSystem:
     
     def render(self):
         for feed_coord, feed in self.feeds.items():
-            self.game.map.cells[feed_coord].put_surf(self.feed_surf)
+            self.game.map.get_cells()[feed_coord].put_surf(self.feed_surf)
 
 class Feed:
     def __init__(self, coord, feed_type):

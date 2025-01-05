@@ -15,15 +15,12 @@ class Game:
 
         self.clock = pygame.time.Clock()
 
-        if SCREEN_WIDTH > SCREEN_HEIGHT: # case: landscape
-            self.origin = (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 2 - SCREEN_WIDTH // 4)
-            map_size = (SCREEN_WIDTH // 2, SCREEN_WIDTH // 2)
-        else: # case: portrait
-            self.origin = (0, SCREEN_HEIGHT // 2 - SCREEN_WIDTH // 2)
-            map_size = (SCREEN_WIDTH, SCREEN_WIDTH)
+        screen_rect = self.screen.get_rect()
+        map_side_length = (SCREEN_WIDTH // 2) if SCREEN_WIDTH > SCREEN_HEIGHT else SCREEN_WIDTH
+        self.origin = (screen_rect.centerx - map_side_length // 2, screen_rect.centery - map_side_length // 2)
 
-        self.map = Map(self, map_size, GRID_NUM, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
-        self.map.add_outerline(OUTERLINE_THICKNESS, WHITE)
+        self.map = Map(self, map_side_length, GRID_NUM, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
+        self.map.add_outerline(MAP_OUTERLINE_THICKNESS, WHITE)
 
         self.player = Player(self, INIT_LENGTH)
         self.fs = FeedSystem(self)
@@ -66,6 +63,7 @@ class Game:
 
     def gameover(self, is_gameover: bool = True):
         self.is_gameover = is_gameover
+        self.end_of_game()
 
     def event_handler(self):
         for event in pygame.event.get():
