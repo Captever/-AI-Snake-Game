@@ -53,7 +53,8 @@ class Game:
     def check_collision(self, coord):
         if not self.is_in_bound(coord):
             return 'wall', None
-        if coord in self.player.bodies:
+        # 'body' collision is not valid for head
+        if coord in self.player.bodies[1:]:
             return 'body', None
         if coord in self.fs.feeds:
             feed = self.fs.feeds[coord]

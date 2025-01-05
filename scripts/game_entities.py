@@ -14,38 +14,42 @@ class Player:
         self.move_accum = 0
 
         self.body_surf: pygame.Surface = self.make_surf(OBJECT_OUTLINE_THICKNESS)
-        
+        self.bodies = self.make_bodies()
+    
+    def make_bodies(self):
         rand_coord = (random.randint(0, GRID_NUM[0] - 1), random.randint(0, GRID_NUM[1] - 1))
-        self.bodies = [rand_coord]
+        ret = [rand_coord]
         
         dirs = ['E', 'W', 'S', 'N']
-        for _ in range(initial_length - 1):
-            prev_body_coord = self.bodies[-1]
+        for _ in range(self.length - 1):
+            prev_body_coord = ret[-1]
             dirs_copy = dirs.copy()
             while True:
                 dir = dirs_copy[random.randint(0, len(dirs_copy) - 1)]
                 dir_offset = DIR_OFFSET_DICT[dir]
                 body_coord = (prev_body_coord[0] + dir_offset[0], prev_body_coord[1] + dir_offset[1])
                 # validation
-                if self.game.is_in_bound(body_coord) and body_coord not in self.bodies:
-                    self.bodies.append(body_coord)
+                if self.game.is_in_bound(body_coord) and body_coord not in ret:
+                    ret.append(body_coord)
 
-                    # if the player's direction hasn't yet been set,
-                    #  set it to the opposite direction of the second body part
+                    # set the player's initial direction to
+                    #  the opposite direction of the second body part
                     if self.direction == None:
                         if dir == 'E':
-                            self.set_direction('W')
+                            self.direction = 'W'
                         elif dir == 'W':
-                            self.set_direction('E')
+                            self.direction = 'E'
                         elif dir == 'S':
-                            self.set_direction('N')
+                            self.direction = 'N'
                         else:
-                            self.set_direction('S')
-                    
+                            self.direction = 'S'
+
                     break
                 else:
                     dirs_copy.remove(dir)
-    
+        
+        return ret
+
     def make_surf(self, outline_thickness) -> pygame.Surface:
         size = self.game.map.cell_size
         ret = pygame.Surface(size)
@@ -88,11 +92,14 @@ class Player:
             self.move_accum += 1
 
     def move(self):
-        prev_head = self.bodies[0]
+        head, tail = self.bodies[0], self.bodies[-1]
         dir_offset = DIR_OFFSET_DICT[self.direction]
-        head = (prev_head[0] + dir_offset[0], prev_head[1] + dir_offset[1])
+        new_head = (head[0] + dir_offset[0], head[1] + dir_offset[1])
 
-        collision = self.check_collision(head)
+        new_bodies = [new_head] + self.bodies[:-1]
+        self.bodies = new_bodies
+
+        collision = self.check_collision(new_head)
         # game over when colliding with walls or the player's own body
         if collision[0] in ['wall', 'body']:
             self.game.gameover()
@@ -100,13 +107,10 @@ class Player:
         # length increases when eat feed
         if collision[0] == 'feed':
             curr_feed = collision[1]
-            self.eat_feed(curr_feed)
-
-        updated_bodies = [head] + self.bodies[:-1]
-        self.bodies = updated_bodies
+            self.eat_feed(tail, curr_feed)
     
-    def eat_feed(self, feed: 'Feed'):
-        self.bodies.append(self.bodies[-1])
+    def eat_feed(self, tail_coord: Tuple[int, int], feed: 'Feed'):
+        self.bodies.append(tail_coord)
         self.game.remove_feed(feed.coord)
     
     def render(self):
