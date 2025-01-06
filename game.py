@@ -18,14 +18,7 @@ class Game:
 
         self.init_ui()
 
-        self.player = Player(self, INIT_LENGTH)
-        self.fs = FeedSystem(self)
-        self.fs.add_feed_random_coord(FEED_NUM)
-
-        self.score: int = 0
-
-        self.is_gameover = False
-        self.is_paused = False
+        self.start_game()
 
     def init_ui(self):
         screen_rect = self.screen.get_rect()
@@ -45,15 +38,33 @@ class Game:
         self.map = Map(self, map_side_length, GRID_NUM, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
         self.map.add_outerline(MAP_OUTERLINE_THICKNESS, WHITE)
 
+        self.centered_font = pygame.font.SysFont('consolas', round(map_side_length * FONT_SIZE_RATIO * 3.5), bold=True)
+
+    def start_game(self):
+        self.player = Player(self, INIT_LENGTH)
+        self.fs = FeedSystem(self)
+        self.fs.add_feed_random_coord(FEED_NUM)
+
+        self.score: int = 0
+
+        self.is_countdown = False
+        self.is_paused = False
+        self.is_clear = False
+        self.is_gameover = False
+
+        self.start_countdown(3000)
+    
+    def render_centered_font(self, surf: pygame.Surface, font_content: str):
+        self.centered_font_surf = self.centered_font.render(font_content, True, WHITE)
+        self.centered_font_offset = self.centered_font_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)).topleft
+        surf.blit(self.centered_font_surf, self.centered_font_offset)
+
     def run(self):
         self.running = True
         while self.running:
             self.start_of_frame()
 
-            if self.is_gameover:
-                self.running = False
-
-            if not self.is_paused:
+            if not self.is_countdown and not self.is_paused and not self.is_clear and not self.is_gameover:
                 self.player.move_sequence()
 
             self.event_handler()
@@ -61,6 +72,18 @@ class Game:
             self.end_of_frame()
 
         self.end_of_game()
+    
+    def start_countdown(self, count_ms: int = 3000):
+        self.is_countdown = True
+        self.countdown_remaining_time = count_ms / 1000.0
+        self.countdown_end_ticks = (pygame.time.get_ticks() + count_ms) / 1000.0
+    
+    def countdown(self):
+        if self.is_countdown:
+            current_ticks = pygame.time.get_ticks() / 1000.0
+            self.countdown_remaining_time = max(0.0, self.countdown_end_ticks - current_ticks)
+            if not self.countdown_remaining_time:
+                self.is_countdown = False
     
     def is_in_bound(self, coord) -> bool:
         return self.map.is_inside(coord)
@@ -83,11 +106,10 @@ class Game:
         self.sm.update_score(amount)
 
     def clear(self):
-        self.is_paused = True
+        self.is_clear = True
 
     def gameover(self, is_gameover: bool = True):
         self.is_gameover = is_gameover
-        self.end_of_game()
 
     def event_handler(self):
         for event in pygame.event.get():
@@ -108,12 +130,17 @@ class Game:
     def start_of_frame(self):
         # initialize screen
         self.screen.fill(BLACK + (0,))
+
+        self.countdown()
         
     def end_of_frame(self):
         self.player.render()
         self.fs.render()
         self.map.render(self.screen, self.origin)
         self.sm.render(self.screen, self.score_offset)
+        if self.is_clear or self.is_gameover or self.is_countdown:
+            centered_font_content = ("CLEAR" if self.is_clear else "GAME OVER") if not self.is_countdown else str(round(self.countdown_remaining_time, 1))
+            self.render_centered_font(self.screen, centered_font_content)
 
         pygame.display.flip()
         self.clock.tick(60)

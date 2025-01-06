@@ -99,13 +99,13 @@ class Player:
         dir_offset = DIR_OFFSET_DICT[self.direction]
         new_head = (head[0] + dir_offset[0], head[1] + dir_offset[1])
 
-        self.bodies = [new_head] + self.bodies[:-1]
-
         collision = self.check_collision(new_head)
         # game over when colliding with walls or the player's own body
         if collision[0] in ['wall', 'body']:
             self.game.gameover()
             return
+
+        self.bodies = [new_head] + self.bodies[:-1]
         # length increases when eat feed
         if collision[0] == 'feed':
             curr_feed = collision[1]
