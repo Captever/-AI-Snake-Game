@@ -3,32 +3,31 @@ from random import sample
 
 from constants import *
 
-from queue import Queue
 from typing import Tuple, Dict, List
 
 class Map:
-    def __init__(self, game, map_side_length: Tuple[int, int], grid_num: Tuple[int, int], grid_thickness: int = 1, grid_color=(255, 255, 255, 128)):
-        self.game = game
-        self.side_length = map_side_length
-        self.grid_num = grid_num
+    def __init__(self, game: 'Game', map_side_length: int, grid_thickness: int = 1, grid_color=(255, 255, 255, 128)):
+        self.game: 'Game' = game
+        self.side_length: int = map_side_length
 
-        self.outerline = None
-        self.available_cells = set((x, y) for x in range(grid_num[0]) for y in range(grid_num[1]))
+        self.outerline: Outerline = None
+
+        self.grid_num = self.game.state_manager.get_grid_num()
 
         # divide by grid height for vertical rect, grid width for horizontal rect
-        grid_diff = grid_num[0] - grid_num[1]
+        grid_diff = self.grid_num[0] - self.grid_num[1]
         grid_coord_diff = abs(grid_diff) // 2
         if grid_diff > 0:
-            self.cell_side_length = map_side_length // grid_num[0]
+            self.cell_side_length = map_side_length // self.grid_num[0]
             self.grid_offset = (0, self.cell_side_length * grid_coord_diff)
         else:
-            self.cell_side_length = map_side_length // grid_num[1]
+            self.cell_side_length = map_side_length // self.grid_num[1]
             self.grid_offset = (self.cell_side_length * grid_coord_diff, 0)
         
         self.arrow = Arrow(self.get_cell_size())
         self.arrow_pos = None
 
-        self.grid = Grid(self.cell_side_length, grid_num, grid_thickness, grid_color)
+        self.grid = Grid(self.cell_side_length, self.grid_num, grid_thickness, grid_color)
         self.grid.add_outerline(GRID_OUTERLINE_THICKNESS, WHITE)
     
     def add_outerline(self, outline_thickness: int = 3, outline_color=(255, 255, 255)):
@@ -38,25 +37,10 @@ class Map:
         self.arrow.set_angle(angle)
         self.arrow_pos = tuple(coord[i] * self.cell_side_length for i in [0, 1])
 
-    # remove coordinate currently in use
-    def mark_cell_used(self, coord: Tuple[int, int]):
-        self.available_cells.discard(coord)
-    
-    # restore coordinate no longer in use
-    def mark_cell_free(self, coord: Tuple[int, int]):
-        self.available_cells.add(coord)
-    
     def is_inside(self, coord) -> bool:
         is_in_x = 0 <= coord[0] < self.grid_num[0]
         is_in_y = 0 <= coord[1] < self.grid_num[1]
         return is_in_x and is_in_y
-    
-    def get_remaining_cell_num(self):
-        return len(self.available_cells)
-
-    def get_available_cell_coords(self, num: int = 1) -> List[Tuple[int, int]]:
-        remaining_cell_num = self.get_remaining_cell_num()
-        return sample(list(self.available_cells), k=min(remaining_cell_num, num))
 
     def get_cells(self):
         return self.grid.cells
@@ -117,22 +101,24 @@ class Cell:
         self.outline_thickness = outline_thickness
         self.outline_color = outline_color
 
-        self.surfs: Queue[Tuple[pygame.Surface, Tuple[int, int]]] = Queue()
+        self.surfs: List[Tuple[pygame.Surface, Tuple[int, int]]] = []
     
     def put_surf(self, surf: pygame.Surface, offset: Tuple[int, int] = (0, 0)):
-        self.surfs.put((surf, offset))
+        self.surfs.append((surf, offset))
 
     def render(self, surf, offset=(0, 0)):
         self.surf = pygame.Surface(self.get_size(), pygame.SRCALPHA)
 
-        while not self.surfs.empty():
-            target_surf, target_offset = self.surfs.get()
+        for target_surf, target_offset in self.surfs:
             self.surf.blit(target_surf, target_offset)
 
         # draw outline
         pygame.draw.rect(self.surf, self.outline_color, self.surf.get_rect(), self.outline_thickness)
 
         surf.blit(self.surf, offset)
+
+        # clear Surfaces after rendering
+        self.surfs.clear()
     
     def get_size(self) -> Tuple[int, int]:
         return (self.side_length, self.side_length)

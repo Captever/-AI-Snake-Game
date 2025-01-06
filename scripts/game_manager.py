@@ -1,6 +1,99 @@
 import pygame
+from enum import Enum
+from random import sample
+from typing import Tuple, Set, List
 
-from typing import Tuple
+class GameState(Enum):
+    ACTIVE = 0
+    COUNTDOWN = 1
+    PAUSED = 2
+    GAMEOVER = 10
+    CLEAR = 9
+
+class GameStateManager:
+    """
+    Centralized data manager for the game's state.
+    Manages grid size, available cells, and provides utility methods for coordinate management.
+    """
+    def __init__(self, grid_num: Tuple[int, int]):
+        """
+        Initialize the game state manager with the given grid size.
+
+        Args:
+            grid_size (Tuple[int, int]): Size of the grid as (width, height).
+        """
+        self.grid_num: Tuple[int, int] = grid_num
+        self.available_cells: Set[Tuple[int, int]] = set(
+            (x, y) for x in range(grid_num[0]) for y in range(grid_num[1])
+        )
+    
+    def get_grid_num(self):
+        return self.grid_num
+
+    def mark_cell_used(self, coord: Tuple[int, int]) -> None:
+        """
+        Mark a cell as used and remove it from available cells.
+
+        Args:
+            coord (Tuple[int, int]): The coordinate of the cell to mark as used.
+        """
+        if coord in self.available_cells:
+            self.available_cells.discard(coord)
+
+    def mark_cell_free(self, coord: Tuple[int, int]) -> None:
+        """
+        Mark a cell as free and add it back to available cells.
+
+        Args:
+            coord (Tuple[int, int]): The coordinate of the cell to mark as free.
+        """
+        self.available_cells.add(coord)
+
+    def is_cell_available(self, coord: Tuple[int, int]) -> bool:
+        """
+        Check if a given cell is available.
+
+        Args:
+            coord (Tuple[int, int]): The coordinate of the cell to check.
+
+        Returns:
+            bool: True if the cell is available, False otherwise.
+        """
+        return coord in self.available_cells
+    
+    def get_remaining_available_cells_num(self) -> int:
+        """
+        Get the number of remaining available cells
+
+        Returns:
+            int: Number of remaining available cells.
+        """
+        return len(self.available_cells)
+
+    def get_random_available_cells(self, k: int) -> List[Tuple[int, int]]:
+        """
+        Get `k` random available cells from the grid.
+
+        Args:
+            k (int): The number of cells to be returned.
+
+        Returns:
+            List[Tuple[int, int]]: Coordinates of `k` available cells.
+
+        Raises:
+            ValueError: If there are not enough available cells remain.
+        """
+        if not self.available_cells:
+            raise ValueError("There are not enough available cells in the grid.")
+        return sample(list(self.available_cells), k=k)
+
+    def reset(self) -> None:
+        """
+        Reset all cells in the grid to available state.
+        """
+        self.available_cells = set(
+            (x, y) for x in range(self.grid_num[0]) for y in range(self.grid_num[1])
+        )
 
 class ScoreManager:
     def __init__(self, game, size: Tuple[int, int], font_weight: int, font_color):
@@ -33,7 +126,7 @@ class ScoreManager:
         self.score += amount
         self.update_score_font()
         if self.clear_condition is not None and self.score >= self.clear_condition:
-            self.game.clear()
+            self.game.set_state(GameState.CLEAR)
     
     def update_score_font(self):
         self.score_surf = self.score_font.render(str(self.score), True, self.font_color)
