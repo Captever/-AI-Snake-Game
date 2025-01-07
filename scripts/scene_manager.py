@@ -15,9 +15,8 @@ class Scene:
         pass
 
 class SceneManager:
-    def __init__(self, font_size):
+    def __init__(self):
         self.scenes = {}
-        self.font_size = font_size
         self.active_scene = None
 
     def add_scene(self, name, scene):
@@ -27,9 +26,6 @@ class SceneManager:
     def set_active_scene(self, name):
         """Set the active scene by name."""
         self.active_scene = self.scenes[name]
-
-    def get_standard_font_size(self):
-        return self.font_size
 
     def handle_events(self, events):
         if self.active_scene:
