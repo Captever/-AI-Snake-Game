@@ -1,6 +1,3 @@
-import pygame
-import sys
-
 class Scene:
     def __init__(self, manager):
         self.manager = manager

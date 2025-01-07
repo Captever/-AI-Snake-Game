@@ -2,7 +2,7 @@ import pygame
 import sys
 
 from scripts.scene_manager import Scene
-from scripts.menu_system import Button
+from scripts.ui_components import Button
 
 class InitScene(Scene):
     def __init__(self, manager):

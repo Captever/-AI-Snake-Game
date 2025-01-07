@@ -14,13 +14,13 @@ class Button:
         self.hover_color = hover_color
         self.hovered: bool = False
 
-    def render(self, surface):
+    def render(self, surface: pygame.Surface):
         pygame.draw.rect(surface, self.hover_color if self.hovered else self.color, self.rect)
         text_surf = self.font.render(self.text, True, BLACK)
         text_rect = text_surf.get_rect(center=self.rect.center)
         surface.blit(text_surf, text_rect)
 
-    def is_hovered(self, pos):
+    def is_hovered(self, pos: Tuple[int, int]):
         self.hovered = self.rect.collidepoint(pos)
         return self.hovered
 
@@ -40,7 +40,7 @@ class ScrollBar:
         handle_x = int(self.rect.x + ((self.value - self.min_val) / (self.max_val - self.min_val)) * self.rect.width)
         self.handle_rect.topleft = (handle_x - self.handle_rect.width // 2, self.rect.y)
 
-    def render(self, surface):
+    def render(self, surface: pygame.Surface):
         pygame.draw.rect(surface, GRAY, self.rect)
         pygame.draw.rect(surface, WHITE, self.handle_rect)
 
