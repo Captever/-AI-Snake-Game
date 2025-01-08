@@ -64,7 +64,7 @@ class Game:
         while self.running:
             self.start_of_frame()
 
-            if self.is_active():
+            if self.is_active() or self.state == GameState.COUNTDOWN:
                 self.player.move_sequence()
 
             self.event_handler()
