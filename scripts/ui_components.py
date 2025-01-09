@@ -7,6 +7,8 @@ from typing import Tuple, List
 LAYOUT_DEFAULT_BG_COLOR = (50, 50, 50, 150)
 BUTTON_DEFAULT_COLOR = WHITE
 BUTTON_DEFAULT_HOVER_COLOR = LIGHT_GRAY
+SCROLLBAR_FONT_RATIO = 0.6
+SCROLLBAR_BAR_RATIO = 0.2
 
 class RelativeRect:
     def __init__(self, x: float, y: float, width: float, height: float):
@@ -141,18 +143,19 @@ class ScrollBar:
         self.min_val: int = min_val
         self.max_val: int = max_val
         self.value: int = initial_val
-        self.handle_rect = pygame.Rect(0, 0, self.rect.width * 0.05, self.rect.height)
+        self.bar_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height * (1.0 - SCROLLBAR_BAR_RATIO), self.rect.width, self.rect.height * SCROLLBAR_BAR_RATIO)
+        self.handle_rect = pygame.Rect((self.bar_rect.topleft) + (self.bar_rect.width * 0.05, self.bar_rect.height))
         self.update_handle()
 
     def update_handle(self):
-        handle_x = int(self.rect.x + ((self.value - self.min_val) / (self.max_val - self.min_val)) * self.rect.width)
-        self.handle_rect.topleft = (handle_x - self.handle_rect.width // 2, self.rect.y)
+        handle_x = int(self.bar_rect.x + ((self.value - self.min_val) / (self.max_val - self.min_val)) * self.bar_rect.width)
+        self.handle_rect.topleft = (handle_x - self.handle_rect.width // 2, self.bar_rect.y)
 
     def render(self, surf: pygame.Surface):
-        font = pygame.font.SysFont("arial", round(self.rect.height * UI_SCROLLBAR["font_ratio"]))
+        font = pygame.font.SysFont("arial", round(self.rect.height * SCROLLBAR_FONT_RATIO))
         text_surf = font.render(f"{self.text}: {int(self.value)}", True, WHITE)
-        surf.blit(text_surf, (self.rect.topleft[0], self.rect.topleft[1] - self.rect.height * 5))
-        pygame.draw.rect(surf, GRAY, self.rect)
+        surf.blit(text_surf, self.rect.topleft)
+        pygame.draw.rect(surf, GRAY, self.bar_rect)
         pygame.draw.rect(surf, WHITE, self.handle_rect)
 
     def handle_event(self, event):

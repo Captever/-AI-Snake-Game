@@ -18,6 +18,7 @@ class InitScene(Scene):
         self.option_layout = self.create_option_layout()
 
         self.menu_state = MAIN_MENU
+        self.menu_state = OPTIONS_MENU
     
     def get_centered_rect(self, base_size: Tuple[int, int], offset_ratio: Tuple[float, float]) -> pygame.Rect:
         screen_center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
@@ -64,15 +65,12 @@ class InitScene(Scene):
 
         layout = UILayout(layout_rect, bg_color)
 
-        # self.options_buttons = [
-        #     Button("Start", self.get_centered_rect((UI_BUTTON["width"] // 2.5, UI_BUTTON["height"]), (-UI_BUTTON["offset_ratio"] * 0.5, UI_BUTTON["offset_ratio"] * 2)), UI_BUTTON["font_size"]),
-        #     Button("Cancel", self.get_centered_rect((UI_BUTTON["width"] // 2.5, UI_BUTTON["height"]), (UI_BUTTON["offset_ratio"] * 0.5, UI_BUTTON["offset_ratio"] * 2)), UI_BUTTON["font_size"])
-        # ]
-        # self.options_scrollbars = {
-        #     "Player Speed": ScrollBar(self.get_centered_rect((UI_SCROLLBAR["width"], UI_SCROLLBAR["height"]), (0, -UI_SCROLLBAR["offset_size"])), UI_SCROLLBAR["font_size"], 1, 10, 5),
-        #     "Grid Size": ScrollBar(self.get_centered_rect((UI_SCROLLBAR["width"], UI_SCROLLBAR["height"]), (0, 0)), UI_SCROLLBAR["font_size"], 5, 20, 10),
-        #     "Clear Goal (%)": ScrollBar(self.get_centered_rect((UI_SCROLLBAR["width"], UI_SCROLLBAR["height"]), (0, UI_SCROLLBAR["offset_size"])), UI_SCROLLBAR["font_size"], 50, 100, 70),
-        # }
+        layout.add_scrollbar(RelativeRect(0.25, 0.1, 0.5, 0.1), "Player Speed", 1, 10, 5)
+        layout.add_scrollbar(RelativeRect(0.25, 0.3, 0.5, 0.1), "Grid Size", 5, 20, 10)
+        layout.add_scrollbar(RelativeRect(0.25, 0.5, 0.5, 0.1), "Clear Goal (%)", 50, 100, 70)
+
+        layout.add_button(RelativeRect(0.1, 0.75, 0.3, 0.15), "Start")
+        layout.add_button(RelativeRect(0.6, 0.75, 0.3, 0.15), "Cancel")
 
         return layout
 
