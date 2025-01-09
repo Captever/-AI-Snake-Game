@@ -1,26 +1,37 @@
-import pygame
+import pygame, sys
 
 from scripts.scene_manager import Scene
 
+from typing import Dict
+
+from game import Game
+
 class GameScene(Scene):
-    def __init__(self, manager, game_instance):
+    def __init__(self, manager):
         super().__init__(manager)
-        # self.game = game_instance  # The existing Game instance should be integrated here.
-        # game_instance.run()
+        self.game = None
 
-    # def handle_events(self, events):
-    #     for event in events:
-    #         if event.type == pygame.KEYDOWN:
-    #             self.game.handle_keydown(event.key)
-    #         elif event.type == pygame.QUIT:
-    #             pygame.quit()
-    #             sys.exit()
+    def initialize(self, settings: Dict[str, any]):
+        self.settings = settings
+        self.player_speed = settings['Player Speed']
+        self.grid_size = (settings['Grid Size'], settings['Grid Size'])
+        self.clear_goal = settings['Clear Goal (%)'] / 100.0
+        self.initial_game()
+    
+    def initial_game(self):
+        # Initialize the game with the given settings
+        self.game = Game(self.player_speed, self.grid_size, self.clear_goal)
 
-    # def update(self):
-    #     if self.game.is_active():
-    #         self.game.player.move_sequence()
-    #     self.game.countdown()
+    def handle_events(self, events):
+        for event in events:
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            
+        self.game.handle_events(events)
 
-    # def render(self, screen):
-    #     self.game.start_of_frame()
-    #     self.game.end_of_frame()
+    def update(self):
+        self.game.update()
+
+    def render(self, surf):
+        self.game.render(surf)

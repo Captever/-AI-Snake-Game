@@ -7,8 +7,6 @@ from scripts.scene_manager import SceneManager
 from scenes.init_scene import InitScene
 from scenes.game_scene import GameScene
 
-from game import Game
-
 class Main:
     def __init__(self):
         pygame.init()
@@ -23,11 +21,10 @@ class Main:
 
     def init_scenes(self):
         self.scene_manager = SceneManager()
-        game_instance = Game()
 
         init_scene = InitScene(self.scene_manager)
         self.scene_manager.add_scene("InitScene", init_scene)
-        game_scene = GameScene(self.scene_manager, game_instance)
+        game_scene = GameScene(self.scene_manager)
         self.scene_manager.add_scene("GameScene", game_scene)
         
         self.scene_manager.set_active_scene("InitScene")
@@ -39,11 +36,11 @@ class Main:
 
             self.scene_manager.handle_events(pygame.event.get())
 
-            self.end_of_frame()
+            self.render()
 
         self.end_of_game()
     
-    def end_of_frame(self):
+    def render(self):
         self.scene_manager.render(self.screen)
 
         pygame.display.flip()
