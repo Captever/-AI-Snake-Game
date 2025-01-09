@@ -32,8 +32,8 @@ class InitScene(Scene):
         layout_size: Tuple[int, int]
 
         if IS_LANDSCAPE:
-            layout_pos = (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 4)
-            layout_size = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+            layout_pos = (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 6)
+            layout_size = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 1.5)
         else:
             layout_pos = (0, SCREEN_HEIGHT // 4)
             layout_size = (SCREEN_WIDTH, SCREEN_HEIGHT // 2)
@@ -54,8 +54,8 @@ class InitScene(Scene):
         layout_size: Tuple[int, int]
 
         if IS_LANDSCAPE:
-            layout_pos = (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 4)
-            layout_size = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+            layout_pos = (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 6)
+            layout_size = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 1.5)
         else:
             layout_pos = (0, SCREEN_HEIGHT // 4)
             layout_size = (SCREEN_WIDTH, SCREEN_HEIGHT // 2)
@@ -65,12 +65,12 @@ class InitScene(Scene):
 
         layout = UILayout(layout_rect, bg_color)
 
-        layout.add_scrollbar(RelativeRect(0.25, 0.1, 0.5, 0.1), "Player Speed", 1, 10, 5)
-        layout.add_scrollbar(RelativeRect(0.25, 0.3, 0.5, 0.1), "Grid Size", 5, 20, 10)
-        layout.add_scrollbar(RelativeRect(0.25, 0.5, 0.5, 0.1), "Clear Goal (%)", 50, 100, 70)
+        layout.add_scrollbar(RelativeRect(0.2, 0.1, 0.6, 0.1), "Player Speed", 1, 10, 5)
+        layout.add_scrollbar(RelativeRect(0.2, 0.3, 0.6, 0.1), "Grid Size", 5, 20, 10)
+        layout.add_scrollbar(RelativeRect(0.2, 0.5, 0.6, 0.1), "Clear Goal (%)", 50, 100, 70)
 
-        layout.add_button(RelativeRect(0.1, 0.75, 0.3, 0.15), "Start")
-        layout.add_button(RelativeRect(0.6, 0.75, 0.3, 0.15), "Cancel")
+        layout.add_button(RelativeRect(0.2, 0.75, 0.25, 0.1), "Start")
+        layout.add_button(RelativeRect(0.55, 0.75, 0.25, 0.1), "Cancel")
 
         return layout
 
