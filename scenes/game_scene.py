@@ -12,7 +12,7 @@ class GameScene(Scene):
     def initialize(self, settings: Dict[str, any]):
         self.settings = settings
         self.player_speed: int = settings['Player Speed']
-        self.grid_size: Tuple[int, int] = (settings['Grid Size'], settings['Grid Size'])
+        self.grid_size: Tuple[int, int] = (settings['Grid Width'], settings['Grid Height'])
         self.clear_goal: float = settings['Clear Goal (%)'] / 100.0
         self.initial_game()
     
