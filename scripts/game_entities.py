@@ -99,9 +99,9 @@ class Player:
     def is_body_collision(self, coord: Tuple[int, int]) -> bool:
         """
         Check if the given coordinate collides with the player's body
-        (excluding the head).
+        (excluding the tail).
         """
-        return coord in self.bodies[1:]
+        return coord in self.bodies[:-1]
 
     def move_sequence(self):
         if self.move_accum >= MOVE_DELAY * (10 - self.move_speed + 1): # min: 1, max: 10
@@ -120,8 +120,7 @@ class Player:
         if collision[0] in ['wall', 'body']:
             self.game.set_state(GameState.GAMEOVER)
             return
-
-        self.bodies = [new_head] + self.bodies[:-1]
+        
         # length increases when eat feed
         if collision[0] == 'feed':
             curr_feed = collision[1]
@@ -129,6 +128,8 @@ class Player:
         else:
             self.game.state_manager.mark_cell_free(tail)
         self.game.state_manager.mark_cell_used(new_head)
+
+        self.bodies = [new_head] + self.bodies[:-1]
     
     def eat_feed(self, tail_coord: Tuple[int, int], feed: 'Feed'):
         self.game.update_score(1)
