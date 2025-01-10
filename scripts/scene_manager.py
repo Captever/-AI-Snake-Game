@@ -1,10 +1,15 @@
+import pygame, sys
+
 class Scene:
     def __init__(self, manager):
         self.manager = manager
 
     def handle_events(self, events):
         """Handle input events."""
-        pass
+        for event in events:
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
 
     def update(self):
         """Update game logic."""

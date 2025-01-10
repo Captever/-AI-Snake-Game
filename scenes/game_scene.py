@@ -1,5 +1,3 @@
-import pygame, sys
-
 from scripts.scene_manager import Scene
 
 from typing import Tuple, Dict
@@ -23,11 +21,8 @@ class GameScene(Scene):
         self.game = Game(self.player_speed, self.grid_size, self.clear_goal)
 
     def handle_events(self, events):
-        for event in events:
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            
+        super().handle_events(events)
+        
         self.game.handle_events(events)
 
     def update(self):

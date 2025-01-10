@@ -1,5 +1,4 @@
 import pygame
-import sys
 
 from constants import *
 
@@ -74,11 +73,8 @@ class InitScene(Scene):
         return layout
 
     def handle_events(self, events):
-        for event in events:
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            
+        super().handle_events(events)
+        
         if self.menu_state == MAIN_MENU:
             self.menu_layout.handle_events(events)
         elif self.menu_state == OPTIONS_MENU:
