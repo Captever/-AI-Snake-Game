@@ -16,19 +16,15 @@ class Map:
 
         # divide by grid height for vertical rect, grid width for horizontal rect
         grid_diff = self.grid_num[0] - self.grid_num[1]
-        grid_coord_diff = abs(grid_diff) // 2
-        if grid_diff > 0:
-            self.cell_side_length = map_side_length // self.grid_num[0]
-            self.grid_offset = (0, self.cell_side_length * grid_coord_diff)
-        else:
-            self.cell_side_length = map_side_length // self.grid_num[1]
-            self.grid_offset = (self.cell_side_length * grid_coord_diff, 0)
+        self.cell_side_length = map_side_length // (self.grid_num[0] if grid_diff > 0 else self.grid_num[1])
         
-        self.arrow = Arrow(self.get_cell_size())
-        self.arrow_pos = None
-
         self.grid = Grid(self.cell_side_length, self.grid_num, grid_thickness, grid_color)
         self.grid.add_outerline(GRID_OUTERLINE_THICKNESS, WHITE)
+
+        self.grid_offset = tuple((self.side_length - self.grid.size[i]) // 2 for i in [0, 1])
+
+        self.arrow = Arrow(self.get_cell_size())
+        self.arrow_pos = None
     
     def add_outerline(self, outline_thickness: int = 3, outline_color=(255, 255, 255)):
         self.outerline = Outerline(self.get_size(), outline_thickness, outline_color)

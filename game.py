@@ -7,26 +7,26 @@ from scripts.map_structure import Map
 from scripts.game_entities import Player, FeedSystem
 from scripts.game_manager import ScoreManager, GameState, GameStateManager
 
-class Game:
-    def __init__(self):
-        pygame.init()
+from typing import Tuple
 
-        pygame.display.set_caption("Snake")
+class Game:
+    def __init__(self, player_speed: int, grid_size: Tuple[int, int], clear_goal: float):
+        self.player_speed: int = player_speed
+        self.grid_size: Tuple[int, int] = grid_size
+        self.clear_goal: float = clear_goal
 
         self.state: GameState = None
-        self.screen: pygame.Surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        self.clock: pygame.time.Clok = pygame.time.Clock()
+        self.clock: pygame.time.Clock = pygame.time.Clock()
         self.running: bool = False
         self.player: Player = None
         self.fs: FeedSystem = None
-        self.state_manager: GameStateManager = GameStateManager(GRID_NUM)
+        self.state_manager: GameStateManager = GameStateManager(self.grid_size)
 
         self.init_ui()
 
         self.start_game()
 
     def init_ui(self):
-        screen_rect = self.screen.get_rect()
         self.is_landscape: bool = SCREEN_WIDTH > SCREEN_HEIGHT
 
         if self.is_landscape:
@@ -37,8 +37,8 @@ class Game:
             map_side_length = SCREEN_WIDTH
             self.sm = ScoreManager(self, (SCREEN_WIDTH, SCREEN_HEIGHT // 4), map_side_length * FONT_SIZE_RATIO, WHITE)
             self.score_offset = (0, SCREEN_HEIGHT * 0.75)
-        self.sm.set_clear_condition(round(GRID_NUM[0] * GRID_NUM[1] * 0.7) - INIT_LENGTH)
-        self.origin = (screen_rect.centerx - map_side_length // 2, screen_rect.centery - map_side_length // 2)
+        self.sm.set_clear_condition(round(self.grid_size[0] * self.grid_size[1] * self.clear_goal) - INIT_LENGTH)
+        self.origin = (SCREEN_WIDTH // 2 - map_side_length // 2, SCREEN_HEIGHT // 2 - map_side_length // 2)
 
         self.map = Map(self, map_side_length, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
         self.map.add_outerline(MAP_OUTERLINE_THICKNESS, WHITE)
@@ -46,33 +46,24 @@ class Game:
         self.centered_font = pygame.font.SysFont('consolas', round(map_side_length * FONT_SIZE_RATIO * 3.5), bold=True)
 
     def start_game(self):
-        self.player = Player(self, INIT_LENGTH)
+        self.player = Player(self, INIT_LENGTH, self.player_speed)
         self.fs = FeedSystem(self)
         self.fs.add_feed_random_coord(FEED_NUM)
 
         self.score: int = 0
 
         self.start_countdown(3000)
+
+    def update(self):
+        if self.is_active():
+            self.player.move_sequence()
+        self.countdown()
     
     def render_centered_font(self, surf: pygame.Surface, font_content: str):
         self.centered_font_surf = self.centered_font.render(font_content, True, WHITE)
         self.centered_font_offset = self.centered_font_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)).topleft
         surf.blit(self.centered_font_surf, self.centered_font_offset)
 
-    def run(self):
-        self.running = True
-        while self.running:
-            self.start_of_frame()
-
-            if self.is_active() or self.state == GameState.COUNTDOWN:
-                self.player.move_sequence()
-
-            self.event_handler()
-
-            self.end_of_frame()
-
-        self.end_of_game()
-    
     def start_countdown(self, count_ms: int = 3000):
         self.set_state(GameState.COUNTDOWN)
         self.countdown_remaining_time = count_ms / 1000.0
@@ -111,15 +102,13 @@ class Game:
     def set_state(self, state: GameState):
         self.state = state
 
-    def event_handler(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
-            elif event.type == pygame.KEYDOWN:
+    def handle_events(self, events):
+        for event in events:
+            if event.type == pygame.KEYDOWN:
                 self.handle_keydown(event.key)
     
     def handle_keydown(self, key):
-        if self.is_active():
+        if self.is_active() or self.state == GameState.COUNTDOWN:
             self.handle_active_keydown(key)
         elif self.state == GameState.PAUSED:
             self.handle_paused_keydown(key)
@@ -142,17 +131,13 @@ class Game:
         elif key == pygame.K_p:
             self.set_state(GameState.PAUSED)
 
-    def start_of_frame(self):
-        # initialize screen
-        self.screen.fill(BLACK + (0,))
+    def render(self, surf: pygame.Surface):
+        surf.fill((0, 0, 0))
 
-        self.countdown()
-        
-    def end_of_frame(self):
         self.player.render()
         self.fs.render()
-        self.map.render(self.screen, self.origin)
-        self.sm.render(self.screen, self.score_offset)
+        self.map.render(surf, self.origin)
+        self.sm.render(surf, self.score_offset)
         if self.state in [GameState.PAUSED, GameState.CLEAR, GameState.GAMEOVER, GameState.COUNTDOWN]:
             if self.state == GameState.PAUSED:
                 centered_font_content = "PAUSED"
@@ -162,7 +147,7 @@ class Game:
                 centered_font_content = "GAME OVER"
             elif self.state == GameState.COUNTDOWN:
                 centered_font_content = str(round(self.countdown_remaining_time, 1))
-            self.render_centered_font(self.screen, centered_font_content)
+            self.render_centered_font(surf, centered_font_content)
 
         pygame.display.flip()
         self.clock.tick(60)
@@ -170,5 +155,3 @@ class Game:
     def end_of_game(self):
         pygame.quit()
         sys.exit()
-
-Game().run()

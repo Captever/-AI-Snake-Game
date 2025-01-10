@@ -8,7 +8,7 @@ from typing import Tuple, Dict, List
 
 
 class Player:
-    def __init__(self, game: 'Game', initial_length):
+    def __init__(self, game: 'Game', initial_length, move_speed):
         """
         Initialize Player Class
 
@@ -18,6 +18,7 @@ class Player:
         """
         self.game: 'Game' = game
         self.length: int = initial_length
+        self.move_speed = move_speed
         self.direction: str = None
         self.move_accum: int = 0
 
@@ -103,7 +104,7 @@ class Player:
         return coord in self.bodies[1:]
 
     def move_sequence(self):
-        if self.move_accum >= MOVE_DELAY:
+        if self.move_accum >= MOVE_DELAY * (10 - self.move_speed + 1): # min: 1, max: 10
             self.move_accum = 0
             self.move()
         else:
