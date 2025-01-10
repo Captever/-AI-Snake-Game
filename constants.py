@@ -7,30 +7,31 @@ SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 IS_LANDSCAPE = bool(SCREEN_WIDTH > SCREEN_HEIGHT)
 
+# ui color
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GRAY = (128, 128, 128)
+LIGHT_GRAY = (200, 200, 200)
+DARK_GARY = (70, 70, 70)
+
 # ui size
 FONT_SIZE_RATIO = 0.075
-FONT_SIZE = round(max(SCREEN_WIDTH, SCREEN_HEIGHT) * FONT_SIZE_RATIO)
-BUTTON_SIZE_RATIO = 0.2
-BUTTON_WIDTH = round(max(SCREEN_WIDTH, SCREEN_HEIGHT) * BUTTON_SIZE_RATIO)
-BUTTON_HEIGHT = round(BUTTON_WIDTH * 0.25)
-BUTTON_OFFSET_RATIO = 1.5
-BUTTON_FONT_RATIO = 0.6
-SCROLLBAR_WIDTH = BUTTON_WIDTH
-SCROLLBAR_HEIGHT = round(SCROLLBAR_WIDTH * 0.03)
-SCROLLBAR_OFFSET_RATIO = 12
-SCROLLBAR_FONT_RATIO = 3
+UI_LAYOUT = {
+    "default_color": (128, 128, 128, 150),
+}
 
 UI_BUTTON = {
-    "width": BUTTON_WIDTH,
-    "height": BUTTON_HEIGHT,
-    "font_ratio": BUTTON_FONT_RATIO,
-    "offset_ratio": BUTTON_OFFSET_RATIO,
+    "default_color": WHITE,
+    "hover_color": LIGHT_GRAY,
+    "font_ratio": 0.6,
 }
 UI_SCROLLBAR = {
-    "width": SCROLLBAR_WIDTH,
-    "height": SCROLLBAR_HEIGHT,
-    "font_ratio": SCROLLBAR_FONT_RATIO,
-    "offset_ratio": SCROLLBAR_OFFSET_RATIO,
+    "bar_default_color": GRAY,
+    "bar_hover_color": DARK_GARY,
+    "handle_default_color": WHITE,
+    "handle_hover_color": LIGHT_GRAY,
+    "bar_ratio": 0.2,
+    "font_ratio": 0.5,
 }
 
 # object
@@ -42,12 +43,7 @@ OBJECT_DICT = {
 }
 OBJECT_OUTLINE_RATIO = 0.2
 
-# color
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-GRAY = (128, 128, 128)
-LIGHT_GRAY = (200, 200, 200)
-
+# object color
 BODY_OUTLINE_COLOR = (59, 92, 70)
 BODY_COLOR = (7, 255, 82)
 FEED_OUTLINE_COLOR = (187, 113, 40)
@@ -75,7 +71,7 @@ GRID_NUM = (20, 20)
 GRID_ALPHA = 128
 GRID_THICKNESS = 1 # grid line thickness of map
 FEED_NUM = 3
-MOVE_DELAY = 10 # frame
+MOVE_DELAY = 5 # frame
 INIT_LENGTH = 3 # initial length of snake
 MAP_OUTERLINE_THICKNESS = 1
 GRID_OUTERLINE_THICKNESS = 3

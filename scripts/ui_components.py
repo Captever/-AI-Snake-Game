@@ -4,12 +4,6 @@ from constants import *
 
 from typing import Tuple
 
-LAYOUT_DEFAULT_BG_COLOR = (50, 50, 50, 150)
-BUTTON_DEFAULT_COLOR = WHITE
-BUTTON_DEFAULT_HOVER_COLOR = LIGHT_GRAY
-SCROLLBAR_FONT_RATIO = 0.5
-SCROLLBAR_BAR_RATIO = 0.2
-
 class RelativeRect:
     def __init__(self, x: float, y: float, width: float, height: float):
         """
@@ -43,19 +37,21 @@ class RelativeRect:
         return pygame.Rect(abs_x, abs_y, abs_width, abs_height)
 
 class UILayout:
-    def __init__(self, rect: pygame.Rect, bg_color=LAYOUT_DEFAULT_BG_COLOR):
+    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, bg_color=UI_LAYOUT["default_color"]):
         """
         A layout for managing UI elements relative to the surface size.
         
         Args:
+            parent_abs_pos (Tuple[int, int]): Absolute position of the parent element
             rect (pygame.Rect): Position and size
             bg_color (Tuple[int, int, int]): Background color of the surface.
         """
-        self.rect = rect
+        self.rect: pygame.Rect = rect
+        self.abs_pos: Tuple[int, int] = tuple(parent_abs_pos[i] + rect.topleft[i] for i in [0, 1])
         self.bg_color = bg_color
         self.elements = []
 
-    def add_layout(self, relative_rect: RelativeRect, bg_color=LAYOUT_DEFAULT_BG_COLOR):
+    def add_layout(self, relative_rect: RelativeRect, bg_color=UI_LAYOUT["default_color"]):
         """
         Add a layout to the layout with its relative position.
         
@@ -63,15 +59,15 @@ class UILayout:
             relative_rect (pygame.Rect): Relative position and size as a fraction of the layout size.
             bg_color (Tuple[int, int, int]): Background color of the layout surface.
         """
-        layout = UILayout(relative_rect.to_absolute(self.rect.size), bg_color)
+        layout = UILayout(self.abs_pos, relative_rect.to_absolute(self.rect.size), bg_color)
 
         self.elements.append(layout)
 
-    def add_button(self, relative_rect: RelativeRect, text: str, callback=None, color=BUTTON_DEFAULT_COLOR, hover_color=BUTTON_DEFAULT_HOVER_COLOR):
+    def add_button(self, relative_rect: RelativeRect, text: str, callback=None):
         """
         Add a button to the layout with its relative position.
         """
-        button = Button(relative_rect.to_absolute(self.rect.size), text, callback, color, hover_color)
+        button = Button(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, callback)
 
         self.elements.append(button)
 
@@ -79,7 +75,7 @@ class UILayout:
         """
         Add a scroll bar to the layout with its relative position.
         """
-        scrollbar = ScrollBar(relative_rect.to_absolute(self.rect.size), text, min_val, max_val, initial_val)
+        scrollbar = ScrollBar(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, min_val, max_val, initial_val)
 
         self.elements.append(scrollbar)
 
@@ -110,35 +106,36 @@ class UILayout:
         layout_surf.fill(self.bg_color)
         
         for element in self.elements:
-            if isinstance(element, Button):
-                mouse_pos_in_layout = tuple(pygame.mouse.get_pos()[i] - self.rect.topleft[i] for i in [0, 1])
-                element.is_hovered(mouse_pos_in_layout)
+            if isinstance(element, Button) or isinstance(element, ScrollBar):
+                element.is_hovered(pygame.mouse.get_pos())
             element.render(layout_surf)
         
         surf.blit(layout_surf, self.rect.topleft)
 
 class Button:
-    def __init__(self, rect: pygame.Rect, text: str, callback=None, color=BUTTON_DEFAULT_COLOR, hover_color=BUTTON_DEFAULT_HOVER_COLOR):
+    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, callback=None):
         self.rect: pygame.Rect = pygame.Rect(rect)
+        self.abs_pos: Tuple[int, int] = tuple(parent_abs_pos[i] + rect.topleft[i] for i in [0, 1])
         self.text: str = text
         self.callback = callback
-        self.color = color
-        self.hover_color = hover_color
         self.hovered: bool = False
     
     def handle_event(self, event):
         if self.is_clicked(event):
             if self.callback:
                 self.callback()
+    
+    def get_abs_rect(self) -> pygame.Rect:
+        return pygame.Rect(self.abs_pos + self.rect.size)
 
-    def is_hovered(self, pos: Tuple[int, int]):
+    def is_hovered(self, m_pos: Tuple[int, int]):
         """
         Check if the button is hovered based on the mouse position.
         
         Args:
             pos (Tuple[int, int]): Mouse position.
         """
-        self.hovered = self.rect.collidepoint(pos)
+        self.hovered = self.get_abs_rect().collidepoint(m_pos)
         return self.hovered
 
     def is_clicked(self, event):
@@ -151,40 +148,60 @@ class Button:
         Args:
             surf (pygame.Surface): Surface to render on.
         """
-        pygame.draw.rect(surf, self.hover_color if self.hovered else self.color, self.rect)
+        pygame.draw.rect(surf, UI_BUTTON["hover_color"] if self.hovered else UI_BUTTON["default_color"], self.rect)
         font = pygame.font.SysFont("arial", round(self.rect.height * UI_BUTTON["font_ratio"]))
         text_surf = font.render(self.text, True, BLACK)
         text_rect = text_surf.get_rect(center=self.rect.center)
         surf.blit(text_surf, text_rect)
 
 class ScrollBar:
-    def __init__(self, rect: pygame.Rect, text: str, min_val: int, max_val: int, initial_val: int):
+    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, min_val: int, max_val: int, initial_val: int):
         self.rect: pygame.Rect = pygame.Rect(rect)
+        self.abs_pos: Tuple[int, int] = tuple(parent_abs_pos[i] + rect.topleft[i] for i in [0, 1])
         self.text: str = text
         self.min_val: int = min_val
         self.max_val: int = max_val
         self.value: int = initial_val
-        self.bar_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height * (1.0 - SCROLLBAR_BAR_RATIO), self.rect.width, self.rect.height * SCROLLBAR_BAR_RATIO)
+        self.bar_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height * (1.0 - UI_SCROLLBAR["bar_ratio"]), self.rect.width, self.rect.height * UI_SCROLLBAR["bar_ratio"])
         self.handle_rect = pygame.Rect((self.bar_rect.topleft) + (self.bar_rect.width * 0.05, self.bar_rect.height))
         self.update_handle()
 
     def update_handle(self):
         handle_x = int(self.bar_rect.x + ((self.value - self.min_val) / (self.max_val - self.min_val)) * self.bar_rect.width)
         self.handle_rect.topleft = (handle_x - self.handle_rect.width // 2, self.bar_rect.y)
+    
+    def get_abs_bar_rect(self) -> pygame.Rect:
+        return pygame.Rect(
+            tuple(self.abs_pos[i] + self.bar_rect.topleft[i] - self.rect.topleft[i] for i in [0, 1])
+              + self.bar_rect.size)
+
+    def is_hovered(self, m_pos: Tuple[int, int]):
+        """
+        Check if the scrollbar is hovered based on the mouse position.
+        
+        Args:
+            pos (Tuple[int, int]): Mouse position.
+        """
+        self.hovered = self.get_abs_bar_rect().collidepoint(m_pos)
+        return self.hovered
 
     def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN and self.handle_rect.collidepoint(event.pos):
+        if event.type == pygame.MOUSEBUTTONDOWN and self.hovered:
             self.dragging = True
         elif event.type == pygame.MOUSEBUTTONUP:
             self.dragging = False
         elif event.type == pygame.MOUSEMOTION and getattr(self, "dragging", False):
-            rel_x = event.pos[0] - self.rect.x
-            self.value = max(self.min_val, min(self.max_val, self.min_val + (rel_x / self.rect.width) * (self.max_val - self.min_val)))
+            rel_x = event.pos[0] - self.abs_pos[0]
+            self.value = max(self.min_val, min(self.max_val, round(self.min_val + (rel_x / self.rect.width) * (self.max_val - self.min_val))))
             self.update_handle()
 
     def render(self, surf: pygame.Surface):
-        font = pygame.font.SysFont("arial", round(self.rect.height * SCROLLBAR_FONT_RATIO))
+        font = pygame.font.SysFont("arial", round(self.rect.height * UI_SCROLLBAR["font_ratio"]))
         text_surf = font.render(f"{self.text}: {int(self.value)}", True, WHITE)
         surf.blit(text_surf, self.rect.topleft)
-        pygame.draw.rect(surf, GRAY, self.bar_rect)
-        pygame.draw.rect(surf, WHITE, self.handle_rect)
+        if self.hovered:
+            pygame.draw.rect(surf, UI_SCROLLBAR["bar_hover_color"], self.bar_rect)
+            pygame.draw.rect(surf, UI_SCROLLBAR["handle_hover_color"], self.handle_rect)
+        else:
+            pygame.draw.rect(surf, UI_SCROLLBAR["bar_default_color"], self.bar_rect)
+            pygame.draw.rect(surf, UI_SCROLLBAR["handle_default_color"], self.handle_rect)

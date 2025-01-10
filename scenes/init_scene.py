@@ -40,7 +40,7 @@ class InitScene(Scene):
         layout_rect: pygame.Rect = pygame.Rect(layout_pos + layout_size)
         bg_color = (50, 50, 50, 50)
 
-        layout = UILayout(layout_rect, bg_color)
+        layout = UILayout((0, 0), layout_rect, bg_color)
 
         layout.add_button(RelativeRect(0.25, 0.1, 0.5, 0.15), "Game Start", self.show_options_menu)
         layout.add_button(RelativeRect(0.25, 0.4, 0.5, 0.15), "AI Lab", self.open_ai_lab)
@@ -62,7 +62,7 @@ class InitScene(Scene):
         layout_rect: pygame.Rect = pygame.Rect(layout_pos + layout_size)
         bg_color = (50, 50, 50, 50)
 
-        layout = UILayout(layout_rect, bg_color)
+        layout = UILayout((0, 0), layout_rect, bg_color)
 
         layout.add_scrollbar(RelativeRect(0.2, 0.1, 0.6, 0.1), "Player Speed", 1, 10, 9)
         layout.add_scrollbar(RelativeRect(0.2, 0.3, 0.6, 0.1), "Grid Size", 5, 20, 5)

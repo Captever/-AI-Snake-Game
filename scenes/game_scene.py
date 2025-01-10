@@ -2,7 +2,7 @@ import pygame, sys
 
 from scripts.scene_manager import Scene
 
-from typing import Dict
+from typing import Tuple, Dict
 
 from game import Game
 
@@ -13,9 +13,9 @@ class GameScene(Scene):
 
     def initialize(self, settings: Dict[str, any]):
         self.settings = settings
-        self.player_speed = settings['Player Speed']
-        self.grid_size = (settings['Grid Size'], settings['Grid Size'])
-        self.clear_goal = settings['Clear Goal (%)'] / 100.0
+        self.player_speed: int = settings['Player Speed']
+        self.grid_size: Tuple[int, int] = (settings['Grid Size'], settings['Grid Size'])
+        self.clear_goal: float = settings['Clear Goal (%)'] / 100.0
         self.initial_game()
     
     def initial_game(self):
