@@ -6,10 +6,8 @@ from constants import *
 
 from typing import Tuple, Dict, List
 
-from game import Game
-
 class Player:
-    def __init__(self, game: Game, initial_length, move_speed):
+    def __init__(self, game, initial_length, move_speed):
         """
         Initialize Player Class
 
@@ -17,7 +15,7 @@ class Player:
             game (Game): Current Game object
             initial_length (int): initial length of the player
         """
-        self.game: Game = game
+        self.game = game
         self.length: int = initial_length
         self.move_speed = move_speed
         self.direction: str = None
@@ -148,7 +146,7 @@ class Player:
         self.game.map.set_arrow(arrow_coord, DIR_ANGLE_DICT[self.direction])
 
 class FeedSystem:
-    def __init__(self, game: Game):
+    def __init__(self, game):
         """
         Initialize FeedSystem Class
 
@@ -156,7 +154,7 @@ class FeedSystem:
             game (Game): Current Game object
         """
         self.feeds: Dict[Tuple[int, int], Feed] = {}
-        self.game: Game = game
+        self.game = game
         
         self.feed_surf: pygame.Surface = self.create_feed_surface()
 

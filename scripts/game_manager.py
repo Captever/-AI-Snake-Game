@@ -4,11 +4,12 @@ from random import sample
 from typing import Tuple, Set, List
 
 class GameState(Enum):
-    ACTIVE = 0
-    COUNTDOWN = 1
-    PAUSED = 2
-    GAMEOVER = 10
-    CLEAR = 9
+    # IN GAME
+    ACTIVE = 100
+    COUNTDOWN = 101
+    PAUSED = 102
+    GAMEOVER = 110
+    CLEAR = 109
 
 class GameStateManager:
     """

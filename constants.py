@@ -1,5 +1,3 @@
-import math
-
 # screen
 # SCREEN_WIDTH = 360
 # SCREEN_HEIGHT = 640
