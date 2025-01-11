@@ -2,7 +2,7 @@ import pygame
 
 from constants import *
 
-from typing import Tuple
+from typing import Tuple, Dict
 
 class RelativeRect:
     def __init__(self, x: float, y: float, width: float, height: float):
@@ -50,8 +50,9 @@ class UILayout:
         self.abs_pos: Tuple[int, int] = tuple(parent_abs_pos[i] + rect.topleft[i] for i in [0, 1])
         self.bg_color = bg_color
         self.elements = []
+        self.layouts: Dict[str, UILayout] = {} # sub layout
 
-    def add_layout(self, relative_rect: RelativeRect, bg_color=UI_LAYOUT["default_color"]):
+    def add_layout(self, name: str, relative_rect: RelativeRect, bg_color=UI_LAYOUT["default_color"]):
         """
         Add a layout to the layout with its relative position.
         
@@ -59,9 +60,13 @@ class UILayout:
             relative_rect (pygame.Rect): Relative position and size as a fraction of the layout size.
             bg_color (Tuple[int, int, int]): Background color of the layout surface.
         """
-        layout = UILayout(self.abs_pos, relative_rect.to_absolute(self.rect.size), bg_color)
+        if name in self.layouts:
+            ValueError(f"Layout name[{name}] already exists")
+            return
 
-        self.elements.append(layout)
+        layout = UILayout(self.abs_pos, relative_rect.to_absolute(self.rect.size), bg_color)
+        
+        self.layouts[name] = layout
 
     def add_button(self, relative_rect: RelativeRect, text: str, callback=None):
         """
@@ -82,11 +87,14 @@ class UILayout:
     def get_surface(self):
         return self.surf
 
-    def get_scrollbar_values(self):
+    def get_scrollbar_values(self) -> Dict[str, any]:
         scrollbar_values = {}
         for element in self.elements:
             if isinstance(element, ScrollBar):
                 scrollbar_values[element.text] = element.value
+        
+        for layout in self.layouts.values():
+            scrollbar_values.update(layout.get_scrollbar_values())
 
         return scrollbar_values
     
@@ -94,6 +102,9 @@ class UILayout:
         for event in events:
             for element in self.elements:
                 element.handle_event(event)
+            
+        for layout in self.layouts.values():
+            layout.handle_events(events)
 
     def render(self, surf: pygame.Surface):
         """
@@ -105,6 +116,9 @@ class UILayout:
         layout_surf = pygame.Surface(self.rect.size, pygame.SRCALPHA)
         layout_surf.fill(self.bg_color)
         
+        for layout in self.layouts.values():
+            layout.render(layout_surf)
+
         for element in self.elements:
             if isinstance(element, Button) or isinstance(element, ScrollBar):
                 element.is_hovered(pygame.mouse.get_pos())

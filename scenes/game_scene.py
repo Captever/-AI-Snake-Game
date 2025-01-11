@@ -36,10 +36,14 @@ class GameScene(Scene):
 
         layout = UILayout((0, 0), layout_rect, bg_color)
 
-        layout.add_scrollbar(RelativeRect(0.2, 0.1, 0.6, 0.1), "Player Speed", 1, 10, 9)
-        layout.add_scrollbar(RelativeRect(0.2, 0.3, 0.28, 0.1), "Grid Width", 5, 20, 5)
-        layout.add_scrollbar(RelativeRect(0.52, 0.3, 0.28, 0.1), "Grid Height", 5, 20, 5)
-        layout.add_scrollbar(RelativeRect(0.2, 0.5, 0.6, 0.1), "Clear Goal (%)", 50, 100, 90)
+        game_init_layout_name = "game_init"
+        layout.add_layout(game_init_layout_name, RelativeRect(0.2, 0.1, 0.6, 0.5), (0, 0, 0, 0))
+        game_init_layout = layout.layouts[game_init_layout_name]
+
+        game_init_layout.add_scrollbar(RelativeRect(0, 0, 1, 0.2), "Player Speed", 1, 10, 9)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0.4, 0.45, 0.2), "Grid Width", 5, 20, 5)
+        game_init_layout.add_scrollbar(RelativeRect(0.55, 0.4, 0.45, 0.2), "Grid Height", 5, 20, 5)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0.8, 1, 0.2), "Clear Goal (%)", 50, 100, 90)
 
         layout.add_button(RelativeRect(0.2, 0.75, 0.25, 0.1), "Start", self.start_game)
         layout.add_button(RelativeRect(0.55, 0.75, 0.25, 0.1), "Cancel", self.activate_main_scene)
