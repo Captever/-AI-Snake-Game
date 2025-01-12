@@ -21,6 +21,7 @@ UI_LAYOUT = {
 UI_BUTTON = {
     "default_color": WHITE,
     "hover_color": LIGHT_GRAY,
+    "disable_color": GRAY,
     "font_ratio": 0.6,
 }
 UI_SCROLLBAR = {

@@ -54,23 +54,24 @@ class AILabScene(Scene):
 
     def add_game_init_layout(self, parent_layout: UILayout):
         game_init_layout_name = "game_init"
-        parent_layout.add_layout(game_init_layout_name, RelativeRect(0.05, 0.1, 0.5, 0.5), (0, 0, 0, 0))
+        parent_layout.add_layout(game_init_layout_name, RelativeRect(0.1, 0.1, 0.4, 0.5), (0, 0, 0, 0))
         game_init_layout = parent_layout.layouts[game_init_layout_name]
 
-        game_init_layout.add_scrollbar(RelativeRect(0, 0, 1, 0.2), "Player Speed", 1, 10, 9)
-        game_init_layout.add_scrollbar(RelativeRect(0, 0.4, 0.45, 0.2), "Grid Width", 5, 20, 5)
-        game_init_layout.add_scrollbar(RelativeRect(0.55, 0.4, 0.45, 0.2), "Grid Height", 5, 20, 5)
-        game_init_layout.add_scrollbar(RelativeRect(0, 0.8, 1, 0.2), "Clear Goal (%)", 50, 100, 90)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0, 0.45, 0.15), "Grid Width", 5, 20, 5)
+        game_init_layout.add_scrollbar(RelativeRect(0.55, 0, 0.45, 0.15), "Grid Height", 5, 20, 5)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0.28, 1, 0.15), "Player Speed", 1, 10, 9)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0.56, 1, 0.15), "Feed Amount", 1, 5, 3)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0.84, 1, 0.15), "Clear Goal (%)", 50, 100, 90)
 
     def add_ai_init_layout(self, parent_layout: UILayout):
         ai_init_layout_name = "ai_init"
-        parent_layout.add_layout(ai_init_layout_name, RelativeRect(0.6, 0.1, 0.35, 0.5), (0, 0, 0, 0))
+        parent_layout.add_layout(ai_init_layout_name, RelativeRect(0.55, 0.1, 0.35, 0.5), (0, 0, 0, 0))
         ai_init_layout = parent_layout.layouts[ai_init_layout_name]
 
-        ai_list: List[str] = self.ai_manager.get_ai_list()
-        x_offset, y_offset, each_row_num = 0.4, 0.3, 3
+        ai_list: List[str] = self.ai_manager.get_ai_list_with_auto_lined()
+        x_offset, y_offset, each_row_num = 0.55, 0.4, 2
         for idx, ai_name in enumerate(ai_list):
-            ai_init_layout.add_button(RelativeRect((x_offset % each_row_num) * idx, (y_offset // each_row_num) * idx, 0.3, 0.2), ai_name, partial(self.set_active_ai, ai_name))
+            ai_init_layout.add_button(RelativeRect((x_offset % each_row_num) * idx, (y_offset // each_row_num) * idx, 0.45, 0.3), ai_name, partial(self.set_active_ai, ai_name))
 
     def initialize_game(self, settings: Dict[str, any]):
         # Initialize the game with the given settings

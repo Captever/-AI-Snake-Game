@@ -133,6 +133,7 @@ class Button:
         self.text: str = text
         self.callback = callback
         self.hovered: bool = False
+        self.disable: bool = False
     
     def handle_event(self, event):
         if self.is_clicked(event):
@@ -162,11 +163,22 @@ class Button:
         Args:
             surf (pygame.Surface): Surface to render on.
         """
-        pygame.draw.rect(surf, UI_BUTTON["hover_color"] if self.hovered else UI_BUTTON["default_color"], self.rect)
-        font = pygame.font.SysFont("arial", round(self.rect.height * UI_BUTTON["font_ratio"]))
-        text_surf = font.render(self.text, True, BLACK)
-        text_rect = text_surf.get_rect(center=self.rect.center)
-        surf.blit(text_surf, text_rect)
+        lined_text = self.text.split('\n')
+        line_num = len(lined_text)
+
+        pygame.draw.rect(surf, UI_BUTTON["hover_color"] if self.hovered else (UI_BUTTON["disable_color"] if self.disable else UI_BUTTON["default_color"]), self.rect)
+        font_size = round(self.rect.height * UI_BUTTON["font_ratio"] / line_num)
+        font = pygame.font.SysFont("arial", font_size)
+
+        if line_num == 1:
+            text_surf = font.render(self.text, True, BLACK)
+            text_rect = text_surf.get_rect(center=self.rect.center)
+            surf.blit(text_surf, text_rect)
+        else:
+            for idx, line in enumerate(lined_text):
+                text_surf = font.render(line, True, BLACK)
+                text_rect = text_surf.get_rect(centerx=self.rect.centerx, y=(self.rect.size[1] - (line_num * font_size)) // 2 + idx * font_size)
+                surf.blit(text_surf, text_rect)
 
 class ScrollBar:
     def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, min_val: int, max_val: int, initial_val: int):
