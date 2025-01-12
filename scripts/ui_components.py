@@ -2,7 +2,7 @@ import pygame
 
 from constants import *
 
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
 
 class RelativeRect:
     def __init__(self, x: float, y: float, width: float, height: float):
@@ -68,11 +68,11 @@ class UILayout:
         
         self.layouts[name] = layout
 
-    def add_button(self, relative_rect: RelativeRect, text: str, callback=None):
+    def add_button(self, relative_rect: RelativeRect, text: str, callback=None, auto_lined_str: List[str]=None):
         """
         Add a button to the layout with its relative position.
         """
-        button = Button(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, callback)
+        button = Button(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, callback, auto_lined_str)
 
         self.elements.append(button)
 
@@ -135,11 +135,13 @@ class UILayout:
         surf.blit(layout_surf, self.rect.topleft)
 
 class Button:
-    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, callback=None):
+    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, callback=None, auto_lined_str: List[str]=None):
         self.rect: pygame.Rect = pygame.Rect(rect)
         self.abs_pos: Tuple[int, int] = tuple(parent_abs_pos[i] + rect.topleft[i] for i in [0, 1])
         self.text: str = text
         self.callback = callback
+        self.auto_lined_str = auto_lined_str
+
         self.hovered: bool = False
         self.selected: bool = False
     
@@ -167,6 +169,17 @@ class Button:
     def is_clicked(self, event):
         return self.hovered and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1
 
+    def to_auto_lined_text(self, text: str, auto_lined_str: List[str]) -> List[str]:
+        ret = [text]
+
+        for target_str in auto_lined_str:
+            for target_text in ret:
+                ret.remove(target_text)
+                for output in target_text.split(target_str):
+                    ret.append(output)
+        
+        return ret
+
     def render(self, surf: pygame.Surface):
         """
         Render the button on the given surface at the specified rect.
@@ -174,22 +187,20 @@ class Button:
         Args:
             surf (pygame.Surface): Surface to render on.
         """
-        lined_text = self.text.split('\n')
-        line_num = len(lined_text)
+        if self.auto_lined_str is not None:
+            font_text = self.to_auto_lined_text(self.text, self.auto_lined_str)
+        else:
+            font_text = [self.text]
+        line_num = len(font_text)
 
         pygame.draw.rect(surf, UI_BUTTON["selected_color"] if self.selected else (UI_BUTTON["hover_color"] if self.hovered else UI_BUTTON["default_color"]), self.rect)
         font_size = round(self.rect.height * UI_BUTTON["font_ratio"] / line_num)
         font = pygame.font.SysFont("arial", font_size)
 
-        if line_num == 1:
-            text_surf = font.render(self.text, True, BLACK)
-            text_rect = text_surf.get_rect(center=self.rect.center)
+        for idx, line in enumerate(font_text):
+            text_surf = font.render(line, True, BLACK)
+            text_rect = text_surf.get_rect(centerx=self.rect.centerx, y=self.rect.topleft[1] + (self.rect.size[1] - (line_num * font_size)) // 2 + idx * font_size)
             surf.blit(text_surf, text_rect)
-        else:
-            for idx, line in enumerate(lined_text):
-                text_surf = font.render(line, True, BLACK)
-                text_rect = text_surf.get_rect(centerx=self.rect.centerx, y=(self.rect.size[1] - (line_num * font_size)) // 2 + idx * font_size)
-                surf.blit(text_surf, text_rect)
 
 class ScrollBar:
     def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, min_val: int, max_val: int, initial_val: int):

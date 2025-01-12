@@ -2,7 +2,7 @@ from .base_ai import BaseAI
 
 class RuleBasedAI(BaseAI):
     def decide_direction(self):
-        # decide the direction using simple rules (e.g., move toward the food)
+        # decide the direction using simple rules (e.g., move toward the feed)
         head = self.game.player.bodies[0]
         feeds = list(self.game.fs.feeds.keys())
         if not feeds:

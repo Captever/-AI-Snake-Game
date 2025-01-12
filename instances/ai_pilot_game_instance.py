@@ -7,13 +7,13 @@ from scripts.map_structure import Map
 from scripts.game_entities import Player, FeedSystem
 from scripts.game_manager import ScoreManager, GameState, GameStateManager
 
-from instances.ai_instance import AI
+from scripts.ai.base_ai import BaseAI
 
 from typing import Tuple
 
 class AI_Pilot_Game:
-    def __init__(self, pilot_ai: AI, player_move_delay: int, grid_size: Tuple[int, int], clear_goal: float):
-        self.pilot_ai: AI = pilot_ai
+    def __init__(self, pilot_ai: BaseAI, player_move_delay: int, grid_size: Tuple[int, int], clear_goal: float):
+        self.pilot_ai: BaseAI = pilot_ai
         self.player_move_delay: int = player_move_delay
         self.grid_size: Tuple[int, int] = grid_size
         self.clear_goal: float = clear_goal
@@ -25,6 +25,7 @@ class AI_Pilot_Game:
         self.fs: FeedSystem = None
         self.state_manager: GameStateManager = GameStateManager(self.grid_size)
 
+        self.move_accum: int = 0
         self.next_direction: str = None
 
         self.init_ui()

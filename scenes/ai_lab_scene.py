@@ -6,7 +6,6 @@ from scripts.scene_manager import Scene
 from scripts.ui_components import UILayout, RelativeRect
 from scripts.ai_manager import AIManager
 
-from instances.ai_instance import AI
 from instances.ai_pilot_game_instance import AI_Pilot_Game
 
 from typing import Tuple, Dict, List
@@ -21,8 +20,8 @@ class AILabScene(Scene):
         self.game: AI_Pilot_Game = None
 
         self.ai_manager: AIManager = AIManager()
-        self.ai: AI = None
-        self.active_ai = None
+        self.ai = None
+        self.target_ai_name = None
         
         self.ui_state = CONFIG
 
@@ -68,12 +67,16 @@ class AILabScene(Scene):
         parent_layout.add_layout(ai_init_layout_name, RelativeRect(0.55, 0.1, 0.35, 0.5), (0, 0, 0, 0))
         ai_init_layout = parent_layout.layouts[ai_init_layout_name]
 
-        ai_list: List[str] = self.ai_manager.get_ai_list_with_auto_lined()
+        ai_list: List[str] = self.ai_manager.get_ai_list()
         x_offset, y_offset, each_row_num = 0.55, 0.4, 2
         for idx, ai_name in enumerate(ai_list):
-            ai_init_layout.add_button(RelativeRect((x_offset % each_row_num) * idx, (y_offset // each_row_num) * idx, 0.45, 0.3), ai_name, partial(self.set_selected_ai, ai_init_layout, ai_name))
+            ai_init_layout.add_button(RelativeRect((x_offset % each_row_num) * idx, (y_offset // each_row_num) * idx, 0.45, 0.3), ai_name, partial(self.set_selected_ai, ai_init_layout, ai_name), ['-'])
             if idx == 0:
                 self.set_selected_ai(ai_init_layout, ai_name)
+
+    def initialize_ai(self):
+        # Initialize the ai with the given settings
+        self.ai = self.ai_manager.get_ai(self.target_ai_name)
 
     def initialize_game(self, settings: Dict[str, any]):
         # Initialize the game with the given settings
@@ -83,10 +86,7 @@ class AILabScene(Scene):
         grid_size: Tuple[int, int] = (settings['Grid Width'], settings['Grid Height'])
         clear_goal: float = settings['Clear Goal (%)'] / 100.0
         self.game = AI_Pilot_Game(self.ai, self.player_move_delay, grid_size, clear_goal)
-
-    def initialize_ai(self):
-        # Initialize the ai with the given settings
-        self.ai = AI(self.active_ai)
+        self.ai.set_current_game(self.game)
 
     def handle_events(self, events):
         super().handle_events(events)
@@ -108,13 +108,13 @@ class AILabScene(Scene):
 
     def start_game(self):
         game_settings = self.config_layout.get_scrollbar_values()
-        self.initialize_game(game_settings)
         self.initialize_ai()
+        self.initialize_game(game_settings)
         self.set_ui_state(IN_GAME)
     
     def set_selected_ai(self, ai_layout: UILayout, ai_name: str):
         ai_layout.update_radio_selection(ai_name)
-        self.active_ai = ai_name
+        self.target_ai_name = ai_name
     
     def activate_main_scene(self):
         self.manager.set_active_scene("MainScene")
