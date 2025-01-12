@@ -4,8 +4,9 @@ import sys
 from constants import *
 
 from scripts.scene_manager import SceneManager
-from scenes.init_scene import InitScene
+from scenes.main_scene import MainScene
 from scenes.game_scene import GameScene
+from scenes.ai_lab_scene import AILabScene
 
 class Main:
     def __init__(self):
@@ -22,12 +23,14 @@ class Main:
     def init_scenes(self):
         self.scene_manager = SceneManager()
 
-        init_scene = InitScene(self.scene_manager)
-        self.scene_manager.add_scene("InitScene", init_scene)
+        main_scene = MainScene(self.scene_manager)
+        self.scene_manager.add_scene("MainScene", main_scene)
         game_scene = GameScene(self.scene_manager)
         self.scene_manager.add_scene("GameScene", game_scene)
+        ai_lab_scene = AILabScene(self.scene_manager)
+        self.scene_manager.add_scene("AILabScene", ai_lab_scene)
         
-        self.scene_manager.set_active_scene("InitScene")
+        self.scene_manager.set_active_scene("MainScene")
 
     def run(self):
         self.running = True

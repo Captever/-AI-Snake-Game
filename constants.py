@@ -1,5 +1,3 @@
-import math
-
 # screen
 # SCREEN_WIDTH = 360
 # SCREEN_HEIGHT = 640
@@ -17,12 +15,13 @@ DARK_GARY = (70, 70, 70)
 # ui size
 FONT_SIZE_RATIO = 0.075
 UI_LAYOUT = {
-    "default_color": (128, 128, 128, 150),
+    "default_color": (15, 15, 15, 255),
 }
 
 UI_BUTTON = {
     "default_color": WHITE,
     "hover_color": LIGHT_GRAY,
+    "selected_color": GRAY,
     "font_ratio": 0.6,
 }
 UI_SCROLLBAR = {

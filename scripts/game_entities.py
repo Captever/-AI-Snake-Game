@@ -6,10 +6,8 @@ from constants import *
 
 from typing import Tuple, Dict, List
 
-from game import Game
-
 class Player:
-    def __init__(self, game: Game, initial_length, move_speed):
+    def __init__(self, game, initial_length):
         """
         Initialize Player Class
 
@@ -17,11 +15,9 @@ class Player:
             game (Game): Current Game object
             initial_length (int): initial length of the player
         """
-        self.game: Game = game
+        self.game = game
         self.length: int = initial_length
-        self.move_speed = move_speed
         self.direction: str = None
-        self.move_accum: int = 0
 
         self.body_surf: pygame.Surface = self.create_body_surface()
         self.bodies: List[Tuple[int, int]] = self.make_bodies()
@@ -104,13 +100,6 @@ class Player:
         """
         return coord in self.bodies[:-1]
 
-    def move_sequence(self):
-        if self.move_accum >= MOVE_DELAY * (10 - self.move_speed + 1): # min: 1, max: 10
-            self.move_accum = 0
-            self.move()
-        else:
-            self.move_accum += 1
-
     def move(self):
         head, tail = self.bodies[0], self.bodies[-1]
         dir_offset = DIR_OFFSET_DICT[self.direction]
@@ -148,7 +137,7 @@ class Player:
         self.game.map.set_arrow(arrow_coord, DIR_ANGLE_DICT[self.direction])
 
 class FeedSystem:
-    def __init__(self, game: Game):
+    def __init__(self, game):
         """
         Initialize FeedSystem Class
 
@@ -156,7 +145,7 @@ class FeedSystem:
             game (Game): Current Game object
         """
         self.feeds: Dict[Tuple[int, int], Feed] = {}
-        self.game: Game = game
+        self.game = game
         
         self.feed_surf: pygame.Surface = self.create_feed_surface()
 
