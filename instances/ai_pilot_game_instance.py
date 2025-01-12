@@ -7,14 +7,16 @@ from scripts.map_structure import Map
 from scripts.game_entities import Player, FeedSystem
 from scripts.game_manager import ScoreManager, GameState, GameStateManager
 
+from instances.ai_instance import AI
+
 from typing import Tuple
 
-class Game:
-    def __init__(self, player_move_delay: int, grid_size: Tuple[int, int], clear_goal: float):
+class AI_Pilot_Game:
+    def __init__(self, pilot_ai: AI, player_move_delay: int, grid_size: Tuple[int, int], clear_goal: float):
+        self.pilot_ai: AI = pilot_ai
         self.player_move_delay: int = player_move_delay
         self.grid_size: Tuple[int, int] = grid_size
         self.clear_goal: float = clear_goal
-        self.move_accum: int = 0
 
         self.state: GameState = None
         self.clock: pygame.time.Clock = pygame.time.Clock()
@@ -22,6 +24,8 @@ class Game:
         self.player: Player = None
         self.fs: FeedSystem = None
         self.state_manager: GameStateManager = GameStateManager(self.grid_size)
+
+        self.next_direction: str = None
 
         self.init_ui()
 
@@ -62,6 +66,9 @@ class Game:
         if self.move_accum >= self.player_move_delay:
             self.move_accum = 0
             self.player.move()
+            
+            # decide next direction after completing player movement
+            self.player.set_direction(self.pilot_ai.decide_direction())
         else:
             self.move_accum += 1
     
@@ -114,41 +121,11 @@ class Game:
                 self.handle_keydown(event.key)
     
     def handle_keydown(self, key):
-        if self.is_active():
-            self.handle_active_keydown(key)
-        elif self.state == GameState.COUNTDOWN:
-            self.handle_countdown_keydown(key)
-        elif self.state == GameState.PAUSED:
-            self.handle_paused_keydown(key)
-    
-    def handle_active_keydown(self, key):
-        # handle keydown on active state
-        if key == pygame.K_UP:
-            self.player.set_direction('N')
-        elif key == pygame.K_DOWN:
-            self.player.set_direction('S')
-        elif key == pygame.K_LEFT:
-            self.player.set_direction('W')
-        elif key == pygame.K_RIGHT:
-            self.player.set_direction('E')
-        elif key == pygame.K_p:
-            self.set_state(GameState.PAUSED)
-    
-    def handle_paused_keydown(self, key):
-        # handle keydown on paused state
         if key == pygame.K_p:
-            self.set_state(GameState.ACTIVE)
-    
-    def handle_countdown_keydown(self, key):
-        # handle keydown on countdown state
-        if key == pygame.K_UP:
-            self.player.set_direction('N')
-        elif key == pygame.K_DOWN:
-            self.player.set_direction('S')
-        elif key == pygame.K_LEFT:
-            self.player.set_direction('W')
-        elif key == pygame.K_RIGHT:
-            self.player.set_direction('E')
+            if self.state == GameState.PAUSED:
+                self.state = GameState.ACTIVE
+            elif self.state == GameState.ACTIVE:
+                self.state = GameState.PAUSED
 
     def render(self, surf: pygame.Surface):
         surf.fill((0, 0, 0))

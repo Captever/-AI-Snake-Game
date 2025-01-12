@@ -6,8 +6,8 @@ from scripts.scene_manager import Scene
 from scripts.ui_components import UILayout, RelativeRect
 from scripts.ai_manager import AIManager
 
-from instances.game_instance import Game
 from instances.ai_instance import AI
+from instances.ai_pilot_game_instance import AI_Pilot_Game
 
 from typing import Tuple, Dict, List
 from functools import partial
@@ -18,7 +18,7 @@ class AILabScene(Scene):
     def __init__(self, manager):
         super().__init__(manager)
 
-        self.game: Game = None
+        self.game: AI_Pilot_Game = None
 
         self.ai_manager: AIManager = AIManager()
         self.ai: AI = None
@@ -78,10 +78,11 @@ class AILabScene(Scene):
     def initialize_game(self, settings: Dict[str, any]):
         # Initialize the game with the given settings
         self.settings = settings
-        self.player_speed: int = settings['Player Speed']
-        self.grid_size: Tuple[int, int] = (settings['Grid Width'], settings['Grid Height'])
-        self.clear_goal: float = settings['Clear Goal (%)'] / 100.0
-        self.game = Game(self.player_speed, self.grid_size, self.clear_goal)
+        player_speed: int = settings['Player Speed']
+        self.player_move_delay = MOVE_DELAY * (10 - player_speed + 1) # min: 1, max: 10
+        grid_size: Tuple[int, int] = (settings['Grid Width'], settings['Grid Height'])
+        clear_goal: float = settings['Clear Goal (%)'] / 100.0
+        self.game = AI_Pilot_Game(self.ai, self.player_move_delay, grid_size, clear_goal)
 
     def initialize_ai(self):
         # Initialize the ai with the given settings

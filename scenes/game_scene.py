@@ -53,10 +53,11 @@ class GameScene(Scene):
     def initialize_game(self, settings: Dict[str, any]):
         # Initialize the game with the given settings
         self.settings = settings
-        self.player_speed: int = settings['Player Speed']
-        self.grid_size: Tuple[int, int] = (settings['Grid Width'], settings['Grid Height'])
-        self.clear_goal: float = settings['Clear Goal (%)'] / 100.0
-        self.game = Game(self.player_speed, self.grid_size, self.clear_goal)
+        player_speed: int = settings['Player Speed']
+        move_delay = MOVE_DELAY * (10 - player_speed + 1) # min: 1, max: 10
+        grid_size: Tuple[int, int] = (settings['Grid Width'], settings['Grid Height'])
+        clear_goal: float = settings['Clear Goal (%)'] / 100.0
+        self.game = Game(move_delay, grid_size, clear_goal)
 
     def handle_events(self, events):
         super().handle_events(events)
