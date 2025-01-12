@@ -83,6 +83,14 @@ class UILayout:
         scrollbar = ScrollBar(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, min_val, max_val, initial_val)
 
         self.elements.append(scrollbar)
+    
+    def update_radio_selection(self, target_text: str):
+        for element in self.elements:
+            if isinstance(element, Button):
+                if element.text == target_text:
+                    element.set_selected()
+                else:
+                    element.set_selected(False)
 
     def get_surface(self):
         return self.surf
@@ -133,12 +141,15 @@ class Button:
         self.text: str = text
         self.callback = callback
         self.hovered: bool = False
-        self.disable: bool = False
+        self.selected: bool = False
     
     def handle_event(self, event):
-        if self.is_clicked(event):
+        if self.is_clicked(event) and not self.selected:
             if self.callback:
                 self.callback()
+    
+    def set_selected(self, is_selected: bool = True):
+        self.selected = is_selected
     
     def get_abs_rect(self) -> pygame.Rect:
         return pygame.Rect(self.abs_pos + self.rect.size)
@@ -166,7 +177,7 @@ class Button:
         lined_text = self.text.split('\n')
         line_num = len(lined_text)
 
-        pygame.draw.rect(surf, UI_BUTTON["hover_color"] if self.hovered else (UI_BUTTON["disable_color"] if self.disable else UI_BUTTON["default_color"]), self.rect)
+        pygame.draw.rect(surf, UI_BUTTON["selected_color"] if self.selected else (UI_BUTTON["hover_color"] if self.hovered else UI_BUTTON["default_color"]), self.rect)
         font_size = round(self.rect.height * UI_BUTTON["font_ratio"] / line_num)
         font = pygame.font.SysFont("arial", font_size)
 

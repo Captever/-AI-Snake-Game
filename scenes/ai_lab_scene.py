@@ -71,7 +71,9 @@ class AILabScene(Scene):
         ai_list: List[str] = self.ai_manager.get_ai_list_with_auto_lined()
         x_offset, y_offset, each_row_num = 0.55, 0.4, 2
         for idx, ai_name in enumerate(ai_list):
-            ai_init_layout.add_button(RelativeRect((x_offset % each_row_num) * idx, (y_offset // each_row_num) * idx, 0.45, 0.3), ai_name, partial(self.set_active_ai, ai_name))
+            ai_init_layout.add_button(RelativeRect((x_offset % each_row_num) * idx, (y_offset // each_row_num) * idx, 0.45, 0.3), ai_name, partial(self.set_selected_ai, ai_init_layout, ai_name))
+            if idx == 0:
+                self.set_selected_ai(ai_init_layout, ai_name)
 
     def initialize_game(self, settings: Dict[str, any]):
         # Initialize the game with the given settings
@@ -109,7 +111,8 @@ class AILabScene(Scene):
         self.initialize_ai()
         self.set_ui_state(IN_GAME)
     
-    def set_active_ai(self, ai_name: str):
+    def set_selected_ai(self, ai_layout: UILayout, ai_name: str):
+        ai_layout.update_radio_selection(ai_name)
         self.active_ai = ai_name
     
     def activate_main_scene(self):
