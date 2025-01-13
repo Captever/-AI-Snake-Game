@@ -69,7 +69,6 @@ DIR_ANGLE_DICT = {
 GRID_NUM = (20, 20)
 GRID_ALPHA = 128
 GRID_THICKNESS = 1 # grid line thickness of map
-FEED_NUM = 3
 MOVE_DELAY = 5 # frame
 INIT_LENGTH = 3 # initial length of snake
 MAP_OUTERLINE_THICKNESS = 1

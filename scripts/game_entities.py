@@ -137,7 +137,7 @@ class Player:
         self.game.map.set_arrow(arrow_coord, DIR_ANGLE_DICT[self.direction])
 
 class FeedSystem:
-    def __init__(self, game):
+    def __init__(self, game, feed_amount: int):
         """
         Initialize FeedSystem Class
 
@@ -146,6 +146,7 @@ class FeedSystem:
         """
         self.feeds: Dict[Tuple[int, int], Feed] = {}
         self.game = game
+        self.feed_amount: int = feed_amount
         
         self.feed_surf: pygame.Surface = self.create_feed_surface()
 
@@ -189,7 +190,7 @@ class FeedSystem:
         
         # if there is no same type feed, add new feeds
         if self.is_feed_empty(target_type):
-            self.add_feed_random_coord(FEED_NUM, feed_type=target_type)
+            self.add_feed_random_coord(self.feed_amount, feed_type=target_type)
 
         self.game.state_manager.mark_cell_free(coord)
     

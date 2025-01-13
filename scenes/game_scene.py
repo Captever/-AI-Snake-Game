@@ -40,10 +40,11 @@ class GameScene(Scene):
         layout.add_layout(game_init_layout_name, RelativeRect(0.2, 0.1, 0.6, 0.5), (0, 0, 0, 0))
         game_init_layout = layout.layouts[game_init_layout_name]
 
-        game_init_layout.add_scrollbar(RelativeRect(0, 0, 1, 0.2), "Player Speed", 1, 10, 9)
-        game_init_layout.add_scrollbar(RelativeRect(0, 0.4, 0.45, 0.2), "Grid Width", 5, 20, 5)
-        game_init_layout.add_scrollbar(RelativeRect(0.55, 0.4, 0.45, 0.2), "Grid Height", 5, 20, 5)
-        game_init_layout.add_scrollbar(RelativeRect(0, 0.8, 1, 0.2), "Clear Goal (%)", 50, 100, 90)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0, 0.45, 0.15), "Grid Width", 5, 20, 5)
+        game_init_layout.add_scrollbar(RelativeRect(0.55, 0, 0.45, 0.15), "Grid Height", 5, 20, 5)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0.28, 1, 0.15), "Player Speed", 1, 10, 9)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0.56, 1, 0.15), "Feed Amount", 1, 5, 3)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0.84, 1, 0.15), "Clear Goal (%)", 50, 100, 90)
 
         layout.add_button(RelativeRect(0.2, 0.75, 0.25, 0.1), "Start", self.start_game)
         layout.add_button(RelativeRect(0.55, 0.75, 0.25, 0.1), "Cancel", self.activate_main_scene)
@@ -53,11 +54,12 @@ class GameScene(Scene):
     def initialize_game(self, settings: Dict[str, any]):
         # Initialize the game with the given settings
         self.settings = settings
-        player_speed: int = settings['Player Speed']
+        grid_size: Tuple[int, int] = (int(settings['Grid Width']), int(settings['Grid Height']))
+        player_speed: int = int(settings['Player Speed'])
         move_delay = MOVE_DELAY * (10 - player_speed + 1) # min: 1, max: 10
-        grid_size: Tuple[int, int] = (settings['Grid Width'], settings['Grid Height'])
+        feed_amount: int = int(settings['Feed Amount'])
         clear_goal: float = settings['Clear Goal (%)'] / 100.0
-        self.game = Game(move_delay, grid_size, clear_goal)
+        self.game = Game(move_delay, grid_size, feed_amount, clear_goal)
 
     def handle_events(self, events):
         super().handle_events(events)

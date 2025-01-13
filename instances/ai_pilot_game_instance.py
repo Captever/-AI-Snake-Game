@@ -12,10 +12,11 @@ from scripts.ai.base_ai import BaseAI
 from typing import Tuple
 
 class AI_Pilot_Game:
-    def __init__(self, pilot_ai: BaseAI, player_move_delay: int, grid_size: Tuple[int, int], clear_goal: float):
+    def __init__(self, pilot_ai: BaseAI, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
         self.pilot_ai: BaseAI = pilot_ai
         self.player_move_delay: int = player_move_delay
         self.grid_size: Tuple[int, int] = grid_size
+        self.feed_amount: int = feed_amount
         self.clear_goal: float = clear_goal
 
         self.state: GameState = None
@@ -51,8 +52,8 @@ class AI_Pilot_Game:
 
     def start_game(self):
         self.player = Player(self, INIT_LENGTH)
-        self.fs = FeedSystem(self)
-        self.fs.add_feed_random_coord(FEED_NUM)
+        self.fs = FeedSystem(self, self.feed_amount)
+        self.fs.add_feed_random_coord(self.feed_amount)
 
         self.score: int = 0
 

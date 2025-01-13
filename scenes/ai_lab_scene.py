@@ -81,11 +81,12 @@ class AILabScene(Scene):
     def initialize_game(self, settings: Dict[str, any]):
         # Initialize the game with the given settings
         self.settings = settings
-        player_speed: int = settings['Player Speed']
+        grid_size: Tuple[int, int] = (int(settings['Grid Width']), int(settings['Grid Height']))
+        player_speed: int = int(settings['Player Speed'])
         self.player_move_delay = MOVE_DELAY * (10 - player_speed + 1) # min: 1, max: 10
-        grid_size: Tuple[int, int] = (settings['Grid Width'], settings['Grid Height'])
+        feed_amount: int = int(settings['Feed Amount'])
         clear_goal: float = settings['Clear Goal (%)'] / 100.0
-        self.game = AI_Pilot_Game(self.ai, self.player_move_delay, grid_size, clear_goal)
+        self.game = AI_Pilot_Game(self.ai, self.player_move_delay, grid_size, feed_amount, clear_goal)
         self.ai.set_current_game(self.game)
 
     def handle_events(self, events):

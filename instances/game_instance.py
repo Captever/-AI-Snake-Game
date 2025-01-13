@@ -10,11 +10,11 @@ from scripts.game_manager import ScoreManager, GameState, GameStateManager
 from typing import Tuple
 
 class Game:
-    def __init__(self, player_move_delay: int, grid_size: Tuple[int, int], clear_goal: float):
+    def __init__(self, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
         self.player_move_delay: int = player_move_delay
         self.grid_size: Tuple[int, int] = grid_size
+        self.feed_amount: int = feed_amount
         self.clear_goal: float = clear_goal
-        self.move_accum: int = 0
 
         self.state: GameState = None
         self.clock: pygame.time.Clock = pygame.time.Clock()
@@ -22,6 +22,8 @@ class Game:
         self.player: Player = None
         self.fs: FeedSystem = None
         self.state_manager: GameStateManager = GameStateManager(self.grid_size)
+        
+        self.move_accum: int = 0
 
         self.init_ui()
 
@@ -46,8 +48,8 @@ class Game:
 
     def start_game(self):
         self.player = Player(self, INIT_LENGTH)
-        self.fs = FeedSystem(self)
-        self.fs.add_feed_random_coord(FEED_NUM)
+        self.fs = FeedSystem(self, self.feed_amount)
+        self.fs.add_feed_random_coord(self.feed_amount)
 
         self.score: int = 0
 
