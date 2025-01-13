@@ -1,0 +1,2 @@
+Movement was restricted when attempting to move in the direction of the neck(second body part), causing a collision with the wall.
+-> Add a rule to select only directions without movement restrictions.
