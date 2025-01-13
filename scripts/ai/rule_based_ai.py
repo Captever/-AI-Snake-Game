@@ -56,6 +56,9 @@ class RuleBasedAI(BaseAI):
             else:
                 dir = 'S' if dy > 0 else 'N'
         
+        # exclude directions with movement restrictions
+        # - facing the neck
+        # - direction out of bounds
         if dir == neck_dir:
             grid_size = self.game.grid_size
 
