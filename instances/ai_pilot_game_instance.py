@@ -80,13 +80,15 @@ class AI_Pilot_Game:
             self.move_sequence()
         self.countdown()
 
+        if self.next_direction is None:
+            self.next_direction = self.pilot_ai.decide_direction()
+            self.player.set_direction(self.next_direction)
+
     def move_sequence(self):
         if self.move_accum >= self.player_move_delay:
             self.move_accum = 0
             self.player.move()
-            
-            # decide next direction after completing player movement
-            self.player.set_direction(self.pilot_ai.decide_direction())
+            self.next_direction = None
         else:
             self.move_accum += 1
     
