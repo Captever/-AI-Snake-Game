@@ -1,14 +1,12 @@
 from .base_ai import BaseAI
 
-from sys import maxsize
-
 from typing import Tuple, List
 
 def get_dist(pos_a: Tuple[int, int], pos_b: Tuple[int, int]) -> int:
     return abs(pos_b[0] - pos_a[0]) + abs(pos_b[1] - pos_a[0])
 
 def get_nearest_feed_pos(head: Tuple[int, int], feed_list: List[Tuple[int, int]]) -> Tuple[int, int]:
-    min_dist = maxsize
+    min_dist = int('inf')
     ret = None
 
     for feed in feed_list:
@@ -28,7 +26,7 @@ class RuleBasedAI(BaseAI):
         if not feed_list:
             return None
         
-        target = get_nearest_feed_pos(head, feed_list)
+        target = get_nearest_feed_pos(feed_list)
 
         dx, dy = target[0] - head[0], target[1] - head[1]
 
