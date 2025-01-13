@@ -59,7 +59,7 @@ class GameScene(Scene):
         move_delay = MOVE_DELAY * (10 - player_speed + 1) # min: 1, max: 10
         feed_amount: int = int(settings['Feed Amount'])
         clear_goal: float = settings['Clear Goal (%)'] / 100.0
-        self.game = Game(move_delay, grid_size, feed_amount, clear_goal)
+        self.game = Game(self, move_delay, grid_size, feed_amount, clear_goal)
 
     def handle_events(self, events):
         super().handle_events(events)
@@ -69,7 +69,6 @@ class GameScene(Scene):
             self.config_layout.handle_events(events)
         elif ui_state == IN_GAME:
             self.game.handle_events(events)
-
     
     def set_ui_state(self, state):
         if state not in [CONFIG, IN_GAME]:
@@ -84,6 +83,10 @@ class GameScene(Scene):
         game_settings = self.config_layout.get_scrollbar_values()
         self.initialize_game(game_settings)
         self.set_ui_state(IN_GAME)
+    
+    def restart_new_game(self):
+        self.set_ui_state(CONFIG)
+        self.game = None
     
     def activate_main_scene(self):
         self.manager.set_active_scene("MainScene")

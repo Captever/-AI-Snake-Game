@@ -3,6 +3,7 @@ import sys
 
 from constants import *
 
+from scripts.ui_components import UILayout, RelativeRect
 from scripts.map_structure import Map
 from scripts.game_entities import Player, FeedSystem
 from scripts.game_manager import ScoreManager, GameState, GameStateManager
@@ -10,7 +11,8 @@ from scripts.game_manager import ScoreManager, GameState, GameStateManager
 from typing import Tuple
 
 class Game:
-    def __init__(self, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
+    def __init__(self, scene, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
+        self.scene = scene
         self.player_move_delay: int = player_move_delay
         self.grid_size: Tuple[int, int] = grid_size
         self.feed_amount: int = feed_amount
@@ -44,7 +46,21 @@ class Game:
         self.map = Map(self, map_side_length, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
         self.map.add_outerline(MAP_OUTERLINE_THICKNESS, WHITE)
 
-        self.centered_font = pygame.font.SysFont('consolas', round(map_side_length * FONT_SIZE_RATIO * 3.5), bold=True)
+        self.centered_font_size = round(map_side_length * FONT_SIZE_RATIO * 3.5)
+        self.centered_font = pygame.font.SysFont('consolas', self.centered_font_size, bold=True)
+        self.state_layout: UILayout = self.create_state_layout(self.origin, map_side_length)
+
+    def create_state_layout(self, origin, map_side_length):
+        offset_y = (map_side_length + self.centered_font_size) // 2
+        top = origin[1] + offset_y
+        height = map_side_length - offset_y
+
+        layout: UILayout = UILayout((0, 0), pygame.Rect(origin[0], top, map_side_length, height), (0, 0, 0, 0))
+
+        layout.add_button(RelativeRect(0.1, 0.1, 0.35, 0.5), "New", self.scene.restart_new_game)
+        layout.add_button(RelativeRect(0.55, 0.1, 0.35, 0.5), "Save")
+
+        return layout
 
     def start_game(self):
         self.player = Player(self, INIT_LENGTH)
@@ -114,6 +130,9 @@ class Game:
         for event in events:
             if event.type == pygame.KEYDOWN:
                 self.handle_keydown(event.key)
+        
+        if self.state in [GameState.GAMEOVER, GameState.CLEAR]:
+            self.state_layout.handle_events(events)
     
     def handle_keydown(self, key):
         if self.is_active():
@@ -164,8 +183,10 @@ class Game:
                 centered_font_content = "PAUSED"
             elif self.state == GameState.CLEAR:
                 centered_font_content = "CLEAR"
+                self.state_layout.render(surf)
             elif self.state == GameState.GAMEOVER:
                 centered_font_content = "GAME OVER"
+                self.state_layout.render(surf)
             elif self.state == GameState.COUNTDOWN:
                 centered_font_content = str(round(self.countdown_remaining_time, 1))
             self.render_centered_font(surf, centered_font_content)

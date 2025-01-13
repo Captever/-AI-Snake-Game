@@ -86,7 +86,7 @@ class AILabScene(Scene):
         self.player_move_delay = MOVE_DELAY * (10 - player_speed + 1) # min: 1, max: 10
         feed_amount: int = int(settings['Feed Amount'])
         clear_goal: float = settings['Clear Goal (%)'] / 100.0
-        self.game = AI_Pilot_Game(self.ai, self.player_move_delay, grid_size, feed_amount, clear_goal)
+        self.game = AI_Pilot_Game(self, self.ai, self.player_move_delay, grid_size, feed_amount, clear_goal)
         self.ai.set_current_game(self.game)
 
     def handle_events(self, events):
@@ -112,6 +112,11 @@ class AILabScene(Scene):
         self.initialize_ai()
         self.initialize_game(game_settings)
         self.set_ui_state(IN_GAME)
+    
+    def restart_new_game(self):
+        self.set_ui_state(CONFIG)
+        self.game = None
+        self.ai = None
     
     def set_selected_ai(self, ai_layout: UILayout, ai_name: str):
         ai_layout.update_radio_selection(ai_name)
