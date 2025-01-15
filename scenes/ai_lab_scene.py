@@ -70,7 +70,7 @@ class AILabScene(Scene):
         ai_list: List[str] = self.ai_manager.get_ai_list()
         x_offset, y_offset, each_row_num = 0.55, 0.4, 2
         for idx, ai_name in enumerate(ai_list):
-            ai_init_layout.add_button(RelativeRect((x_offset % each_row_num) * idx, (y_offset // each_row_num) * idx, 0.45, 0.3), ai_name, partial(self.set_selected_ai, ai_init_layout, ai_name), ['-'])
+            ai_init_layout.add_button(RelativeRect(x_offset * (idx % each_row_num), y_offset * (idx // each_row_num), 0.45, 0.3), ai_name, partial(self.set_selected_ai, ai_init_layout, ai_name), ['-'])
             if idx == 0:
                 self.set_selected_ai(ai_init_layout, ai_name)
 

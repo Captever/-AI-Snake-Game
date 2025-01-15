@@ -1,5 +1,7 @@
 import pygame
 
+import re
+
 from constants import *
 
 from typing import Tuple, Dict, List
@@ -170,15 +172,9 @@ class Button:
         return self.hovered and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1
 
     def to_auto_lined_text(self, text: str, auto_lined_str: List[str]) -> List[str]:
-        ret = [text]
+        pattern = '|'.join(map(re.escape, auto_lined_str))
 
-        for target_str in auto_lined_str:
-            for target_text in ret:
-                ret.remove(target_text)
-                for output in target_text.split(target_str):
-                    ret.append(output)
-        
-        return ret
+        return re.split(pattern, text)
 
     def render(self, surf: pygame.Surface):
         """
