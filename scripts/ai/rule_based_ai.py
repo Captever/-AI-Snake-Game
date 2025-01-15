@@ -110,10 +110,6 @@ class RuleBasedAI(BaseAI):
                 else:
                     break
         else: # method: maximalism
-            edges = [(0, 0), # counter-clockwise from (0, 0) to the end
-                     (0, grid_size[1] - 1), 
-                     (grid_size[0] - 1, grid_size[1] - 1), 
-                     (grid_size[0] - 1, 0)]
             is_width_even, is_height_even = tuple(is_even(grid_size[i]) for i in [0, 1])
 
             if is_width_even:
