@@ -81,13 +81,8 @@ class GameStateManager:
 
         Returns:
             List[Tuple[int, int]]: Coordinates of `k` available cells.
-
-        Raises:
-            ValueError: If there are not enough available cells remain.
         """
-        if not self.available_cells:
-            raise ValueError("There are not enough available cells in the grid.")
-        return sample(list(self.available_cells), k=k)
+        return sample(list(self.available_cells), k=min(k, len(self.available_cells)))
 
     def reset(self) -> None:
         """
