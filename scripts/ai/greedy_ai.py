@@ -22,4 +22,5 @@ class GreedyAI(BaseAI):
                 if distance < min_distance:
                     min_distance = distance
                     best_direction = direction
-        return best_direction
+        
+        return best_direction if best_direction is not None else "surrender"
