@@ -1,3 +1,5 @@
+from sys import maxsize
+
 from .base_ai import BaseAI
 
 from constants import DIR_OFFSET_DICT
@@ -5,13 +7,12 @@ from constants import DIR_OFFSET_DICT
 class GreedyAI(BaseAI):
     def decide_direction(self):
         # explore the optimal direction from all possible directions
-        head = self.game.player.bodies[0]
-        possible_directions = ['E', 'W', 'N', 'S']
+        bodies = self.game.player.bodies
+        head = bodies[0]
         best_direction = None
-        min_distance = float('inf')
+        min_distance = maxsize
 
-        for direction in possible_directions:
-            offset = DIR_OFFSET_DICT[direction]
+        for direction, offset in DIR_OFFSET_DICT.items():
             next_position = (head[0] + offset[0], head[1] + offset[1])
             if not self.game.is_in_bound(next_position):
                 continue

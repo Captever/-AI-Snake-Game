@@ -10,7 +10,7 @@ class AIManager:
         self.ai_list["Rule-based-Smaller"] = RuleBasedAI("priority-smaller")
         self.ai_list["Rule-based-Larger"] = RuleBasedAI("priority-larger")
         self.ai_list["Rule-based-Maximalism"] = RuleBasedAI("maximalism")
-        self.ai_list["Greedy-algorithm"] = GreedyAI
+        self.ai_list["Greedy-algorithm"] = GreedyAI()
     
     def get_ai_list(self) -> List[str]:
         return self.ai_list.keys()
