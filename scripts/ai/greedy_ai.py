@@ -14,7 +14,7 @@ class GreedyAI(BaseAI):
 
         for direction, offset in DIR_OFFSET_DICT.items():
             next_position = (head[0] + offset[0], head[1] + offset[1])
-            if not self.game.is_in_bound(next_position):
+            if (not self.game.is_in_bound(next_position)) or (next_position in bodies):
                 continue
 
             for feed in self.game.fs.feeds:
