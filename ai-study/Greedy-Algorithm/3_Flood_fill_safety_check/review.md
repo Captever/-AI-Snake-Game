@@ -1,0 +1,2 @@
+The average score has increased significantly, and the variance between epochs has decreased. However, there doesn't seem to be a significant improvement in achieving a clear.
+-> Modify the decision-making process to assign weights to safety scores among valid directions and reflect both the distance to the feed and the safety score when determining the optimal direction.
