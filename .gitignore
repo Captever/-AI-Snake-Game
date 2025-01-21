@@ -164,3 +164,4 @@ cython_debug/
 # custom
 design/for_exporting.pptx
 *.mp4
+documents/youtube/*
