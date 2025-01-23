@@ -152,8 +152,8 @@ class AI_Pilot_Game:
         if state in [GameState.CLEAR, GameState.GAMEOVER]:
             self.scene.add_score_to_statistics(self.sm.get_score())
 
+            self.epoch_count += 1
             if not self.is_epoch_completed():
-                self.epoch_count += 1
                 self.restart_game()
             else:
                 self.epoch_count = 0
