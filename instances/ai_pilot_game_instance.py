@@ -150,14 +150,13 @@ class AI_Pilot_Game:
         self.state = state
 
         if state in [GameState.CLEAR, GameState.GAMEOVER]:
-            self.scene.add_score_to_statistics(self.sm.get_score())
+            self.scene.add_score_to_figure(self.epoch_count + 1, self.sm.get_score())
 
             self.epoch_count += 1
             if not self.is_epoch_completed():
                 self.restart_game()
             else:
                 self.epoch_count = 0
-                self.scene.plot_scores()
 
     def handle_events(self, events):
         for event in events:

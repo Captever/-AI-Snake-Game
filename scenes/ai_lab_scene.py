@@ -3,6 +3,7 @@ import pygame
 from constants import *
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 
 from scripts.scene_manager import Scene
 from scripts.ui_components import UILayout, RelativeRect
@@ -24,11 +25,10 @@ class AILabScene(Scene):
         self.ai_manager: AIManager = AIManager()
         self.ai = None
         self.target_ai_name = None
-
-        self.fig, self.ax = plt.subplots()
-        self.scores = []
         
         self.ui_state = CONFIG
+
+        self.fig, self.ax = None, None
 
         self.config_layout = self.create_config_layout()
 
@@ -52,7 +52,7 @@ class AILabScene(Scene):
         self.add_ai_init_layout(layout)
 
         layout.add_button(RelativeRect(0.2, 0.75, 0.25, 0.1), "Start", self.start_game)
-        layout.add_button(RelativeRect(0.55, 0.75, 0.25, 0.1), "Cancel", self.activate_main_scene)
+        layout.add_button(RelativeRect(0.55, 0.75, 0.25, 0.1), "Cancel", self.return_to_main_scene)
 
         return layout
 
@@ -96,6 +96,27 @@ class AILabScene(Scene):
         self.game = AI_Pilot_Game(self, self.ai, self.player_move_delay, grid_size, feed_amount, clear_goal, self.epoch_num)
         self.ai.set_current_game(self.game)
 
+    def init_plt(self):
+        plt.ion()
+
+        self.fig, self.ax = plt.subplots()
+        self.epochs = []
+        self.scores = []
+        self.average_scores = []
+
+        self.plot_scores, = self.ax.plot([], [], label="Scores", marker='o')
+        self.plot_average_scores, = self.ax.plot([], [], label="Average Score", linestyle='--')
+
+        self.ax.set_xlabel("Epochs")
+        self.ax.set_ylabel("Score")
+
+        self.ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        self.ax.tick_params(axis='x', which='minor', bottom=False)
+        self.ax.legend()
+
+        self.fig.canvas.draw()
+        self.fig.show()
+
     def handle_events(self, events):
         super().handle_events(events)
         
@@ -118,6 +139,7 @@ class AILabScene(Scene):
         game_settings = self.config_layout.get_scrollbar_values()
         self.initialize_ai()
         self.initialize_game(game_settings)
+        self.init_plt()
         self.set_ui_state(IN_GAME)
     
     def restart_new_game(self):
@@ -129,26 +151,24 @@ class AILabScene(Scene):
         ai_layout.update_radio_selection(ai_name)
         self.target_ai_name = ai_name
     
-    def activate_main_scene(self):
+    def return_to_main_scene(self):
+        if self.fig is not None:
+            plt.close(self.fig)
         self.manager.set_active_scene("MainScene")
     
-    def add_score_to_statistics(self, score: int):
+    def add_score_to_figure(self, epoch: int, score: int):
+        self.epochs.append(epoch)
         self.scores.append(score)
-    
-    def plot_scores(self):
-        epochs, average_scores = [], []
+        self.average_scores.append(sum(self.scores) / len(self.scores))
 
-        for i in range(len(self.scores)):
-            epochs.append(i + 1)
-            average_scores.append(sum(self.scores[:i+1]) / (i + 1))
+        self.plot_scores.set_data(self.epochs, self.scores)
+        self.plot_average_scores.set_data(self.epochs, self.average_scores)
 
-        self.ax.plot(epochs, self.scores, label="Scores", marker='o')
-        self.ax.plot(epochs, average_scores, label="Average score", marker='--')
+        self.ax.relim()
+        self.ax.autoscale_view()
 
-        self.ax.set_xlabel("Epochs")
-        self.ax.set_ylabel("Score")
-
-        plt.show()
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
     def update(self):
         ui_state = self.get_ui_state()
