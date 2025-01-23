@@ -122,9 +122,10 @@ class Player:
         self.bodies = [new_head] + self.bodies[:-1]
     
     def eat_feed(self, tail_coord: Tuple[int, int], feed: 'Feed'):
-        self.game.update_score(1)
         self.bodies.append(tail_coord)
         self.game.remove_feed(feed.coord)
+
+        self.game.update_score(1)
     
     def render(self):
         for body_coord in self.bodies:
