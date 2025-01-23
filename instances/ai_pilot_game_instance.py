@@ -31,6 +31,7 @@ class AI_Pilot_Game:
         self.epoch_count: int = 0
 
         self.move_accum: int = 0
+        self.curr_direction: str = None
         self.next_direction: str = None
 
         self.init_ui()
@@ -76,9 +77,6 @@ class AI_Pilot_Game:
 
         self.start_countdown(3000)
     
-    def surrender_game(self):
-        self.set_state(GameState.SURRENDER)
-    
     def restart_game(self):
         self.sm.reset_score()
         self.start_game()
@@ -86,13 +84,15 @@ class AI_Pilot_Game:
     def update(self):
         if self.is_active():
             self.move_sequence()
-        self.countdown()
+        else:
+            self.countdown()
 
-        if self.next_direction is None:
+        if self.player is not None and self.state in [GameState.ACTIVE, GameState.COUNTDOWN] and self.next_direction is None:
             self.next_direction = self.pilot_ai.decide_direction()
-            if self.next_direction == "surrender":
-                self.surrender_game()
-            else:
+            if self.next_direction == "surrender": # Maintain previous movement upon surrender
+                self.next_direction = self.curr_direction
+            else: # No need to reset when maintaining the same direction
+                self.curr_direction = self.next_direction
                 self.player.set_direction(self.next_direction)
 
     def move_sequence(self):
@@ -149,7 +149,7 @@ class AI_Pilot_Game:
     def set_state(self, state: GameState):
         self.state = state
 
-        if state in [GameState.CLEAR, GameState.GAMEOVER, GameState.SURRENDER]:
+        if state in [GameState.CLEAR, GameState.GAMEOVER]:
             self.scene.add_score_to_statistics(self.sm.get_score())
 
             if not self.is_epoch_completed():
@@ -164,7 +164,7 @@ class AI_Pilot_Game:
             if event.type == pygame.KEYDOWN:
                 self.handle_keydown(event.key)
         
-        if self.state in [GameState.GAMEOVER, GameState.CLEAR, GameState.SURRENDER]:
+        if self.state in [GameState.GAMEOVER, GameState.CLEAR]:
             self.state_layout.handle_events(events)
     
     def handle_keydown(self, key):
@@ -181,7 +181,7 @@ class AI_Pilot_Game:
         self.fs.render()
         self.map.render(surf, self.origin)
         self.sm.render(surf, self.score_offset)
-        if self.state in [GameState.PAUSED, GameState.CLEAR, GameState.GAMEOVER, GameState.COUNTDOWN, GameState.SURRENDER]:
+        if self.state in [GameState.PAUSED, GameState.CLEAR, GameState.GAMEOVER, GameState.COUNTDOWN]:
             if self.state == GameState.PAUSED:
                 centered_font_content = "PAUSED"
             elif self.state == GameState.CLEAR:
@@ -189,9 +189,6 @@ class AI_Pilot_Game:
                 self.state_layout.render(surf)
             elif self.state == GameState.GAMEOVER:
                 centered_font_content = "GAME OVER"
-                self.state_layout.render(surf)
-            elif self.state == GameState.SURRENDER:
-                centered_font_content = "SURRENDER"
                 self.state_layout.render(surf)
             elif self.state == GameState.COUNTDOWN:
                 centered_font_content = str(round(self.countdown_remaining_time, 1))
