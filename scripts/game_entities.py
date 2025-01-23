@@ -90,7 +90,7 @@ class Player:
         # restrict movement towards walls or the neck direction
         return self.game.is_in_bound(neck) and neck != self.bodies[1]
         
-    def check_collision(self, target) -> int:
+    def check_collision(self, target):
         return self.game.check_collision(target)
     
     def is_body_collision(self, coord: Tuple[int, int]) -> bool:
@@ -175,6 +175,9 @@ class FeedSystem:
         self.game.state_manager.mark_cell_used(coord)
     
     def add_feed_random_coord(self, k: int, feed_type: str = 'normal'):
+        if k < 1:
+            return
+
         random_cell_coords = self.game.state_manager.get_random_available_cells(k)
 
         if not len(random_cell_coords):
