@@ -12,7 +12,7 @@ class Map:
 
         self.outerline: Outerline = None
 
-        self.grid_num = self.game.state_manager.get_grid_num()
+        self.grid_num = self.game.grid_size
 
         # divide by grid height for vertical rect, grid width for horizontal rect
         grid_diff = self.grid_num[0] - self.grid_num[1]

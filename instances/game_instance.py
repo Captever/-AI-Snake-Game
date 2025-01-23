@@ -23,7 +23,7 @@ class Game:
         self.running: bool = False
         self.player: Player = None
         self.fs: FeedSystem = None
-        self.state_manager: GameStateManager = GameStateManager(self.grid_size)
+        self.state_manager: GameStateManager = None
         
         self.move_accum: int = 0
 
@@ -63,6 +63,7 @@ class Game:
         return layout
 
     def start_game(self):
+        self.state_manager = GameStateManager(self.grid_size)
         self.player = Player(self, INIT_LENGTH)
         self.fs = FeedSystem(self, self.feed_amount)
         self.fs.add_feed_random_coord(self.feed_amount)
