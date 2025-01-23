@@ -2,6 +2,8 @@ import pygame
 
 from constants import *
 
+import matplotlib.pyplot as plt
+
 from scripts.scene_manager import Scene
 from scripts.ui_components import UILayout, RelativeRect
 from scripts.ai_manager import AIManager
@@ -22,6 +24,9 @@ class AILabScene(Scene):
         self.ai_manager: AIManager = AIManager()
         self.ai = None
         self.target_ai_name = None
+
+        self.fig, self.ax = plt.subplots()
+        self.scores = []
         
         self.ui_state = CONFIG
 
@@ -58,9 +63,10 @@ class AILabScene(Scene):
 
         game_init_layout.add_scrollbar(RelativeRect(0, 0, 0.45, 0.15), "Grid Width", 5, 20, 5)
         game_init_layout.add_scrollbar(RelativeRect(0.55, 0, 0.45, 0.15), "Grid Height", 5, 20, 5)
-        game_init_layout.add_scrollbar(RelativeRect(0, 0.28, 1, 0.15), "Player Speed", 1, 10, 9)
-        game_init_layout.add_scrollbar(RelativeRect(0, 0.56, 1, 0.15), "Feed Amount", 1, 5, 3)
-        game_init_layout.add_scrollbar(RelativeRect(0, 0.84, 1, 0.15), "Clear Goal (%)", 50, 100, 90)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0.28, 0.45, 0.15), "Player Speed", 1, 10, 9)
+        game_init_layout.add_scrollbar(RelativeRect(0.55, 0.28, 0.45, 0.15), "Feed Amount", 1, 5, 3)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0.56, 1, 0.15), "Clear Goal (%)", 50, 100, 90)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0.84, 1, 0.15), "Epoch", 1, 30, 10)
 
     def add_ai_init_layout(self, parent_layout: UILayout):
         ai_init_layout_name = "ai_init"
@@ -86,7 +92,8 @@ class AILabScene(Scene):
         self.player_move_delay = MOVE_DELAY * (10 - player_speed + 1) # min: 1, max: 10
         feed_amount: int = int(settings['Feed Amount'])
         clear_goal: float = settings['Clear Goal (%)'] / 100.0
-        self.game = AI_Pilot_Game(self, self.ai, self.player_move_delay, grid_size, feed_amount, clear_goal)
+        self.epoch_num: int = settings['Epoch']
+        self.game = AI_Pilot_Game(self, self.ai, self.player_move_delay, grid_size, feed_amount, clear_goal, self.epoch_num)
         self.ai.set_current_game(self.game)
 
     def handle_events(self, events):
@@ -124,6 +131,24 @@ class AILabScene(Scene):
     
     def activate_main_scene(self):
         self.manager.set_active_scene("MainScene")
+    
+    def add_score_to_statistics(self, score: int):
+        self.scores.append(score)
+    
+    def plot_scores(self):
+        epochs, average_scores = [], []
+
+        for i in range(len(self.scores)):
+            epochs.append(i + 1)
+            average_scores.append(sum(self.scores[:i+1]) / (i + 1))
+
+        self.ax.plot(epochs, self.scores, label="Scores", marker='o')
+        self.ax.plot(epochs, average_scores, label="Average score", marker='--')
+
+        self.ax.set_xlabel("Epochs")
+        self.ax.set_ylabel("Score")
+
+        plt.show()
 
     def update(self):
         ui_state = self.get_ui_state()

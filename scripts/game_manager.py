@@ -116,6 +116,13 @@ class ScoreManager:
         self.title_font_offset = self.title_rect.topleft
         self.update_score_font()
     
+    def reset_score(self):
+        self.score = 0
+        self.update_score_font()
+
+    def get_score(self):
+        return self.score
+    
     def set_clear_condition(self, score: int):
         self.clear_condition = score
     

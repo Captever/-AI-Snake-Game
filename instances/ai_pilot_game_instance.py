@@ -13,13 +13,14 @@ from scripts.ai.base_ai import BaseAI
 from typing import Tuple
 
 class AI_Pilot_Game:
-    def __init__(self, scene, pilot_ai: BaseAI, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
+    def __init__(self, scene, pilot_ai: BaseAI, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float, epoch_num: int):
         self.scene = scene
         self.pilot_ai: BaseAI = pilot_ai
         self.player_move_delay: int = player_move_delay
         self.grid_size: Tuple[int, int] = grid_size
         self.feed_amount: int = feed_amount
         self.clear_goal: float = clear_goal
+        self.epoch_set_num: int = epoch_num
 
         self.state: GameState = None
         self.clock: pygame.time.Clock = pygame.time.Clock()
@@ -27,6 +28,7 @@ class AI_Pilot_Game:
         self.player: Player = None
         self.fs: FeedSystem = None
         self.state_manager: GameStateManager = GameStateManager(self.grid_size)
+        self.epoch_count: int = 0
 
         self.move_accum: int = 0
         self.next_direction: str = None
@@ -71,12 +73,14 @@ class AI_Pilot_Game:
         self.fs = FeedSystem(self, self.feed_amount)
         self.fs.add_feed_random_coord(self.feed_amount)
 
-        self.score: int = 0
-
         self.start_countdown(3000)
     
     def surrender_game(self):
         self.set_state(GameState.SURRENDER)
+    
+    def restart_game(self):
+        self.sm.reset_score()
+        self.start_game()
 
     def update(self):
         if self.is_active():
@@ -121,6 +125,9 @@ class AI_Pilot_Game:
     def is_in_bound(self, coord) -> bool:
         return self.map.is_inside(coord)
 
+    def is_epoch_completed(self) -> bool:
+        return self.epoch_set_num == self.epoch_count
+
     def check_collision(self, coord):
         if not self.is_in_bound(coord):
             return 'wall', None
@@ -140,6 +147,16 @@ class AI_Pilot_Game:
 
     def set_state(self, state: GameState):
         self.state = state
+
+        if state in [GameState.CLEAR, GameState.GAMEOVER, GameState.SURRENDER]:
+            self.scene.add_score_to_statistics(self.sm.get_score())
+
+            if not self.is_epoch_completed():
+                self.epoch_count += 1
+                self.restart_game()
+            else:
+                self.epoch_count = 0
+                self.scene.plot_scores()
 
     def handle_events(self, events):
         for event in events:
