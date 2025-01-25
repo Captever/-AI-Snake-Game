@@ -65,8 +65,8 @@ class AILabScene(Scene):
         game_init_layout.add_scrollbar(RelativeRect(0.55, 0, 0.45, 0.15), "Grid Height", 5, 20, 5)
         game_init_layout.add_scrollbar(RelativeRect(0, 0.28, 0.45, 0.15), "Player Speed", 1, 10, 9)
         game_init_layout.add_scrollbar(RelativeRect(0.55, 0.28, 0.45, 0.15), "Feed Amount", 1, 5, 3)
-        game_init_layout.add_scrollbar(RelativeRect(0, 0.56, 1, 0.15), "Clear Goal (%)", 50, 100, 90)
-        game_init_layout.add_scrollbar(RelativeRect(0, 0.84, 1, 0.15), "Epoch", 1, 30, 10)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0.56, 1, 0.15), "Clear Goal (%)", 50, 100, 90, 5)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0.84, 1, 0.15), "Epoch", 5, 100, 10, 5)
 
     def add_ai_init_layout(self, parent_layout: UILayout):
         ai_init_layout_name = "ai_init"

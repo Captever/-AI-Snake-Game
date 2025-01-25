@@ -1,6 +1,7 @@
 import pygame
 
 import re
+import warnings
 
 from constants import *
 
@@ -78,11 +79,11 @@ class UILayout:
 
         self.elements.append(button)
 
-    def add_scrollbar(self, relative_rect: RelativeRect, text: str, min_val: int, max_val: int, initial_val: int):
+    def add_scrollbar(self, relative_rect: RelativeRect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1):
         """
         Add a scroll bar to the layout with its relative position.
         """
-        scrollbar = ScrollBar(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, min_val, max_val, initial_val)
+        scrollbar = ScrollBar(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, min_val, max_val, default_val, val_step)
 
         self.elements.append(scrollbar)
     
@@ -199,13 +200,47 @@ class Button:
             surf.blit(text_surf, text_rect)
 
 class ScrollBar:
-    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, min_val: int, max_val: int, initial_val: int):
+    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1):
+        # handling exception
+        if (min_val > max_val) or (default_val < min_val) or (default_val > max_val):
+            error_param = []
+
+            if min_val > max_val:
+                error_param.append("min_val > max_val")
+            if default_val < min_val:
+                error_param.append("default_val < min_val")
+            if default_val > max_val:
+                error_param.append("default_val > max_val")
+
+            error_message = f"Scrollbar({text}) value error: {' / '.join(error_param)}"
+
+            raise ValueError(error_message)
+
+        # handling warning
+        if (min_val % val_step) or (max_val % val_step) or (default_val % val_step):
+            warn_param = []
+
+            if min_val % val_step:
+                min_val = (min_val // val_step) * val_step
+                warn_param.append("min_val")
+            if max_val % val_step:
+                max_val = (max_val // val_step + 1) * val_step
+                warn_param.append("max_val")
+            if default_val % val_step:
+                default_val = (default_val // val_step) * val_step
+                warn_param.append("default_val")
+
+            warn_message = f"Scrollbar({text}) value warning: items({', '.join(warn_param)}) does not align with the value step."
+            
+            warnings.warn(warn_message, UserWarning)
+
         self.rect: pygame.Rect = pygame.Rect(rect)
         self.abs_pos: Tuple[int, int] = tuple(parent_abs_pos[i] + rect.topleft[i] for i in [0, 1])
         self.text: str = text
         self.min_val: int = min_val
         self.max_val: int = max_val
-        self.value: int = initial_val
+        self.value: int = default_val
+        self.val_step: int = val_step
         self.bar_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height * (1.0 - UI_SCROLLBAR["bar_ratio"]), self.rect.width, self.rect.height * UI_SCROLLBAR["bar_ratio"])
         self.handle_rect = pygame.Rect((self.bar_rect.topleft) + (self.bar_rect.width * 0.05, self.bar_rect.height))
         self.update_handle()
@@ -235,8 +270,11 @@ class ScrollBar:
         elif event.type == pygame.MOUSEBUTTONUP:
             self.dragging = False
         elif event.type == pygame.MOUSEMOTION and getattr(self, "dragging", False):
-            rel_x = event.pos[0] - self.abs_pos[0]
-            self.value = max(self.min_val, min(self.max_val, round(self.min_val + (rel_x / self.rect.width) * (self.max_val - self.min_val))))
+            relative_x = event.pos[0] - self.abs_pos[0]
+            percentile_val: float = relative_x / self.rect.width
+            range_count = self.max_val - self.min_val
+            step_count: int = round(percentile_val * range_count / self.val_step) * self.val_step // self.val_step
+            self.value = max(self.min_val, min(self.max_val, step_count * self.val_step + self.min_val))
             self.update_handle()
 
     def render(self, surf: pygame.Surface):
