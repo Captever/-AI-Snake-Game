@@ -86,7 +86,7 @@ class AIPilotGame:
 
         layout: UILayout = UILayout((0, 0), pygame.Rect(layout_pos + layout_size), (0, 0, 0, 0))
 
-        layout.add_scrollbar(RelativeRect(0, 0, 1, 0.4), "Additional Epoch", 5, 100, 10, 5)
+        layout.add_scrollbar(RelativeRect(0, 0, 1, 0.4), "Additional Epoch", 20, 500, 100, 20)
         layout.add_button(RelativeRect(0.05, 0.6, 0.4, 0.4), "Resume", self.resume_game_at_epoch)
         layout.add_button(RelativeRect(0.55, 0.6, 0.4, 0.4), "Back", partial(self.set_to_resume, False))
 
