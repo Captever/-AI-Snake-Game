@@ -2,6 +2,7 @@ from typing import Dict, List
 
 from scripts.ai.rule_based_ai import RuleBasedAI
 from scripts.ai.greedy_ai import GreedyAI
+from scripts.ai.q_learning import QLearningAI
 
 class AIManager:
     def __init__(self):
@@ -11,6 +12,7 @@ class AIManager:
         self.ai_list["Rule-based-Larger"] = RuleBasedAI("priority-larger")
         self.ai_list["Rule-based-Maximalism"] = RuleBasedAI("maximalism")
         self.ai_list["Greedy-algorithm"] = GreedyAI()
+        self.ai_list["Q-Learning"] = QLearningAI()
     
     def get_ai_list(self) -> List[str]:
         return self.ai_list.keys()

@@ -16,6 +16,8 @@ from scripts.manager.game_manager import GameState
 from typing import Tuple
 from functools import partial
 
+from scripts.ai.q_learning import QLearningAI
+
 class AIPilotGame:
     def __init__(self, scene, pilot_ai: BaseAI, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float, epoch_num: int):
         self.scene = scene
@@ -181,7 +183,11 @@ class AIPilotGame:
     def set_state(self, state: GameState):
         self.state = state
 
-        if state in [GameState.CLEAR, GameState.GAMEOVER]:
+        if state == GameState.CLEAR:
+            self.handle_game_end()
+        elif state == GameState.GAMEOVER:
+            if isinstance(self.pilot_ai, QLearningAI):
+                self.pilot_ai.learn(-1, None)
             self.handle_game_end()
     
     def handle_game_end(self):
