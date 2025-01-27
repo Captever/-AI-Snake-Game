@@ -38,7 +38,7 @@ class QLearningAI(BaseAI):
         feeds = self.game.fs.feeds
 
         state = self.get_state(head, feeds)
-        score = self.game.sm.get_score()
+        score = self.game.score
         action = self.agent.choose_action(state)
 
         if self.last_state is not None:

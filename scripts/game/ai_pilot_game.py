@@ -5,9 +5,10 @@ from constants import *
 
 from scripts.ui.ui_components import UILayout, RelativeRect
 from scripts.ui.map_structure import Map
+from scripts.ui.score_board import ScoreBoard, AvgScoreBoard
+from scripts.ui.epoch_board import EpochBoard
 from scripts.entity.player import Player
 from scripts.entity.feed_system import FeedSystem
-from scripts.manager.score_manager import ScoreManager
 from scripts.manager.cell_manager import CellManager
 
 from scripts.ai.base_ai import BaseAI
@@ -25,7 +26,7 @@ class AIPilotGame:
         self.player_move_delay: int = player_move_delay
         self.grid_size: Tuple[int, int] = grid_size
         self.feed_amount: int = feed_amount
-        self.clear_goal: float = clear_goal
+        self.clear_condition: int = round(self.grid_size[0] * self.grid_size[1] * clear_goal) - INIT_LENGTH
         self.epoch_set_num: int = epoch_num
 
         self.state: GameState = None
@@ -34,6 +35,7 @@ class AIPilotGame:
         self.player: Player = None
         self.fs: FeedSystem = None
         self.cell_manager: CellManager = None
+        self.score: int = 0
         self.epoch_count: int = 0
 
         self.to_resume: bool = False # TODO: Include it in the mode when expanding modes to a global concept
@@ -42,6 +44,8 @@ class AIPilotGame:
         self.curr_direction: str = None
         self.next_direction: str = None
 
+        self.boards = {}
+
         self.init_ui()
 
         self.start_game()
@@ -49,17 +53,24 @@ class AIPilotGame:
     def init_ui(self):
         if IS_LANDSCAPE:
             map_side_length = (SCREEN_WIDTH // 2)
-            self.sm = ScoreManager(self, (SCREEN_WIDTH // 4, SCREEN_HEIGHT), map_side_length * FONT_SIZE_RATIO, WHITE)
-            self.score_offset = (SCREEN_WIDTH * 0.75, 0)
+            board_size = (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 3.5)
+            board_offset = (SCREEN_WIDTH * 0.75, 0)
+            board_margin = (0, SCREEN_HEIGHT * 0.3)
         else:
             map_side_length = SCREEN_WIDTH
-            self.sm = ScoreManager(self, (SCREEN_WIDTH, SCREEN_HEIGHT // 4), map_side_length * FONT_SIZE_RATIO, WHITE)
-            self.score_offset = (0, SCREEN_HEIGHT * 0.75)
-        self.sm.set_clear_condition(round(self.grid_size[0] * self.grid_size[1] * self.clear_goal) - INIT_LENGTH)
+            board_size = (SCREEN_WIDTH // 3.5, SCREEN_HEIGHT // 4)
+            board_offset = (0, SCREEN_HEIGHT * 0.75)
+            board_margin = (SCREEN_WIDTH * 0.3, 0)
+        board_font_weight = map_side_length * FONT_SIZE_RATIO
         self.map_origin = (SCREEN_WIDTH // 2 - map_side_length // 2, SCREEN_HEIGHT // 2 - map_side_length // 2)
 
         self.map = Map(self, map_side_length, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
         self.map.add_outerline(MAP_OUTERLINE_THICKNESS, WHITE)
+
+        for idx, (board_name, board_context) in enumerate([("score", ScoreBoard), ("epoch", EpochBoard), ("avg_score", AvgScoreBoard)]):
+            additional_offset = (board_margin[0] * idx, board_margin[1] * idx)
+            curr_board_offset = (board_offset[0] + additional_offset[0], board_offset[1] + additional_offset[1])
+            self.boards[board_name] = board_context(board_size, board_font_weight, WHITE, curr_board_offset)
 
         self.centered_font_size = round(map_side_length * FONT_SIZE_RATIO * 3.5)
         self.centered_font = pygame.font.SysFont('consolas', self.centered_font_size, bold=True)
@@ -86,7 +97,7 @@ class AIPilotGame:
 
         layout: UILayout = UILayout((0, 0), pygame.Rect(layout_pos + layout_size), (0, 0, 0, 0))
 
-        layout.add_scrollbar(RelativeRect(0, 0, 1, 0.4), "Additional Epoch", 20, 500, 100, 20)
+        layout.add_scrollbar(RelativeRect(0, 0, 1, 0.4), "Additional Epoch", 200, 5000, 1000, 200)
         layout.add_button(RelativeRect(0.05, 0.6, 0.4, 0.4), "Resume", self.resume_game_at_epoch)
         layout.add_button(RelativeRect(0.55, 0.6, 0.4, 0.4), "Back", partial(self.set_to_resume, False))
 
@@ -113,7 +124,8 @@ class AIPilotGame:
         self.restart_game()
     
     def restart_game(self):
-        self.sm.reset_score()
+        self.score = 0
+        self.boards["score"].update_score(self.score)
         self.start_game()
 
     def update(self):
@@ -165,7 +177,11 @@ class AIPilotGame:
         self.fs.remove_feed(coord)
 
     def update_score(self, amount: int = 1):
-        self.sm.update_score(amount)
+        self.score += amount
+        self.boards["score"].update_score(self.score)
+        
+        if self.clear_condition is not None and self.score >= self.clear_condition:
+            self.set_state(GameState.CLEAR)
 
     def set_state(self, state: GameState):
         self.state = state
@@ -178,9 +194,11 @@ class AIPilotGame:
             self.handle_game_end()
     
     def handle_game_end(self):
-        self.scene.add_score_to_figure(self.epoch_count + 1, self.sm.get_score())
+        self.scene.add_score_to_figure(self.epoch_count + 1, self.score)
 
         self.epoch_count += 1
+        self.boards["epoch"].update_epoch(self.epoch_count)
+        self.boards["avg_score"].update_avg_score(round(self.scene.get_last_average_score_last_100(), 3))
         if not self.is_epoch_completed():
             self.restart_game()
 
@@ -207,7 +225,8 @@ class AIPilotGame:
         self.player.render()
         self.fs.render()
         self.map.render(surf, self.map_origin)
-        self.sm.render(surf, self.score_offset)
+        for board_context in self.boards.values():
+            board_context.render(surf)
         
         if self.to_resume:
             self.resume_layout.render(surf)

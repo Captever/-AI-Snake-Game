@@ -68,7 +68,7 @@ class AILabScene(Scene):
         game_init_layout.add_scrollbar(RelativeRect(0, 0.28, 0.45, 0.15), "Player Speed", 1, 5, 5)
         game_init_layout.add_scrollbar(RelativeRect(0.55, 0.28, 0.45, 0.15), "Feed Amount", 1, 5, 3)
         game_init_layout.add_scrollbar(RelativeRect(0, 0.56, 1, 0.15), "Clear Goal (%)", 50, 100, 75, 5)
-        game_init_layout.add_scrollbar(RelativeRect(0, 0.84, 1, 0.15), "Epoch", 20, 500, 100, 20)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0.84, 1, 0.15), "Epoch", 200, 10000, 1000, 200)
 
     def add_ai_init_layout(self, parent_layout: UILayout):
         ai_init_layout_name = "ai_init"
@@ -99,15 +99,20 @@ class AILabScene(Scene):
         self.ai.set_current_game(self.game)
 
     def init_plt(self):
+        pixel_width = SCREEN_WIDTH
+        pixel_height = SCREEN_HEIGHT
+        dpi = 100  # dots per inch
+        
+        plt.figure(figsize=(pixel_width / dpi, pixel_height / dpi), dpi=dpi)
         plt.ion()
 
         self.fig, self.ax = plt.subplots()
         self.epochs = []
         self.scores = []
-        self.average_scores = []
+        self.average_score_last_100 = []
 
         self.plot_scores, = self.ax.plot([], [], label="Scores", marker='o')
-        self.plot_average_scores, = self.ax.plot([], [], label="Average Score", linestyle='--')
+        self.plot_average_scores, = self.ax.plot([], [], label="Average Score(Last 100)", linestyle='--')
 
         self.ax.set_xlabel("Epochs")
         self.ax.set_ylabel("Score")
@@ -161,16 +166,20 @@ class AILabScene(Scene):
     def add_score_to_figure(self, epoch: int, score: int):
         self.epochs.append(epoch)
         self.scores.append(score)
-        self.average_scores.append(sum(self.scores) / len(self.scores))
+        last_data_num = min(len(self.scores), 100)
+        self.average_score_last_100.append(sum(self.scores[-last_data_num:]) / last_data_num)
 
-        self.plot_scores.set_data(self.epochs, self.scores)
-        self.plot_average_scores.set_data(self.epochs, self.average_scores)
+        self.plot_scores.set_data(self.epochs[-last_data_num:], self.scores[-last_data_num:])
+        self.plot_average_scores.set_data(self.epochs[-last_data_num:], self.average_score_last_100[-last_data_num:])
 
         self.ax.relim()
         self.ax.autoscale_view()
 
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
+    
+    def get_last_average_score_last_100(self):
+        return self.average_score_last_100[-1]
 
     def update(self):
         ui_state = self.get_ui_state()

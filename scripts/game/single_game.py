@@ -5,9 +5,9 @@ from constants import *
 
 from scripts.ui.ui_components import UILayout, RelativeRect
 from scripts.ui.map_structure import Map
+from scripts.ui.score_board import ScoreBoard
 from scripts.entity.player import Player
 from scripts.entity.feed_system import FeedSystem
-from scripts.manager.score_manager import ScoreManager
 from scripts.manager.cell_manager import CellManager
 
 from scripts.manager.game_manager import GameState
@@ -20,7 +20,7 @@ class SingleGame:
         self.player_move_delay: int = player_move_delay
         self.grid_size: Tuple[int, int] = grid_size
         self.feed_amount: int = feed_amount
-        self.clear_goal: float = clear_goal
+        self.clear_condition: int = round(self.grid_size[0] * self.grid_size[1] * clear_goal) - INIT_LENGTH
 
         self.state: GameState = None
         self.clock: pygame.time.Clock = pygame.time.Clock()
@@ -28,8 +28,11 @@ class SingleGame:
         self.player: Player = None
         self.fs: FeedSystem = None
         self.cell_manager: CellManager = None
+        self.score: int = 0
         
         self.move_accum: int = 0
+
+        self.score_board: ScoreBoard = None
 
         self.init_ui()
 
@@ -38,17 +41,19 @@ class SingleGame:
     def init_ui(self):
         if IS_LANDSCAPE:
             map_side_length = (SCREEN_WIDTH // 2)
-            self.sm = ScoreManager(self, (SCREEN_WIDTH // 4, SCREEN_HEIGHT), map_side_length * FONT_SIZE_RATIO, WHITE)
-            self.score_offset = (SCREEN_WIDTH * 0.75, 0)
+            board_size = (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 3.5)
+            board_offset = (SCREEN_WIDTH * 0.75, 0)
         else:
             map_side_length = SCREEN_WIDTH
-            self.sm = ScoreManager(self, (SCREEN_WIDTH, SCREEN_HEIGHT // 4), map_side_length * FONT_SIZE_RATIO, WHITE)
-            self.score_offset = (0, SCREEN_HEIGHT * 0.75)
-        self.sm.set_clear_condition(round(self.grid_size[0] * self.grid_size[1] * self.clear_goal) - INIT_LENGTH)
+            board_size = (SCREEN_WIDTH // 3.5, SCREEN_HEIGHT // 4)
+            board_offset = (0, SCREEN_HEIGHT * 0.75)
+        board_font_weight = map_side_length * FONT_SIZE_RATIO
         self.map_origin = (SCREEN_WIDTH // 2 - map_side_length // 2, SCREEN_HEIGHT // 2 - map_side_length // 2)
 
         self.map = Map(self, map_side_length, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
         self.map.add_outerline(MAP_OUTERLINE_THICKNESS, WHITE)
+
+        self.score_board = ScoreBoard(board_size, board_font_weight, WHITE, board_offset)
 
         self.centered_font_size = round(map_side_length * FONT_SIZE_RATIO * 3.5)
         self.centered_font = pygame.font.SysFont('consolas', self.centered_font_size, bold=True)
@@ -71,8 +76,6 @@ class SingleGame:
         self.player = Player(self, INIT_LENGTH)
         self.fs = FeedSystem(self, self.feed_amount)
         self.fs.add_feed_random_coord(self.feed_amount)
-
-        self.score: int = 0
 
         self.start_countdown(3000)
 
@@ -126,7 +129,11 @@ class SingleGame:
         self.fs.remove_feed(coord)
 
     def update_score(self, amount: int = 1):
-        self.sm.update_score(amount)
+        self.score += amount
+        self.score_board.update_score(self.score)
+        
+        if self.clear_condition is not None and self.score >= self.clear_condition:
+            self.set_state(GameState.CLEAR)
 
     def set_state(self, state: GameState):
         self.state = state
@@ -182,7 +189,7 @@ class SingleGame:
         self.player.render()
         self.fs.render()
         self.map.render(surf, self.map_origin)
-        self.sm.render(surf, self.score_offset)
+        self.score_board.render(surf)
         if self.state in [GameState.PAUSED, GameState.CLEAR, GameState.GAMEOVER, GameState.COUNTDOWN]:
             if self.state == GameState.PAUSED:
                 centered_font_content = "PAUSED"
