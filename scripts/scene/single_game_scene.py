@@ -2,21 +2,21 @@ import pygame
 
 from constants import *
 
-from scripts.scene_manager import Scene
-from scripts.ui_components import UILayout, RelativeRect
+from .base_scene import Scene
+from scripts.ui.ui_components import UILayout, RelativeRect
 
 from typing import Tuple, Dict
 
-from scripts.instances.game_instance import Game
+from scripts.game.single_game import SingleGame
 
 # UI state
 CONFIG = "config"
 IN_GAME = "in_game"
 
-class GameScene(Scene):
+class SingleGameScene(Scene):
     def __init__(self, manager):
         super().__init__(manager)
-        self.game = None
+        self.game: SingleGame = None
         
         self.ui_state = CONFIG
 
@@ -61,7 +61,7 @@ class GameScene(Scene):
         move_delay = MOVE_DELAY * (10 - player_speed + 1) # min: 1, max: 10
         feed_amount: int = int(settings['Feed Amount'])
         clear_goal: float = settings['Clear Goal (%)'] / 100.0
-        self.game = Game(self, move_delay, grid_size, feed_amount, clear_goal)
+        self.game = SingleGame(self, move_delay, grid_size, feed_amount, clear_goal)
 
     def handle_events(self, events):
         super().handle_events(events)

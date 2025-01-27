@@ -1,5 +1,4 @@
 import pygame
-from random import sample
 
 from constants import *
 

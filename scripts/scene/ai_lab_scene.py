@@ -5,11 +5,11 @@ from constants import *
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
-from scripts.scene_manager import Scene
-from scripts.ui_components import UILayout, RelativeRect
-from scripts.ai_manager import AIManager
+from .base_scene import Scene
+from scripts.ui.ui_components import UILayout, RelativeRect
+from scripts.manager.ai_manager import AIManager
 
-from scripts.instances.ai_pilot_game_instance import AI_Pilot_Game
+from scripts.game.ai_pilot_game import AIPilotGame
 
 from typing import Tuple, Dict, List
 from functools import partial
@@ -22,7 +22,7 @@ class AILabScene(Scene):
     def __init__(self, manager):
         super().__init__(manager)
 
-        self.game: AI_Pilot_Game = None
+        self.game: AIPilotGame = None
 
         self.ai_manager: AIManager = AIManager()
         self.ai = None
@@ -95,7 +95,7 @@ class AILabScene(Scene):
         feed_amount: int = int(settings['Feed Amount'])
         clear_goal: float = settings['Clear Goal (%)'] / 100.0
         self.epoch_num: int = settings['Epoch']
-        self.game = AI_Pilot_Game(self, self.ai, self.player_move_delay, grid_size, feed_amount, clear_goal, self.epoch_num)
+        self.game = AIPilotGame(self, self.ai, self.player_move_delay, grid_size, feed_amount, clear_goal, self.epoch_num)
         self.ai.set_current_game(self.game)
 
     def init_plt(self):

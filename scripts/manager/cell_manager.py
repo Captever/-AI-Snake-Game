@@ -1,21 +1,9 @@
-import pygame
-from enum import Enum
 from random import sample
 from typing import Tuple, Set, List
 
-class GameState(Enum):
-    # IN GAME
-    ACTIVE = 100
-    COUNTDOWN = 101
-    PAUSED = 102
-    SURRENDER = 103
-    GAMEOVER = 110
-    CLEAR = 109
-
-class GameStateManager:
+class CellManager:
     """
-    Centralized data manager for the game's state.
-    Manages grid size, available cells, and provides utility methods for coordinate management.
+    Manages grid size, available cells.
     """
     def __init__(self, grid_num: Tuple[int, int]):
         """
@@ -91,55 +79,3 @@ class GameStateManager:
         self.available_cells = set(
             (x, y) for x in range(self.grid_num[0]) for y in range(self.grid_num[1])
         )
-
-class ScoreManager:
-    def __init__(self, game, size: Tuple[int, int], font_weight: int, font_color):
-        self.game = game
-        self.size = size
-        self.surf = pygame.Surface(size, pygame.SRCALPHA)
-        self.font_weight = font_weight
-        self.font_color = font_color
-
-        self.score: int = 0
-        self.clear_condition: int = None
-
-        self.init_font_surfs()
-
-    def init_font_surfs(self):
-        self.title_font = pygame.font.SysFont('consolas', round(self.font_weight * 1.25), bold=True)
-        self.score_font = pygame.font.SysFont('consolas', round(self.font_weight * 0.9))
-        
-        self.centered_origin = (self.size[0] * 0.5, self.size[1] * 0.1)
-
-        self.title_surf = self.title_font.render("Score", True, self.font_color)
-        self.title_rect = self.title_surf.get_rect(centerx = self.centered_origin[0], y = self.centered_origin[1])
-        self.title_font_offset = self.title_rect.topleft
-        self.update_score_font()
-    
-    def reset_score(self):
-        self.score = 0
-        self.update_score_font()
-
-    def get_score(self):
-        return self.score
-    
-    def set_clear_condition(self, score: int):
-        self.clear_condition = score
-    
-    def update_score(self, amount: int):
-        self.score += amount
-        self.update_score_font()
-        if self.clear_condition is not None and self.score >= self.clear_condition:
-            self.game.set_state(GameState.CLEAR)
-    
-    def update_score_font(self):
-        self.score_surf = self.score_font.render(str(self.score), True, self.font_color)
-        self.score_rect = self.score_surf.get_rect(centerx = self.centered_origin[0], y = self.centered_origin[1] + self.title_rect.height * 1.1)
-        self.score_font_offset = self.score_rect.topleft
-
-    def render(self, surf, offset: Tuple[int, int] = (0, 0)):
-        self.surf.fill((0, 0, 0, 0))
-        self.surf.blit(self.title_surf, self.title_font_offset)
-        self.surf.blit(self.score_surf, self.score_font_offset)
-
-        surf.blit(self.surf, offset)

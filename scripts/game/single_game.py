@@ -3,36 +3,33 @@ import sys
 
 from constants import *
 
-from scripts.ui_components import UILayout, RelativeRect
-from scripts.map_structure import Map
-from scripts.game_entities import Player, FeedSystem
-from scripts.game_manager import ScoreManager, GameState, GameStateManager
+from scripts.ui.ui_components import UILayout, RelativeRect
+from scripts.ui.map_structure import Map
+from scripts.entity.player import Player
+from scripts.entity.feed_system import FeedSystem
+from scripts.manager.score_manager import ScoreManager
+from scripts.manager.cell_manager import CellManager
 
-from scripts.ai.base_ai import BaseAI
+from scripts.manager.game_manager import GameState
 
 from typing import Tuple
 
-class AI_Pilot_Game:
-    def __init__(self, scene, pilot_ai: BaseAI, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float, epoch_num: int):
+class SingleGame:
+    def __init__(self, scene, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
         self.scene = scene
-        self.pilot_ai: BaseAI = pilot_ai
         self.player_move_delay: int = player_move_delay
         self.grid_size: Tuple[int, int] = grid_size
         self.feed_amount: int = feed_amount
         self.clear_goal: float = clear_goal
-        self.epoch_set_num: int = epoch_num
 
         self.state: GameState = None
         self.clock: pygame.time.Clock = pygame.time.Clock()
         self.running: bool = False
         self.player: Player = None
         self.fs: FeedSystem = None
-        self.state_manager: GameStateManager = None
-        self.epoch_count: int = 0
-
+        self.cell_manager: CellManager = None
+        
         self.move_accum: int = 0
-        self.curr_direction: str = None
-        self.next_direction: str = None
 
         self.init_ui()
 
@@ -70,36 +67,25 @@ class AI_Pilot_Game:
         return layout
 
     def start_game(self):
-        self.state_manager = GameStateManager(self.grid_size)
+        self.cell_manager = CellManager(self.grid_size)
         self.player = Player(self, INIT_LENGTH)
         self.fs = FeedSystem(self, self.feed_amount)
         self.fs.add_feed_random_coord(self.feed_amount)
 
+        self.score: int = 0
+
         self.start_countdown(3000)
-    
-    def restart_game(self):
-        self.sm.reset_score()
-        self.start_game()
 
     def update(self):
         if self.is_active():
             self.move_sequence()
-        else:
+        elif self.state == GameState.COUNTDOWN:
             self.countdown()
-
-        if self.player is not None and self.state in [GameState.ACTIVE, GameState.COUNTDOWN] and self.next_direction is None:
-            self.next_direction = self.pilot_ai.decide_direction()
-            if self.next_direction == "surrender": # Maintain previous movement upon surrender
-                self.next_direction = self.curr_direction
-            else: # No need to reset when maintaining the same direction
-                self.curr_direction = self.next_direction
-                self.player.set_direction(self.next_direction)
 
     def move_sequence(self):
         if self.move_accum >= self.player_move_delay:
             self.move_accum = 0
             self.player.move()
-            self.next_direction = None
         else:
             self.move_accum += 1
     
@@ -114,20 +100,16 @@ class AI_Pilot_Game:
         self.countdown_end_ticks = (pygame.time.get_ticks() + count_ms) / 1000.0
     
     def countdown(self):
-        if self.state == GameState.COUNTDOWN:
-            current_ticks = pygame.time.get_ticks() / 1000.0
-            self.countdown_remaining_time = max(0.0, self.countdown_end_ticks - current_ticks)
-            if not self.countdown_remaining_time:
-                self.set_state(GameState.ACTIVE)
+        current_ticks = pygame.time.get_ticks() / 1000.0
+        self.countdown_remaining_time = max(0.0, self.countdown_end_ticks - current_ticks)
+        if not self.countdown_remaining_time:
+            self.set_state(GameState.ACTIVE)
     
     def is_active(self) -> bool:
         return self.state == GameState.ACTIVE
     
     def is_in_bound(self, coord) -> bool:
         return self.map.is_inside(coord)
-
-    def is_epoch_completed(self) -> bool:
-        return self.epoch_set_num == self.epoch_count
 
     def check_collision(self, coord):
         if not self.is_in_bound(coord):
@@ -149,15 +131,6 @@ class AI_Pilot_Game:
     def set_state(self, state: GameState):
         self.state = state
 
-        if state in [GameState.CLEAR, GameState.GAMEOVER]:
-            self.scene.add_score_to_figure(self.epoch_count + 1, self.sm.get_score())
-
-            self.epoch_count += 1
-            if not self.is_epoch_completed():
-                self.restart_game()
-            else:
-                self.epoch_count = 0
-
     def handle_events(self, events):
         for event in events:
             if event.type == pygame.KEYDOWN:
@@ -167,11 +140,41 @@ class AI_Pilot_Game:
             self.state_layout.handle_events(events)
     
     def handle_keydown(self, key):
+        if self.is_active():
+            self.handle_active_keydown(key)
+        elif self.state == GameState.COUNTDOWN:
+            self.handle_countdown_keydown(key)
+        elif self.state == GameState.PAUSED:
+            self.handle_paused_keydown(key)
+    
+    def handle_active_keydown(self, key):
+        # handle keydown on active state
+        if key == pygame.K_UP:
+            self.player.set_direction('N')
+        elif key == pygame.K_DOWN:
+            self.player.set_direction('S')
+        elif key == pygame.K_LEFT:
+            self.player.set_direction('W')
+        elif key == pygame.K_RIGHT:
+            self.player.set_direction('E')
+        elif key == pygame.K_p:
+            self.set_state(GameState.PAUSED)
+    
+    def handle_paused_keydown(self, key):
+        # handle keydown on paused state
         if key == pygame.K_p:
-            if self.state == GameState.PAUSED:
-                self.state = GameState.ACTIVE
-            elif self.state == GameState.ACTIVE:
-                self.state = GameState.PAUSED
+            self.set_state(GameState.ACTIVE)
+    
+    def handle_countdown_keydown(self, key):
+        # handle keydown on countdown state
+        if key == pygame.K_UP:
+            self.player.set_direction('N')
+        elif key == pygame.K_DOWN:
+            self.player.set_direction('S')
+        elif key == pygame.K_LEFT:
+            self.player.set_direction('W')
+        elif key == pygame.K_RIGHT:
+            self.player.set_direction('E')
 
     def render(self, surf: pygame.Surface):
         surf.fill((0, 0, 0))

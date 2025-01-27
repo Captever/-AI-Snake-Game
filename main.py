@@ -3,10 +3,10 @@ import sys
 
 from constants import *
 
-from scripts.scene_manager import SceneManager
-from scenes.main_scene import MainScene
-from scenes.game_scene import GameScene
-from scenes.ai_lab_scene import AILabScene
+from scripts.manager.scene_manager import SceneManager
+from scripts.scene.main_scene import MainScene
+from scripts.scene.single_game_scene import SingleGameScene
+from scripts.scene.ai_lab_scene import AILabScene
 
 class Main:
     def __init__(self):
@@ -25,7 +25,7 @@ class Main:
 
         main_scene = MainScene(self.scene_manager)
         self.scene_manager.add_scene("MainScene", main_scene)
-        game_scene = GameScene(self.scene_manager)
+        game_scene = SingleGameScene(self.scene_manager)
         self.scene_manager.add_scene("GameScene", game_scene)
         ai_lab_scene = AILabScene(self.scene_manager)
         self.scene_manager.add_scene("AILabScene", ai_lab_scene)

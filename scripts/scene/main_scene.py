@@ -2,8 +2,8 @@ import pygame
 
 from constants import *
 
-from scripts.scene_manager import Scene
-from scripts.ui_components import UILayout, RelativeRect
+from .base_scene import Scene
+from scripts.ui.ui_components import UILayout, RelativeRect
 
 from typing import Tuple
 
