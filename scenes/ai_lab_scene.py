@@ -9,12 +9,14 @@ from scripts.scene_manager import Scene
 from scripts.ui_components import UILayout, RelativeRect
 from scripts.ai_manager import AIManager
 
-from instances.ai_pilot_game_instance import AI_Pilot_Game
+from scripts.instances.ai_pilot_game_instance import AI_Pilot_Game
 
 from typing import Tuple, Dict, List
 from functools import partial
 
-CONFIG, IN_GAME = "config", "in_game"
+# UI state
+CONFIG = "config"
+IN_GAME = "in_game"
 
 class AILabScene(Scene):
     def __init__(self, manager):

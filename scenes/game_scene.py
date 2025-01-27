@@ -7,9 +7,11 @@ from scripts.ui_components import UILayout, RelativeRect
 
 from typing import Tuple, Dict
 
-from instances.game_instance import Game
+from scripts.instances.game_instance import Game
 
-CONFIG, IN_GAME = "config", "in_game"
+# UI state
+CONFIG = "config"
+IN_GAME = "in_game"
 
 class GameScene(Scene):
     def __init__(self, manager):
