@@ -44,7 +44,7 @@ class SingleGameScene(Scene):
 
         game_init_layout.add_scrollbar(RelativeRect(0, 0, 0.45, 0.15), "Grid Width", 5, 20, 5)
         game_init_layout.add_scrollbar(RelativeRect(0.55, 0, 0.45, 0.15), "Grid Height", 5, 20, 5)
-        game_init_layout.add_scrollbar(RelativeRect(0, 0.28, 1, 0.15), "Player Speed", 1, 10, 9)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0.28, 1, 0.15), "Player Speed", 1, 8, 5)
         game_init_layout.add_scrollbar(RelativeRect(0, 0.56, 1, 0.15), "Feed Amount", 1, 5, 3)
         game_init_layout.add_scrollbar(RelativeRect(0, 0.84, 1, 0.15), "Clear Goal (%)", 50, 100, 90)
 
@@ -58,7 +58,7 @@ class SingleGameScene(Scene):
         self.settings = settings
         grid_size: Tuple[int, int] = (int(settings['Grid Width']), int(settings['Grid Height']))
         player_speed: int = int(settings['Player Speed'])
-        move_delay = MOVE_DELAY * (10 - player_speed + 1) # min: 1, max: 10
+        move_delay = MOVE_DELAY * (10 - player_speed) # min: 2, max: 9
         feed_amount: int = int(settings['Feed Amount'])
         clear_goal: float = settings['Clear Goal (%)'] / 100.0
         self.game = SingleGame(self, move_delay, grid_size, feed_amount, clear_goal)

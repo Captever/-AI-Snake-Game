@@ -63,11 +63,11 @@ class AILabScene(Scene):
         parent_layout.add_layout(game_init_layout_name, RelativeRect(0.1, 0.1, 0.4, 0.5), (0, 0, 0, 0))
         game_init_layout = parent_layout.layouts[game_init_layout_name]
 
-        game_init_layout.add_scrollbar(RelativeRect(0, 0, 0.45, 0.15), "Grid Width", 5, 20, 5)
-        game_init_layout.add_scrollbar(RelativeRect(0.55, 0, 0.45, 0.15), "Grid Height", 5, 20, 5)
-        game_init_layout.add_scrollbar(RelativeRect(0, 0.28, 0.45, 0.15), "Player Speed", 1, 10, 9)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0, 0.45, 0.15), "Grid Width", 5, 20, 10)
+        game_init_layout.add_scrollbar(RelativeRect(0.55, 0, 0.45, 0.15), "Grid Height", 5, 20, 10)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0.28, 0.45, 0.15), "Player Speed", 1, 5, 5)
         game_init_layout.add_scrollbar(RelativeRect(0.55, 0.28, 0.45, 0.15), "Feed Amount", 1, 5, 3)
-        game_init_layout.add_scrollbar(RelativeRect(0, 0.56, 1, 0.15), "Clear Goal (%)", 50, 100, 90, 5)
+        game_init_layout.add_scrollbar(RelativeRect(0, 0.56, 1, 0.15), "Clear Goal (%)", 50, 100, 75, 5)
         game_init_layout.add_scrollbar(RelativeRect(0, 0.84, 1, 0.15), "Epoch", 5, 100, 10, 5)
 
     def add_ai_init_layout(self, parent_layout: UILayout):
@@ -91,7 +91,7 @@ class AILabScene(Scene):
         self.settings = settings
         grid_size: Tuple[int, int] = (int(settings['Grid Width']), int(settings['Grid Height']))
         player_speed: int = int(settings['Player Speed'])
-        self.player_move_delay = MOVE_DELAY * (10 - player_speed + 1) # min: 1, max: 10
+        self.player_move_delay = MOVE_DELAY * (11 - player_speed * 2) # min: 1, max: 9
         feed_amount: int = int(settings['Feed Amount'])
         clear_goal: float = settings['Clear Goal (%)'] / 100.0
         self.epoch_num: int = settings['Epoch']
