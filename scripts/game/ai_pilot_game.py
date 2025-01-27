@@ -101,7 +101,7 @@ class AIPilotGame:
         self.fs = FeedSystem(self, self.feed_amount)
         self.fs.add_feed_random_coord(self.feed_amount)
 
-        self.start_countdown(3000)
+        self.state = GameState.ACTIVE
 
     def resume_game_at_epoch(self):
         additional_epoch = self.resume_layout.get_scrollbar_values()["Additional Epoch"]
@@ -119,10 +119,8 @@ class AIPilotGame:
     def update(self):
         if self.is_active():
             self.move_sequence()
-        elif self.state == GameState.COUNTDOWN:
-            self.countdown()
 
-        if self.player is not None and self.state in [GameState.ACTIVE, GameState.COUNTDOWN] and self.next_direction is None:
+        if self.player is not None and self.state == GameState.ACTIVE and self.next_direction is None:
             self.next_direction = self.pilot_ai.decide_direction()
             if self.next_direction == "surrender": # Maintain previous movement upon surrender
                 self.next_direction = self.curr_direction
@@ -142,17 +140,6 @@ class AIPilotGame:
         self.centered_font_surf = self.centered_font.render(font_content, True, WHITE)
         self.centered_font_offset = self.centered_font_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)).topleft
         surf.blit(self.centered_font_surf, self.centered_font_offset)
-
-    def start_countdown(self, count_ms: int = 3000):
-        self.set_state(GameState.COUNTDOWN)
-        self.countdown_remaining_time = count_ms / 1000.0
-        self.countdown_end_ticks = (pygame.time.get_ticks() + count_ms) / 1000.0
-    
-    def countdown(self):
-        current_ticks = pygame.time.get_ticks() / 1000.0
-        self.countdown_remaining_time = max(0.0, self.countdown_end_ticks - current_ticks)
-        if not self.countdown_remaining_time:
-            self.set_state(GameState.ACTIVE)
     
     def is_active(self) -> bool:
         return self.state == GameState.ACTIVE
@@ -224,7 +211,7 @@ class AIPilotGame:
         
         if self.to_resume:
             self.resume_layout.render(surf)
-        elif self.state in [GameState.PAUSED, GameState.CLEAR, GameState.GAMEOVER, GameState.COUNTDOWN]:
+        elif self.state in [GameState.PAUSED, GameState.CLEAR, GameState.GAMEOVER]:
             if self.state == GameState.PAUSED:
                 centered_font_content = "PAUSED"
             elif self.state == GameState.CLEAR:
@@ -233,8 +220,6 @@ class AIPilotGame:
             elif self.state == GameState.GAMEOVER:
                 centered_font_content = "GAME OVER"
                 self.state_layout.render(surf)
-            elif self.state == GameState.COUNTDOWN:
-                centered_font_content = str(round(self.countdown_remaining_time, 1))
             self.render_centered_font(surf, centered_font_content)
 
         pygame.display.flip()
