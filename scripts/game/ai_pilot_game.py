@@ -14,6 +14,7 @@ from scripts.ai.base_ai import BaseAI
 from scripts.manager.game_manager import GameState
 
 from typing import Tuple
+from functools import partial
 
 class AIPilotGame:
     def __init__(self, scene, pilot_ai: BaseAI, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float, epoch_num: int):
@@ -33,6 +34,8 @@ class AIPilotGame:
         self.cell_manager: CellManager = None
         self.epoch_count: int = 0
 
+        self.to_resume: bool = False # TODO: Include it in the mode when expanding modes to a global concept
+
         self.move_accum: int = 0
         self.curr_direction: str = None
         self.next_direction: str = None
@@ -51,26 +54,44 @@ class AIPilotGame:
             self.sm = ScoreManager(self, (SCREEN_WIDTH, SCREEN_HEIGHT // 4), map_side_length * FONT_SIZE_RATIO, WHITE)
             self.score_offset = (0, SCREEN_HEIGHT * 0.75)
         self.sm.set_clear_condition(round(self.grid_size[0] * self.grid_size[1] * self.clear_goal) - INIT_LENGTH)
-        self.origin = (SCREEN_WIDTH // 2 - map_side_length // 2, SCREEN_HEIGHT // 2 - map_side_length // 2)
+        self.map_origin = (SCREEN_WIDTH // 2 - map_side_length // 2, SCREEN_HEIGHT // 2 - map_side_length // 2)
 
         self.map = Map(self, map_side_length, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
         self.map.add_outerline(MAP_OUTERLINE_THICKNESS, WHITE)
 
         self.centered_font_size = round(map_side_length * FONT_SIZE_RATIO * 3.5)
         self.centered_font = pygame.font.SysFont('consolas', self.centered_font_size, bold=True)
-        self.state_layout: UILayout = self.create_state_layout(self.origin, map_side_length)
+        self.state_layout: UILayout = self.create_state_layout(self.map_origin, map_side_length)
 
-    def create_state_layout(self, origin, map_side_length):
+        self.resume_layout: UILayout = self.create_resume_layout(self.map_origin, map_side_length)
+
+    def create_state_layout(self, map_origin: Tuple[int, int], map_side_length: int):
         offset_y = (map_side_length + self.centered_font_size) // 2
-        top = origin[1] + offset_y
-        height = map_side_length - offset_y
+        top = map_origin[1] + offset_y
+        height = map_side_length * 0.2
 
-        layout: UILayout = UILayout((0, 0), pygame.Rect(origin[0], top, map_side_length, height), (0, 0, 0, 0))
+        layout: UILayout = UILayout((0, 0), pygame.Rect(map_origin[0], top, map_side_length, height), (0, 0, 0, 0))
 
-        layout.add_button(RelativeRect(0.1, 0.1, 0.35, 0.5), "New", self.scene.restart_new_game)
-        layout.add_button(RelativeRect(0.55, 0.1, 0.35, 0.5), "Save")
+        layout.add_button(RelativeRect(0.025, 0.1, 0.3, 0.5), "New", self.scene.restart_new_game)
+        layout.add_button(RelativeRect(0.35, 0.1, 0.3, 0.5), "Add Epoch", self.set_to_resume)
+        layout.add_button(RelativeRect(0.675, 0.1, 0.3, 0.5), "Save")
 
         return layout
+
+    def create_resume_layout(self, map_origin: Tuple[int, int], map_side_length: int):
+        layout_size: Tuple[int, int] = (round(map_side_length * 0.75), round(map_side_length * 0.25))
+        layout_pos: Tuple[int, int] = (map_origin[0] + (map_side_length - layout_size[0]) // 2, map_origin[1] + (map_side_length - layout_size[1]) // 2)
+
+        layout: UILayout = UILayout((0, 0), pygame.Rect(layout_pos + layout_size), (0, 0, 0, 0))
+
+        layout.add_scrollbar(RelativeRect(0, 0, 1, 0.4), "Additional Epoch", 5, 100, 10, 5)
+        layout.add_button(RelativeRect(0.05, 0.6, 0.4, 0.4), "Resume", self.resume_game_at_epoch)
+        layout.add_button(RelativeRect(0.55, 0.6, 0.4, 0.4), "Back", partial(self.set_to_resume, False))
+
+        return layout
+
+    def set_to_resume(self, to_resume: bool = True):
+        self.to_resume = to_resume
 
     def start_game(self):
         self.cell_manager = CellManager(self.grid_size)
@@ -79,6 +100,15 @@ class AIPilotGame:
         self.fs.add_feed_random_coord(self.feed_amount)
 
         self.start_countdown(3000)
+
+    def resume_game_at_epoch(self):
+        additional_epoch = self.resume_layout.get_scrollbar_values()["Additional Epoch"]
+
+        self.epoch_set_num += additional_epoch
+
+        self.set_to_resume(False)
+
+        self.restart_game()
     
     def restart_game(self):
         self.sm.reset_score()
@@ -129,7 +159,7 @@ class AIPilotGame:
         return self.map.is_inside(coord)
 
     def is_epoch_completed(self) -> bool:
-        return self.epoch_set_num == self.epoch_count
+        return self.epoch_set_num <= self.epoch_count
 
     def check_collision(self, coord):
         if not self.is_in_bound(coord):
@@ -152,20 +182,23 @@ class AIPilotGame:
         self.state = state
 
         if state in [GameState.CLEAR, GameState.GAMEOVER]:
-            self.scene.add_score_to_figure(self.epoch_count + 1, self.sm.get_score())
+            self.handle_game_end()
+    
+    def handle_game_end(self):
+        self.scene.add_score_to_figure(self.epoch_count + 1, self.sm.get_score())
 
-            self.epoch_count += 1
-            if not self.is_epoch_completed():
-                self.restart_game()
-            else:
-                self.epoch_count = 0
+        self.epoch_count += 1
+        if not self.is_epoch_completed():
+            self.restart_game()
 
     def handle_events(self, events):
         for event in events:
             if event.type == pygame.KEYDOWN:
                 self.handle_keydown(event.key)
         
-        if self.state in [GameState.GAMEOVER, GameState.CLEAR]:
+        if self.to_resume:
+            self.resume_layout.handle_events(events)
+        elif self.state in [GameState.GAMEOVER, GameState.CLEAR]:
             self.state_layout.handle_events(events)
     
     def handle_keydown(self, key):
@@ -180,9 +213,12 @@ class AIPilotGame:
 
         self.player.render()
         self.fs.render()
-        self.map.render(surf, self.origin)
+        self.map.render(surf, self.map_origin)
         self.sm.render(surf, self.score_offset)
-        if self.state in [GameState.PAUSED, GameState.CLEAR, GameState.GAMEOVER, GameState.COUNTDOWN]:
+        
+        if self.to_resume:
+            self.resume_layout.render(surf)
+        elif self.state in [GameState.PAUSED, GameState.CLEAR, GameState.GAMEOVER, GameState.COUNTDOWN]:
             if self.state == GameState.PAUSED:
                 centered_font_content = "PAUSED"
             elif self.state == GameState.CLEAR:

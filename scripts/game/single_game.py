@@ -45,21 +45,21 @@ class SingleGame:
             self.sm = ScoreManager(self, (SCREEN_WIDTH, SCREEN_HEIGHT // 4), map_side_length * FONT_SIZE_RATIO, WHITE)
             self.score_offset = (0, SCREEN_HEIGHT * 0.75)
         self.sm.set_clear_condition(round(self.grid_size[0] * self.grid_size[1] * self.clear_goal) - INIT_LENGTH)
-        self.origin = (SCREEN_WIDTH // 2 - map_side_length // 2, SCREEN_HEIGHT // 2 - map_side_length // 2)
+        self.map_origin = (SCREEN_WIDTH // 2 - map_side_length // 2, SCREEN_HEIGHT // 2 - map_side_length // 2)
 
         self.map = Map(self, map_side_length, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
         self.map.add_outerline(MAP_OUTERLINE_THICKNESS, WHITE)
 
         self.centered_font_size = round(map_side_length * FONT_SIZE_RATIO * 3.5)
         self.centered_font = pygame.font.SysFont('consolas', self.centered_font_size, bold=True)
-        self.state_layout: UILayout = self.create_state_layout(self.origin, map_side_length)
+        self.state_layout: UILayout = self.create_state_layout(self.map_origin, map_side_length)
 
-    def create_state_layout(self, origin, map_side_length):
+    def create_state_layout(self, map_origin: Tuple[int, int], map_side_length: int):
         offset_y = (map_side_length + self.centered_font_size) // 2
-        top = origin[1] + offset_y
+        top = map_origin[1] + offset_y
         height = map_side_length - offset_y
 
-        layout: UILayout = UILayout((0, 0), pygame.Rect(origin[0], top, map_side_length, height), (0, 0, 0, 0))
+        layout: UILayout = UILayout((0, 0), pygame.Rect(map_origin[0], top, map_side_length, height), (0, 0, 0, 0))
 
         layout.add_button(RelativeRect(0.1, 0.1, 0.35, 0.5), "New", self.scene.restart_new_game)
         layout.add_button(RelativeRect(0.55, 0.1, 0.35, 0.5), "Save")
@@ -181,7 +181,7 @@ class SingleGame:
 
         self.player.render()
         self.fs.render()
-        self.map.render(surf, self.origin)
+        self.map.render(surf, self.map_origin)
         self.sm.render(surf, self.score_offset)
         if self.state in [GameState.PAUSED, GameState.CLEAR, GameState.GAMEOVER, GameState.COUNTDOWN]:
             if self.state == GameState.PAUSED:
