@@ -3,19 +3,11 @@ import random
 from .base_ai import BaseAI
 
 from constants import DIR_OFFSET_DICT
+from scripts.plugin.custom_func import get_dist, get_relative_x_y_dist
 
 from collections import defaultdict
 
 from typing import Tuple
-
-def get_x_y_dist(pos_a: Tuple[int, int], pos_b: Tuple[int, int]):
-    return (pos_b[0] - pos_a[0], pos_b[1] - pos_a[1])
-
-def get_relative_x_y_dist(pos_a: Tuple[int, int], pos_b: Tuple[int, int], grid_size: Tuple[int, int]):
-    x, y = get_x_y_dist(pos_a, pos_b)
-    relative_x = x / grid_size[0]
-    relative_y = y / grid_size[1]
-    return (relative_x, relative_y)
     
 class QLearningAI(BaseAI):
     def __init__(self, alpha=0.1, gamma=0.9, epsilon=0.9):
@@ -23,25 +15,41 @@ class QLearningAI(BaseAI):
 
         self.agent = QLearningAgent(self.actions, alpha, gamma, epsilon)
 
+        self.dir_offset_list = list(DIR_OFFSET_DICT.values())
+
         self.last_state = None
+        self.last_feed_dist = None
         self.last_score = None
         self.last_action = None
+
+    def get_collision_values(self, head):
+        collision_values = []
+
+        for dir_offset in self.dir_offset_list:
+            predicted_coord = (head[0] + dir_offset[0], head[1] + dir_offset[1])
+            predicted_collision = self.game.check_collision(predicted_coord)[0]
+            collision_values.append(predicted_collision)
+        
+        return collision_values
 
     def decide_direction(self):
         head = self.game.player.bodies[0]
         feed = self.game.fs.get_nearest_feed(head)
 
-        state = get_relative_x_y_dist(head, feed, self.game.grid_size)
+        state = get_relative_x_y_dist(head, feed, self.game.grid_size) + tuple(self.get_collision_values(head))
+        feed_dist = get_dist(head, feed)
         score = self.game.score
         action = self.agent.choose_action(state)
 
         if self.last_state is not None:
             reward = score - self.last_score
             if reward == 0:
-                reward = -0.001 # movement penalty
+                # feedback based on distance
+                reward = 0.1 if feed_dist < self.last_feed_dist else -0.1
             self.learn(reward, state)
 
         self.last_state = state
+        self.last_feed_dist = feed_dist
         self.last_score = score
         self.last_action = action
 
