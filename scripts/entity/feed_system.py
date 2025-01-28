@@ -1,6 +1,7 @@
 import pygame
 
 from constants import *
+from scripts.plugin.custom_func import get_dist
 
 from scripts.manager.game_manager import GameState
 
@@ -39,6 +40,9 @@ class FeedSystem:
     
     def get_feed(self, coord: Tuple[int, int]) -> 'Feed':
         return self.feeds[coord]
+
+    def get_nearest_feed(self, target: Tuple[int, int]):
+        return min(self.feeds, key=lambda feed: get_dist(feed, target))
 
     def add_feed(self, coord: Tuple[int, int], feed_type: str = 'normal'):
         self.feeds[coord] = Feed(coord=coord, feed_type=feed_type)
