@@ -11,15 +11,14 @@ from typing import Tuple
 def get_x_y_dist(pos_a: Tuple[int, int], pos_b: Tuple[int, int]):
     return (pos_b[0] - pos_a[0], pos_b[1] - pos_a[1])
 
-def get_dist(pos_a: Tuple[int, int], pos_b: Tuple[int, int]):
-    x_diff, y_diff = get_x_y_dist(pos_a, pos_b)
-    return abs(x_diff) + abs(y_diff)
-
-def get_nearest_feed(head, feeds):
-    return min(feeds, key=lambda food: get_dist(head, food))
+def get_relative_x_y_dist(pos_a: Tuple[int, int], pos_b: Tuple[int, int], grid_size: Tuple[int, int]):
+    x, y = get_x_y_dist(pos_a, pos_b)
+    relative_x = x / grid_size[0]
+    relative_y = y / grid_size[1]
+    return (relative_x, relative_y)
     
 class QLearningAI(BaseAI):
-    def __init__(self, alpha=0.1, gamma=0.9, epsilon=0.1):
+    def __init__(self, alpha=0.1, gamma=0.9, epsilon=0.9):
         self.actions = list(DIR_OFFSET_DICT.keys())
 
         self.agent = QLearningAgent(self.actions, alpha, gamma, epsilon)
@@ -28,23 +27,18 @@ class QLearningAI(BaseAI):
         self.last_score = None
         self.last_action = None
 
-    def get_state(self, head, feeds):
-        target_feed = get_nearest_feed(head, feeds)
-        dist_to_target = get_x_y_dist(head, target_feed)
-        return dist_to_target
-
     def decide_direction(self):
         head = self.game.player.bodies[0]
-        feeds = self.game.fs.feeds
+        feed = self.game.fs.get_nearest_feed(head)
 
-        state = self.get_state(head, feeds)
+        state = get_relative_x_y_dist(head, feed, self.game.grid_size)
         score = self.game.score
         action = self.agent.choose_action(state)
 
         if self.last_state is not None:
             reward = score - self.last_score
             if reward == 0:
-                reward = -0.1 # movement penalty
+                reward = -0.001 # movement penalty
             self.learn(reward, state)
 
         self.last_state = state
@@ -85,3 +79,5 @@ class QLearningAgent:
         max_next_q = max([self.q_table[(next_state, a)] for a in self.actions])
         new_q = current_q + self.alpha * (reward + self.gamma * max_next_q - current_q)
         self.q_table[(state, action)] = new_q
+
+        self.epsilon = max(0.01, self.epsilon * 0.995)  # gradually increase greedy behavior
