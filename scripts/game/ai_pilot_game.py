@@ -138,7 +138,7 @@ class AIPilotGame:
                 self.next_direction = self.curr_direction
             else: # No need to reset when maintaining the same direction
                 self.curr_direction = self.next_direction
-                self.player.set_direction(self.next_direction)
+                self.player.set_direction(self.next_direction, False)
 
     def move_sequence(self):
         if self.move_accum >= self.player_move_delay:

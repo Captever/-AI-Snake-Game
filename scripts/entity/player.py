@@ -76,11 +76,11 @@ class Player:
         pygame.draw.rect(body_surface, BODY_COLOR, pygame.Rect(outline_thickness, outline_thickness, size[0] - outline_thickness * 2, size[1] - outline_thickness * 2))
         return body_surface
 
-    def set_direction(self, dir: str):
+    def set_direction(self, dir: str, with_validate: bool = True):
         if dir not in DIR_OFFSET_DICT:
             raise ValueError("parameter(dir) must be the one of [EWSN]")
         
-        if not self.validate_direction(dir):
+        if with_validate and not self.validate_direction(dir):
             return
         
         self.direction = dir
