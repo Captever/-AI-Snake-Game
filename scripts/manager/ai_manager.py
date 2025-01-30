@@ -11,8 +11,11 @@ class AIManager:
         self.ai_list["Rule-based-Smaller"] = RuleBasedAI("priority-smaller")
         self.ai_list["Rule-based-Larger"] = RuleBasedAI("priority-larger")
         self.ai_list["Rule-based-Maximalism"] = RuleBasedAI("maximalism")
-        self.ai_list["Greedy-algorithm"] = GreedyAI()
+        self.ai_list["Greedy-Algorithm"] = GreedyAI()
         self.ai_list["Q-Learning"] = QLearningAI()
+        # self.ai_list["DQN"] = DQN()
+        # self.ai_list["Policy-Gradient"] = PolicyGradient()
+        # self.ai_list["PPO"] = PPO()
     
     def get_ai_list(self) -> List[str]:
         return self.ai_list.keys()
