@@ -5,7 +5,7 @@ from constants import *
 
 from scripts.ui.ui_components import UILayout, RelativeRect
 from scripts.ui.map_structure import Map
-from scripts.ui.score_board import ScoreBoard, AvgScoreBoard
+from scripts.ui.score_board import TopScoreBoard, ScoreBoard, AvgScoreBoard
 from scripts.ui.epoch_board import EpochBoard
 from scripts.entity.player import Player
 from scripts.entity.feed_system import FeedSystem
@@ -53,24 +53,24 @@ class AIPilotGame:
     def init_ui(self):
         if IS_LANDSCAPE:
             map_side_length = (SCREEN_WIDTH // 2)
-            board_size = (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 3.5)
+            board_size = (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 5.5)
             board_offset = (SCREEN_WIDTH * 0.75, 0)
-            board_margin = (0, SCREEN_HEIGHT * 0.3)
+            board_margin = (0, SCREEN_HEIGHT * 0.18)
         else:
             map_side_length = SCREEN_WIDTH
-            board_size = (SCREEN_WIDTH // 3.5, SCREEN_HEIGHT // 4)
+            board_size = (SCREEN_WIDTH // 5.5, SCREEN_HEIGHT // 4)
             board_offset = (0, SCREEN_HEIGHT * 0.75)
-            board_margin = (SCREEN_WIDTH * 0.3, 0)
-        board_font_weight = map_side_length * FONT_SIZE_RATIO
+            board_margin = (SCREEN_WIDTH * 0.18, 0)
+        board_font_weight = map_side_length * FONT_SIZE_RATIO * 0.75
         self.map_origin = (SCREEN_WIDTH // 2 - map_side_length // 2, SCREEN_HEIGHT // 2 - map_side_length // 2)
 
         self.map = Map(self, map_side_length, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
         self.map.add_outerline(MAP_OUTERLINE_THICKNESS, WHITE)
 
-        for idx, (board_name, board_context) in enumerate([("score", ScoreBoard), ("epoch", EpochBoard), ("avg_score", AvgScoreBoard)]):
+        for idx, (board_name, board_text, board_context) in enumerate([("top_score", "TOP", TopScoreBoard), ("score", "Score", ScoreBoard), ("epoch", "Epoch", EpochBoard), ("avg_score_last_100", "Average Last 100", AvgScoreBoard), ("total_avg_score", "Total Average", AvgScoreBoard)]):
             additional_offset = (board_margin[0] * idx, board_margin[1] * idx)
             curr_board_offset = (board_offset[0] + additional_offset[0], board_offset[1] + additional_offset[1])
-            self.boards[board_name] = board_context(board_size, board_font_weight, WHITE, curr_board_offset)
+            self.boards[board_name] = board_context(board_size, board_text, board_font_weight, WHITE, curr_board_offset)
 
         self.centered_font_size = round(map_side_length * FONT_SIZE_RATIO * 3.5)
         self.centered_font = pygame.font.SysFont('consolas', self.centered_font_size, bold=True)
@@ -97,7 +97,7 @@ class AIPilotGame:
 
         layout: UILayout = UILayout((0, 0), pygame.Rect(layout_pos + layout_size), (0, 0, 0, 0))
 
-        layout.add_scrollbar(RelativeRect(0, 0, 1, 0.4), "Additional Epoch", 200, 5000, 1000, 200)
+        layout.add_scrollbar(RelativeRect(0, 0, 1, 0.4), "Additional Epoch", 500, 100000, 1000, 500)
         layout.add_button(RelativeRect(0.05, 0.6, 0.4, 0.4), "Resume", self.resume_game_at_epoch)
         layout.add_button(RelativeRect(0.55, 0.6, 0.4, 0.4), "Back", partial(self.set_to_resume, False))
 
@@ -125,7 +125,7 @@ class AIPilotGame:
     
     def restart_game(self):
         self.score = 0
-        self.boards["score"].update_score(self.score)
+        self.boards["score"].reset()
         self.start_game()
 
     def update(self):
@@ -179,6 +179,7 @@ class AIPilotGame:
     def update_score(self, amount: int = 1):
         self.score += amount
         self.boards["score"].update_score(self.score)
+        self.boards["top_score"].update_score(self.score)
         
         if self.clear_condition is not None and self.score >= self.clear_condition:
             self.set_state(GameState.CLEAR)
@@ -198,7 +199,8 @@ class AIPilotGame:
 
         self.epoch_count += 1
         self.boards["epoch"].update_epoch(self.epoch_count)
-        self.boards["avg_score"].update_avg_score(round(self.scene.get_last_average_score_last_100(), 3))
+        self.boards["avg_score_last_100"].update_avg_score(round(self.scene.get_last_average_score_last_100(), 3))
+        self.boards["total_avg_score"].update_avg_score(round(self.scene.get_average_score(), 3))
         if not self.is_epoch_completed():
             self.restart_game()
 

@@ -3,8 +3,9 @@ import pygame
 from typing import Tuple
 
 class EpochBoard:
-    def __init__(self, size: Tuple[int, int], font_weight: int, font_color, offset=(0, 0)):
+    def __init__(self, size: Tuple[int, int], text, font_weight: int, font_color, offset=(0, 0)):
         self.size = size
+        self.text = text
         self.surf = pygame.Surface(size, pygame.SRCALPHA)
         self.font_weight = font_weight
         self.font_color = font_color
@@ -15,12 +16,12 @@ class EpochBoard:
         self.init_font_surfs()
 
     def init_font_surfs(self):
-        self.title_font = pygame.font.SysFont('consolas', round(self.font_weight * 1.25), bold=True)
-        self.content_font = pygame.font.SysFont('consolas', round(self.font_weight * 0.9))
+        self.title_font = pygame.font.SysFont('consolas', round(self.font_weight * 0.8), bold=True)
+        self.content_font = pygame.font.SysFont('consolas', round(self.font_weight * 0.6))
         
         self.centered_origin = (self.size[0] * 0.5, self.size[1] * 0.5)
 
-        self.title_surf = self.title_font.render("Epoch", True, self.font_color)
+        self.title_surf = self.title_font.render(self.text, True, self.font_color)
         self.title_rect = self.title_surf.get_rect(center = self.centered_origin)
         self.title_font_offset = self.title_rect.topleft
         self.update_epoch_font()
