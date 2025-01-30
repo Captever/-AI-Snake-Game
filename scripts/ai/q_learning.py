@@ -31,12 +31,30 @@ class QLearningAI(BaseAI):
             collision_values.append(predicted_collision)
         
         return collision_values
+    
+    def get_neck_dir(self, head, neck):
+        neck_offset = (neck[0] - head[0], neck[1] - head[1])
+
+        for dir, dir_offset in DIR_OFFSET_DICT.items():
+            if neck_offset == dir_offset:
+                return dir
+    
+    def get_dists_from_wall(self, head, grid_size):
+        return [grid_size[0]-1 - head[0], grid_size[1]-1 - head[1], head[0], head[1]]
 
     def decide_direction(self):
-        head = self.game.player.bodies[0]
+        grid_size = self.game.grid_size
+
+        bodies = self.game.player.bodies
+        head = bodies[0]
+        neck = bodies[1]
+        tail = bodies[-1]
         feed = self.game.fs.get_nearest_feed(head)
 
-        state = get_relative_x_y_dist(head, feed, self.game.grid_size) + tuple(self.get_collision_values(head))
+        state = get_relative_x_y_dist(head, feed, grid_size) + \
+                tuple(self.get_collision_values(head)) + \
+                (self.get_neck_dir(head, neck), len(bodies)) + \
+                tuple(self.get_dists_from_wall(head, grid_size))
         feed_dist = get_dist(head, feed)
         score = self.game.score
         action = self.agent.choose_action(state)
