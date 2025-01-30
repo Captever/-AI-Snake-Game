@@ -287,3 +287,7 @@ class ScrollBar:
         else:
             pygame.draw.rect(surf, UI_SCROLLBAR["bar_default_color"], self.bar_rect)
             pygame.draw.rect(surf, UI_SCROLLBAR["handle_default_color"], self.handle_rect)
+
+class TextBox:
+    def __init__(self):
+        pass
