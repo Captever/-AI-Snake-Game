@@ -289,5 +289,13 @@ class ScrollBar:
             pygame.draw.rect(surf, UI_SCROLLBAR["handle_default_color"], self.handle_rect)
 
 class TextBox:
-    def __init__(self):
-        pass
+    def __init__(self, rect: pygame.Rect, content: str, font_size: int, font_color, bold: bool = False):
+        self.rect = rect
+        self.content = content
+
+        font = pygame.font.SysFont('consolas', font_size, bold=bold)
+        self.font_surf = font.render(content, True, font_color)
+        self.font_rect = self.font_surf.get_rect(center=self.rect.center)
+    
+    def render(self, surf: pygame.Surface):
+        surf.blit(self.font_surf, self.font_rect)
