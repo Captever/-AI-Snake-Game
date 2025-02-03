@@ -191,13 +191,13 @@ class Button:
         line_num = len(font_text)
 
         pygame.draw.rect(surf, UI_BUTTON["selected_color"] if self.selected else (UI_BUTTON["hover_color"] if self.hovered else UI_BUTTON["default_color"]), self.rect)
+
         font_size = round(self.rect.height * UI_BUTTON["font_ratio"] / line_num)
-        font = pygame.font.SysFont("arial", font_size)
 
         for idx, line in enumerate(font_text):
-            text_surf = font.render(line, True, BLACK)
-            text_rect = text_surf.get_rect(centerx=self.rect.centerx, y=self.rect.topleft[1] + (self.rect.size[1] - (line_num * font_size)) // 2 + idx * font_size)
-            surf.blit(text_surf, text_rect)
+            top = self.rect.top + (self.rect.height - (line_num * font_size)) // 2 + idx * font_size
+            text_rect = pygame.Rect(self.rect.left, top, self.rect.width, font_size)
+            TextBox(text_rect, line, font_size, BLACK).render(surf)
 
 class ScrollBar:
     def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1):
@@ -278,9 +278,12 @@ class ScrollBar:
             self.update_handle()
 
     def render(self, surf: pygame.Surface):
-        font = pygame.font.SysFont("arial", round(self.rect.height * UI_SCROLLBAR["font_ratio"]))
-        text_surf = font.render(f"{self.text}: {int(self.value)}", True, WHITE)
-        surf.blit(text_surf, self.rect.topleft)
+        text = f"{self.text}: {int(self.value):,}"
+        font_size = round(self.rect.height * UI_SCROLLBAR["font_ratio"])
+        text_rect = pygame.Rect(self.rect)
+        text_rect.height = font_size
+        TextBox(text_rect, text, font_size, WHITE).render(surf)
+
         if self.hovered:
             pygame.draw.rect(surf, UI_SCROLLBAR["bar_hover_color"], self.bar_rect)
             pygame.draw.rect(surf, UI_SCROLLBAR["handle_hover_color"], self.handle_rect)
@@ -289,11 +292,12 @@ class ScrollBar:
             pygame.draw.rect(surf, UI_SCROLLBAR["handle_default_color"], self.handle_rect)
 
 class TextBox:
-    def __init__(self, rect: pygame.Rect, content: str, font_size: int, font_color, bold: bool = False):
+    def __init__(self, rect: pygame.Rect, content: str, font_size: int, font_color, ttf_file_path: str = "resources/fonts/NanumSquareB.ttf", bold: bool = False):
         self.rect = rect
         self.content = content
 
-        font = pygame.font.SysFont('consolas', font_size, bold=bold)
+        font = pygame.font.Font(ttf_file_path, font_size)
+        font.set_bold(bold)
         self.font_surf = font.render(content, True, font_color)
         self.font_rect = self.font_surf.get_rect(center=self.rect.center)
     

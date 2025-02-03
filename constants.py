@@ -22,7 +22,7 @@ UI_BUTTON = {
     "default_color": WHITE,
     "hover_color": LIGHT_GRAY,
     "selected_color": GRAY,
-    "font_ratio": 0.6,
+    "font_ratio": 0.4,
 }
 UI_SCROLLBAR = {
     "bar_default_color": GRAY,
