@@ -172,10 +172,11 @@ class Button:
     def is_clicked(self, event):
         return self.hovered and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1
 
-    def to_auto_lined_text(self, text: str, auto_lined_str: List[str]) -> List[str]:
-        pattern = '|'.join(map(re.escape, auto_lined_str))
+    def to_auto_lined_text(self, text: str, auto_lined_str: List[str]) -> str:
+        for target in auto_lined_str:
+            text = text.replace(target, '\n')
 
-        return re.split(pattern, text)
+        return text
 
     def render(self, surf: pygame.Surface):
         """
@@ -185,19 +186,14 @@ class Button:
             surf (pygame.Surface): Surface to render on.
         """
         if self.auto_lined_str is not None:
-            font_text = self.to_auto_lined_text(self.text, self.auto_lined_str)
+            text = self.to_auto_lined_text(self.text, self.auto_lined_str)
         else:
-            font_text = [self.text]
-        line_num = len(font_text)
+            text = self.text
 
         pygame.draw.rect(surf, UI_BUTTON["selected_color"] if self.selected else (UI_BUTTON["hover_color"] if self.hovered else UI_BUTTON["default_color"]), self.rect)
 
-        font_size = round(self.rect.height * UI_BUTTON["font_ratio"] / line_num)
-
-        for idx, line in enumerate(font_text):
-            top = self.rect.top + (self.rect.height - (line_num * font_size)) // 2 + idx * font_size
-            text_rect = pygame.Rect(self.rect.left, top, self.rect.width, font_size)
-            TextBox(text_rect, line, font_size, BLACK).render(surf)
+        font_rect = self.rect.scale_by(UI_BUTTON["font_ratio"], UI_BUTTON["font_ratio"])
+        TextBox(font_rect, text, BLACK).render(surf)
 
 class ScrollBar:
     def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1):
@@ -279,10 +275,9 @@ class ScrollBar:
 
     def render(self, surf: pygame.Surface):
         text = f"{self.text}: {int(self.value):,}"
-        font_size = round(self.rect.height * UI_SCROLLBAR["font_ratio"])
-        text_rect = pygame.Rect(self.rect)
-        text_rect.height = font_size
-        TextBox(text_rect, text, font_size, WHITE).render(surf)
+        font_height = self.rect.height * UI_SCROLLBAR["font_ratio"]
+        font_rect = pygame.Rect(self.rect.left, self.rect.top, self.rect.width, font_height)
+        TextBox(font_rect, text, WHITE).render(surf)
 
         if self.hovered:
             pygame.draw.rect(surf, UI_SCROLLBAR["bar_hover_color"], self.bar_rect)
@@ -292,14 +287,20 @@ class ScrollBar:
             pygame.draw.rect(surf, UI_SCROLLBAR["handle_default_color"], self.handle_rect)
 
 class TextBox:
-    def __init__(self, rect: pygame.Rect, content: str, font_size: int, font_color, ttf_file_path: str = "resources/fonts/NanumSquareB.ttf", bold: bool = False):
+    def __init__(self, rect: pygame.Rect, content: str, font_color, ttf_file_path: str = "resources/fonts/NanumSquareB.ttf", bold: bool = False):
         self.rect = rect
-        self.content = content
+        self.content = self.get_lined_content(content)
+        self.font_color = font_color
+        self.font_size = round(rect.height / len(self.content))
+        self.font = pygame.font.Font(ttf_file_path, self.font_size)
+        self.font.set_bold(bold)
 
-        font = pygame.font.Font(ttf_file_path, font_size)
-        font.set_bold(bold)
-        self.font_surf = font.render(content, True, font_color)
-        self.font_rect = self.font_surf.get_rect(center=self.rect.center)
+    def get_lined_content(self, content: str):
+        return content.split('\n')
     
     def render(self, surf: pygame.Surface):
-        surf.blit(self.font_surf, self.font_rect)
+        for idx, line in enumerate(self.content):
+            font_surf = self.font.render(line, True, self.font_color)
+            top = self.rect.top + (self.rect.height - (len(self.content) * self.font_size)) // 2 + idx * self.font_size
+            font_rect = font_surf.get_rect(centerx=self.rect.centerx, top=top)
+            surf.blit(font_surf, font_rect)
