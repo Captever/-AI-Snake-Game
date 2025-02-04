@@ -286,6 +286,54 @@ class ScrollBar:
             pygame.draw.rect(surf, UI_SCROLLBAR["bar_default_color"], self.bar_rect)
             pygame.draw.rect(surf, UI_SCROLLBAR["handle_default_color"], self.handle_rect)
 
+class Board:
+    def __init__(self, rect: pygame.Rect, title, font_color, default: int=0, format: str=None, custom_ttf_file_path=None):
+        self.rect = rect
+        self.title = title
+        self.surf = pygame.Surface(rect.size, pygame.SRCALPHA)
+        self.font_color = font_color
+        self.format = format
+        self.custom_ttf_file_path = custom_ttf_file_path
+
+        self.default = default
+
+        self.init_font()
+
+    def init_font(self):
+        font_area_rect = RelativeRect(UI_BOARD["inner_padding"], UI_BOARD["inner_padding"], 1 - UI_BOARD["inner_padding"] * 2, 1 - UI_BOARD["inner_padding"] * 2).to_absolute(self.rect.size)
+
+        title_rect_height = round(font_area_rect.height * UI_BOARD["title_ratio"])
+        content_rect_height = round(font_area_rect.height * UI_BOARD["content_ratio"])
+
+        title_rect = pygame.Rect(font_area_rect.x, font_area_rect.y, font_area_rect.width, title_rect_height)
+        content_rect = pygame.Rect(font_area_rect.x, font_area_rect.y + font_area_rect.height - content_rect_height, font_area_rect.width, content_rect_height)
+
+        if self.custom_ttf_file_path != None:
+            self.title_textbox = TextBox(title_rect, self.title, self.font_color, ttf_file_path=self.custom_ttf_file_path, bold=True)
+            self.content_textbox = TextBox(content_rect, "", self.font_color, ttf_file_path=self.custom_ttf_file_path)
+        else:
+            self.title_textbox = TextBox(title_rect, self.title, self.font_color, bold=True)
+            self.content_textbox = TextBox(content_rect, "", self.font_color)
+        
+        self.update_content(self.default)
+    
+    def reset(self):
+        self.update_content(self.default)
+    
+    def update_content(self, content):
+        if self.format != None:
+            content = self.format.format(content)
+        else:
+            content = str(content)
+        self.content_textbox.update_content(content)
+
+    def render(self, surf):
+        self.surf.fill((0, 0, 0, 0))
+        self.title_textbox.render(self.surf)
+        self.content_textbox.render(self.surf)
+
+        surf.blit(self.surf, self.rect)
+
 class TextBox:
     def __init__(self, rect: pygame.Rect, content: str, font_color, ttf_file_path: str = "resources/fonts/NanumSquareB.ttf", bold: bool = False):
         self.rect = rect
@@ -297,6 +345,9 @@ class TextBox:
 
     def get_lined_content(self, content: str):
         return content.split('\n')
+    
+    def update_content(self, content):
+        self.content = self.get_lined_content(content)
     
     def render(self, surf: pygame.Surface):
         for idx, line in enumerate(self.content):

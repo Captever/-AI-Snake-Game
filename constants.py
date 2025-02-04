@@ -18,6 +18,11 @@ UI_LAYOUT = {
     "default_color": (15, 15, 15, 255),
 }
 
+UI_BOARD = {
+    "title_ratio": 0.4,
+    "content_ratio": 0.3,
+    "inner_padding": 0.2
+}
 UI_BUTTON = {
     "default_color": WHITE,
     "hover_color": LIGHT_GRAY,

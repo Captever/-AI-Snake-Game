@@ -3,9 +3,8 @@ import sys
 
 from constants import *
 
-from scripts.ui.ui_components import UILayout, RelativeRect
+from scripts.ui.ui_components import UILayout, RelativeRect, Board
 from scripts.ui.map_structure import Map
-from scripts.ui.score_board import ScoreBoard
 from scripts.entity.player import Player
 from scripts.entity.feed_system import FeedSystem
 from scripts.manager.cell_manager import CellManager
@@ -32,7 +31,7 @@ class SingleGame:
         
         self.move_accum: int = 0
 
-        self.score_board: ScoreBoard = None
+        self.score_board: Board = None
 
         self.init_ui()
 
@@ -41,19 +40,17 @@ class SingleGame:
     def init_ui(self):
         if IS_LANDSCAPE:
             map_side_length = (SCREEN_WIDTH // 2)
-            board_size = (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 3.5)
-            board_offset = (SCREEN_WIDTH * 0.75, 0)
+            board_relative_rect = RelativeRect(0.75, 0.1, 0.25, 0.15)
         else:
             map_side_length = SCREEN_WIDTH
-            board_size = (SCREEN_WIDTH // 3.5, SCREEN_HEIGHT // 4)
-            board_offset = (0, SCREEN_HEIGHT * 0.75)
-        board_font_weight = map_side_length * FONT_SIZE_RATIO
+            board_relative_rect = RelativeRect(0.1, 0.75, 0.15, 0.25)
         self.map_origin = (SCREEN_WIDTH // 2 - map_side_length // 2, SCREEN_HEIGHT // 2 - map_side_length // 2)
 
         self.map = Map(self, map_side_length, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
         self.map.add_outerline(MAP_OUTERLINE_THICKNESS, WHITE)
 
-        self.score_board = ScoreBoard(board_size, board_font_weight, WHITE, board_offset)
+        board_rect = board_relative_rect.to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.score_board = Board(board_rect, "Score", WHITE, format="{:,}")
 
         self.centered_font_size = round(map_side_length * FONT_SIZE_RATIO * 3.5)
         self.centered_font = pygame.font.SysFont('consolas', self.centered_font_size, bold=True)
@@ -130,7 +127,7 @@ class SingleGame:
 
     def update_score(self, amount: int = 1):
         self.score += amount
-        self.score_board.update_score(self.score)
+        self.score_board.update_content(self.score)
         
         if self.clear_condition is not None and self.score >= self.clear_condition:
             self.set_state(GameState.CLEAR)

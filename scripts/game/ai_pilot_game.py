@@ -3,10 +3,8 @@ import sys
 
 from constants import *
 
-from scripts.ui.ui_components import UILayout, RelativeRect
+from scripts.ui.ui_components import UILayout, RelativeRect, Board
 from scripts.ui.map_structure import Map
-from scripts.ui.score_board import TopScoreBoard, ScoreBoard, AvgScoreBoard
-from scripts.ui.epoch_board import EpochBoard
 from scripts.entity.player import Player
 from scripts.entity.feed_system import FeedSystem
 from scripts.manager.cell_manager import CellManager
@@ -14,10 +12,18 @@ from scripts.manager.cell_manager import CellManager
 from scripts.ai.base_ai import BaseAI
 from scripts.manager.game_manager import GameState
 
-from typing import Tuple
+from typing import Tuple, Dict
 from functools import partial
 
 from scripts.ai.q_learning import QLearningAI
+
+board_list = [ # key, title, content format
+    ("top_score", "TOP", "{:,}"),
+    ("score", "Score", "{:,}"),
+    ("epoch", "Epoch", "{:,}"),
+    ("avg_score_last_100", "Average Last 100", "{:,.3f}"),
+    ("total_avg_score", "Total Average", "{:,.3f}")
+]
 
 class AIPilotGame:
     def __init__(self, scene, pilot_ai: BaseAI, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float, epoch_num: int):
@@ -36,6 +42,7 @@ class AIPilotGame:
         self.fs: FeedSystem = None
         self.cell_manager: CellManager = None
         self.score: int = 0
+        self.top_score: int = 0
         self.epoch_count: int = 0
 
         self.to_resume: bool = False # TODO: Include it in the mode when expanding modes to a global concept
@@ -44,7 +51,7 @@ class AIPilotGame:
         self.curr_direction: str = None
         self.next_direction: str = None
 
-        self.boards = {}
+        self.boards: Dict[str, Board] = {}
 
         self.init_ui()
 
@@ -53,24 +60,22 @@ class AIPilotGame:
     def init_ui(self):
         if IS_LANDSCAPE:
             map_side_length = (SCREEN_WIDTH // 2)
-            board_size = (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 5.5)
-            board_offset = (SCREEN_WIDTH * 0.75, 0)
-            board_margin = (0, SCREEN_HEIGHT * 0.18)
+            board_relative_rect = RelativeRect(0.75, 0.1, 0.25, 0.15)
+            board_relative_offset = (0, 0.16)
         else:
             map_side_length = SCREEN_WIDTH
-            board_size = (SCREEN_WIDTH // 5.5, SCREEN_HEIGHT // 4)
-            board_offset = (0, SCREEN_HEIGHT * 0.75)
-            board_margin = (SCREEN_WIDTH * 0.18, 0)
-        board_font_weight = map_side_length * FONT_SIZE_RATIO * 0.75
+            board_relative_rect = RelativeRect(0.1, 0.75, 0.15, 0.25)
+            board_relative_offset = (0.16, 0)
         self.map_origin = (SCREEN_WIDTH // 2 - map_side_length // 2, SCREEN_HEIGHT // 2 - map_side_length // 2)
 
         self.map = Map(self, map_side_length, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
         self.map.add_outerline(MAP_OUTERLINE_THICKNESS, WHITE)
 
-        for idx, (board_name, board_text, board_context) in enumerate([("top_score", "TOP", TopScoreBoard), ("score", "Score", ScoreBoard), ("epoch", "Epoch", EpochBoard), ("avg_score_last_100", "Average Last 100", AvgScoreBoard), ("total_avg_score", "Total Average", AvgScoreBoard)]):
-            additional_offset = (board_margin[0] * idx, board_margin[1] * idx)
-            curr_board_offset = (board_offset[0] + additional_offset[0], board_offset[1] + additional_offset[1])
-            self.boards[board_name] = board_context(board_size, board_text, board_font_weight, WHITE, curr_board_offset)
+        for idx, (board_key, board_title, board_format) in enumerate(board_list):
+            board_offset = (board_relative_offset[0] * idx, board_relative_offset[1] * idx)
+            curr_board_relative_rect = RelativeRect(board_relative_rect.x + board_offset[0], board_relative_rect.y + board_offset[1], board_relative_rect.width, board_relative_rect.height)
+            board_rect = curr_board_relative_rect.to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
+            self.boards[board_key] = Board(board_rect, board_title, WHITE, format=board_format)
 
         self.centered_font_size = round(map_side_length * FONT_SIZE_RATIO * 3.5)
         self.centered_font = pygame.font.SysFont('consolas', self.centered_font_size, bold=True)
@@ -178,8 +183,11 @@ class AIPilotGame:
 
     def update_score(self, amount: int = 1):
         self.score += amount
-        self.boards["score"].update_score(self.score)
-        self.boards["top_score"].update_score(self.score)
+        self.boards["score"].update_content(self.score)
+
+        if self.score > self.top_score:
+            self.top_score = self.score
+            self.boards["top_score"].update_content(self.top_score)
         
         if self.clear_condition is not None and self.score >= self.clear_condition:
             self.set_state(GameState.CLEAR)
@@ -198,9 +206,9 @@ class AIPilotGame:
         self.scene.add_score_to_figure(self.epoch_count + 1, self.score)
 
         self.epoch_count += 1
-        self.boards["epoch"].update_epoch(self.epoch_count)
-        self.boards["avg_score_last_100"].update_avg_score(round(self.scene.get_last_average_score_last_100(), 3))
-        self.boards["total_avg_score"].update_avg_score(round(self.scene.get_average_score(), 3))
+        self.boards["epoch"].update_content(self.epoch_count)
+        self.boards["avg_score_last_100"].update_content(self.scene.get_last_average_score_last_100())
+        self.boards["total_avg_score"].update_content(self.scene.get_average_score())
         if not self.is_epoch_completed():
             self.restart_game()
 
@@ -227,8 +235,8 @@ class AIPilotGame:
         self.player.render()
         self.fs.render()
         self.map.render(surf, self.map_origin)
-        for board_context in self.boards.values():
-            board_context.render(surf)
+        for board in self.boards.values():
+            board.render(surf)
         
         if self.to_resume:
             self.resume_layout.render(surf)
