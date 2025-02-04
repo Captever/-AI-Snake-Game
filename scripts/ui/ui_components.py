@@ -87,6 +87,14 @@ class UILayout:
 
         self.elements.append(scrollbar)
     
+    def add_textbox(self, relative_rect: RelativeRect, text: str, font_color, bold: bool = False):
+        """
+        Add a text box to the layout with its relative position.
+        """
+        textbox = TextBox(relative_rect.to_absolute(self.rect.size), text, font_color, bold=bold)
+
+        self.elements.append(textbox)
+    
     def update_radio_selection(self, target_text: str):
         for element in self.elements:
             if isinstance(element, Button):
@@ -112,7 +120,8 @@ class UILayout:
     def handle_events(self, events):
         for event in events:
             for element in self.elements:
-                element.handle_event(event)
+                if isinstance(element, Button) or isinstance(element, ScrollBar):
+                    element.handle_event(event)
             
         for layout in self.layouts.values():
             layout.handle_events(events)

@@ -51,6 +51,8 @@ class AIPilotGame:
         self.curr_direction: str = None
         self.next_direction: str = None
 
+        self.state_layouts: Dict[int, UILayout] = {}
+        self.resume_layout: UILayout = None
         self.boards: Dict[str, Board] = {}
 
         self.init_ui()
@@ -77,34 +79,62 @@ class AIPilotGame:
             board_rect = curr_board_relative_rect.to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
             self.boards[board_key] = Board(board_rect, board_title, WHITE, format=board_format)
 
-        self.centered_font_size = round(map_side_length * FONT_SIZE_RATIO * 3.5)
-        self.centered_font = pygame.font.SysFont('consolas', self.centered_font_size, bold=True)
-        self.state_layout: UILayout = self.create_state_layout(self.map_origin, map_side_length)
+        self.state_layout_rect = RelativeRect(0, 0.3, 1, 0.35).to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.init_states_layout()
+        self.resume_layout = self.create_resume_layout()
 
-        self.resume_layout: UILayout = self.create_resume_layout(self.map_origin, map_side_length)
+    def init_states_layout(self):
+        self.state_layouts[GameState.PAUSED] = self.create_paused_layout()
+        self.state_layouts[GameState.GAMEOVER] = self.create_gameover_layout()
+        self.state_layouts[GameState.CLEAR] = self.create_clear_layout()
+    
+    def create_paused_layout(self):
+        layout: UILayout = UILayout((0, 0), self.state_layout_rect, (0, 0, 0, 0))
 
-    def create_state_layout(self, map_origin: Tuple[int, int], map_side_length: int):
-        offset_y = (map_side_length + self.centered_font_size) // 2
-        top = map_origin[1] + offset_y
-        height = map_side_length * 0.2
+        layout.add_textbox(RelativeRect(0, 0, 1, 0.6), "PAUSED", WHITE)
 
-        layout: UILayout = UILayout((0, 0), pygame.Rect(map_origin[0], top, map_side_length, height), (0, 0, 0, 0))
+        button_layout_name = "button_layout"
+        layout.add_layout(button_layout_name, RelativeRect(0.25, 0.7, 0.5, 0.3), (0, 0, 0, 0))
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.1, 0, 0.35, 1), "New", self.scene.restart_new_game)
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.55, 0, 0.35, 1), "Add Epoch", self.set_to_resume)
 
-        layout.add_button(RelativeRect(0.025, 0.1, 0.3, 0.5), "New", self.scene.restart_new_game)
-        layout.add_button(RelativeRect(0.35, 0.1, 0.3, 0.5), "Add Epoch", self.set_to_resume)
-        layout.add_button(RelativeRect(0.675, 0.1, 0.3, 0.5), "Save")
+        return layout
+    
+    def create_gameover_layout(self):
+        layout: UILayout = UILayout((0, 0), self.state_layout_rect, (0, 0, 0, 0))
+
+        layout.add_textbox(RelativeRect(0, 0, 1, 0.6), "GAME OVER", WHITE)
+
+        button_layout_name = "button_layout"
+        layout.add_layout(button_layout_name, RelativeRect(0.25, 0.7, 0.5, 0.3), (0, 0, 0, 0))
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.025, 0, 0.3, 1), "New", self.scene.restart_new_game)
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.35, 0, 0.3, 1), "Add Epoch", self.set_to_resume)
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.675, 0, 0.3, 1), "Save")
+
+        return layout
+    
+    def create_clear_layout(self):
+        layout: UILayout = UILayout((0, 0), self.state_layout_rect, (0, 0, 0, 0))
+
+        layout.add_textbox(RelativeRect(0, 0, 1, 0.6), "CLEAR", WHITE)
+
+        button_layout_name = "button_layout"
+        layout.add_layout(button_layout_name, RelativeRect(0.25, 0.7, 0.5, 0.3), (0, 0, 0, 0))
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.025, 0, 0.3, 1), "New", self.scene.restart_new_game)
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.35, 0, 0.3, 1), "Add Epoch", self.set_to_resume)
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.675, 0, 0.3, 1), "Save")
 
         return layout
 
-    def create_resume_layout(self, map_origin: Tuple[int, int], map_side_length: int):
-        layout_size: Tuple[int, int] = (round(map_side_length * 0.75), round(map_side_length * 0.25))
-        layout_pos: Tuple[int, int] = (map_origin[0] + (map_side_length - layout_size[0]) // 2, map_origin[1] + (map_side_length - layout_size[1]) // 2)
+    def create_resume_layout(self):
+        layout: UILayout = UILayout((0, 0), self.state_layout_rect, (0, 0, 0, 0))
+        
+        layout.add_scrollbar(RelativeRect(0.25, 0, 0.5, 0.6), "Additional Epoch", 500, 100000, 1000, 500)
 
-        layout: UILayout = UILayout((0, 0), pygame.Rect(layout_pos + layout_size), (0, 0, 0, 0))
-
-        layout.add_scrollbar(RelativeRect(0, 0, 1, 0.4), "Additional Epoch", 500, 100000, 1000, 500)
-        layout.add_button(RelativeRect(0.05, 0.6, 0.4, 0.4), "Resume", self.resume_game_at_epoch)
-        layout.add_button(RelativeRect(0.55, 0.6, 0.4, 0.4), "Back", partial(self.set_to_resume, False))
+        button_layout_name = "button_layout"
+        layout.add_layout(button_layout_name, RelativeRect(0.25, 0.7, 0.5, 0.3), (0, 0, 0, 0))
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.1, 0, 0.35, 1), "Resume", self.scene.restart_new_game)
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.55, 0, 0.35, 1), "Back", partial(self.set_to_resume, False))
 
         return layout
 
@@ -152,11 +182,6 @@ class AIPilotGame:
             self.next_direction = None
         else:
             self.move_accum += 1
-    
-    def render_centered_font(self, surf: pygame.Surface, font_content: str):
-        self.centered_font_surf = self.centered_font.render(font_content, True, WHITE)
-        self.centered_font_offset = self.centered_font_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)).topleft
-        surf.blit(self.centered_font_surf, self.centered_font_offset)
     
     def is_active(self) -> bool:
         return self.state == GameState.ACTIVE
@@ -219,8 +244,8 @@ class AIPilotGame:
         
         if self.to_resume:
             self.resume_layout.handle_events(events)
-        elif self.state in [GameState.GAMEOVER, GameState.CLEAR]:
-            self.state_layout.handle_events(events)
+        elif self.state in [GameState.PAUSED, GameState.GAMEOVER, GameState.CLEAR]:
+            self.state_layouts[self.state].handle_events(events)
     
     def handle_keydown(self, key):
         if key == pygame.K_p:
@@ -241,15 +266,7 @@ class AIPilotGame:
         if self.to_resume:
             self.resume_layout.render(surf)
         elif self.state in [GameState.PAUSED, GameState.CLEAR, GameState.GAMEOVER]:
-            if self.state == GameState.PAUSED:
-                centered_font_content = "PAUSED"
-            elif self.state == GameState.CLEAR:
-                centered_font_content = "CLEAR"
-                self.state_layout.render(surf)
-            elif self.state == GameState.GAMEOVER:
-                centered_font_content = "GAME OVER"
-                self.state_layout.render(surf)
-            self.render_centered_font(surf, centered_font_content)
+            self.state_layouts[self.state].render(surf)
 
         pygame.display.flip()
         self.clock.tick(60)
