@@ -3,7 +3,7 @@ import sys
 
 from constants import *
 
-from scripts.ui.ui_components import UILayout, RelativeRect, Board
+from scripts.ui.ui_components import UILayout, RelativeRect, Board, TextBox
 from scripts.ui.map_structure import Map
 from scripts.entity.player import Player
 from scripts.entity.feed_system import FeedSystem
@@ -11,7 +11,7 @@ from scripts.manager.cell_manager import CellManager
 
 from scripts.manager.game_manager import GameState
 
-from typing import Tuple
+from typing import Tuple, Dict
 
 class SingleGame:
     def __init__(self, scene, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
@@ -31,6 +31,8 @@ class SingleGame:
         
         self.move_accum: int = 0
 
+        self.state_layouts: Dict[int, UILayout] = {}
+        self.countdown_textbox: TextBox = None
         self.score_board: Board = None
 
         self.init_ui()
@@ -52,19 +54,54 @@ class SingleGame:
         board_rect = board_relative_rect.to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.score_board = Board(board_rect, "Score", WHITE, format="{:,}")
 
-        self.centered_font_size = round(map_side_length * FONT_SIZE_RATIO * 3.5)
-        self.centered_font = pygame.font.SysFont('consolas', self.centered_font_size, bold=True)
-        self.state_layout: UILayout = self.create_state_layout(self.map_origin, map_side_length)
+        self.state_layout_rect = RelativeRect(0, 0.3, 1, 0.35).to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.countdown_textbox = TextBox(self.state_layout_rect, "0", YELLOW)
+        self.init_states_layout()
 
-    def create_state_layout(self, map_origin: Tuple[int, int], map_side_length: int):
-        offset_y = (map_side_length + self.centered_font_size) // 2
-        top = map_origin[1] + offset_y
-        height = map_side_length - offset_y
+    def init_states_layout(self):
+        self.state_layouts[GameState.PAUSED] = self.create_paused_layout()
+        self.state_layouts[GameState.GAMEOVER] = self.create_gameover_layout()
+        self.state_layouts[GameState.CLEAR] = self.create_clear_layout()
+    
+    def create_countdown_layout(self):
+        layout: UILayout = UILayout((0, 0), self.state_layout_rect, (0, 0, 0, 0))
 
-        layout: UILayout = UILayout((0, 0), pygame.Rect(map_origin[0], top, map_side_length, height), (0, 0, 0, 0))
+        layout.add_textbox(RelativeRect(0, 0, 1, 0.6), "COUNT DOWN", WHITE)
 
-        layout.add_button(RelativeRect(0.1, 0.1, 0.35, 0.5), "New", self.scene.restart_new_game)
-        layout.add_button(RelativeRect(0.55, 0.1, 0.35, 0.5), "Save")
+        return layout
+    
+    def create_paused_layout(self):
+        layout: UILayout = UILayout((0, 0), self.state_layout_rect, (0, 0, 0, 0))
+
+        layout.add_textbox(RelativeRect(0, 0, 1, 0.6), "PAUSED", WHITE)
+
+        button_layout_name = "button_layout"
+        layout.add_layout(button_layout_name, RelativeRect(0.25, 0.7, 0.5, 0.3), (0, 0, 0, 0))
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.3, 0, 0.4, 1), "New", self.scene.restart_new_game)
+
+        return layout
+    
+    def create_gameover_layout(self):
+        layout: UILayout = UILayout((0, 0), self.state_layout_rect, (0, 0, 0, 0))
+
+        layout.add_textbox(RelativeRect(0, 0, 1, 0.6), "GAME OVER", WHITE)
+
+        button_layout_name = "button_layout"
+        layout.add_layout(button_layout_name, RelativeRect(0.25, 0.7, 0.5, 0.3), (0, 0, 0, 0))
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.1, 0, 0.35, 1), "New", self.scene.restart_new_game)
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.55, 0, 0.35, 1), "Save")
+
+        return layout
+    
+    def create_clear_layout(self):
+        layout: UILayout = UILayout((0, 0), self.state_layout_rect, (0, 0, 0, 0))
+
+        layout.add_textbox(RelativeRect(0, 0, 1, 0.6), "CLEAR", WHITE)
+
+        button_layout_name = "button_layout"
+        layout.add_layout(button_layout_name, RelativeRect(0.25, 0.7, 0.5, 0.3), (0, 0, 0, 0))
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.1, 0, 0.35, 1), "New", self.scene.restart_new_game)
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.55, 0, 0.35, 1), "Save")
 
         return layout
 
@@ -88,11 +125,6 @@ class SingleGame:
             self.player.move()
         else:
             self.move_accum += 1
-    
-    def render_centered_font(self, surf: pygame.Surface, font_content: str):
-        self.centered_font_surf = self.centered_font.render(font_content, True, WHITE)
-        self.centered_font_offset = self.centered_font_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)).topleft
-        surf.blit(self.centered_font_surf, self.centered_font_offset)
 
     def start_countdown(self, count_ms: int = 3000):
         self.set_state(GameState.COUNTDOWN)
@@ -102,6 +134,7 @@ class SingleGame:
     def countdown(self):
         current_ticks = pygame.time.get_ticks() / 1000.0
         self.countdown_remaining_time = max(0.0, self.countdown_end_ticks - current_ticks)
+        self.countdown_textbox.update_content(str(round(self.countdown_remaining_time, 1)))
         if not self.countdown_remaining_time:
             self.set_state(GameState.ACTIVE)
     
@@ -140,8 +173,8 @@ class SingleGame:
             if event.type == pygame.KEYDOWN:
                 self.handle_keydown(event.key)
         
-        if self.state in [GameState.GAMEOVER, GameState.CLEAR]:
-            self.state_layout.handle_events(events)
+        if self.state in [GameState.GAMEOVER, GameState.CLEAR, GameState.PAUSED]:
+            self.state_layouts[self.state].handle_events(events)
     
     def handle_keydown(self, key):
         if self.is_active():
@@ -187,18 +220,10 @@ class SingleGame:
         self.fs.render()
         self.map.render(surf, self.map_origin)
         self.score_board.render(surf)
-        if self.state in [GameState.PAUSED, GameState.CLEAR, GameState.GAMEOVER, GameState.COUNTDOWN]:
-            if self.state == GameState.PAUSED:
-                centered_font_content = "PAUSED"
-            elif self.state == GameState.CLEAR:
-                centered_font_content = "CLEAR"
-                self.state_layout.render(surf)
-            elif self.state == GameState.GAMEOVER:
-                centered_font_content = "GAME OVER"
-                self.state_layout.render(surf)
-            elif self.state == GameState.COUNTDOWN:
-                centered_font_content = str(round(self.countdown_remaining_time, 1))
-            self.render_centered_font(surf, centered_font_content)
+        if self.state in [GameState.PAUSED, GameState.CLEAR, GameState.GAMEOVER]:
+            self.state_layouts[self.state].render(surf)
+        elif self.state == GameState.COUNTDOWN:
+            self.countdown_textbox.render(surf)
 
         pygame.display.flip()
         self.clock.tick(60)

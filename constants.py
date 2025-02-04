@@ -11,6 +11,7 @@ BLACK = (0, 0, 0)
 GRAY = (128, 128, 128)
 LIGHT_GRAY = (200, 200, 200)
 DARK_GARY = (70, 70, 70)
+YELLOW = (255, 255, 0)
 
 # ui size
 FONT_SIZE_RATIO = 0.075
