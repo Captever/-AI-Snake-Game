@@ -32,14 +32,13 @@ instruction_list = [ # key, act
 ]
 
 class AIPilotGame:
-    def __init__(self, scene, pilot_ai: BaseAI, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float, epoch_num: int):
+    def __init__(self, scene, pilot_ai: BaseAI, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
         self.scene = scene
         self.pilot_ai: BaseAI = pilot_ai
         self.player_move_delay: int = player_move_delay
         self.grid_size: Tuple[int, int] = grid_size
         self.feed_amount: int = feed_amount
         self.clear_condition: int = round(self.grid_size[0] * self.grid_size[1] * clear_goal) - INIT_LENGTH
-        self.epoch_set_num: int = epoch_num
 
         self.state: GameState = None
         self.clock: pygame.time.Clock = pygame.time.Clock()
@@ -53,14 +52,11 @@ class AIPilotGame:
         self.final_epoch_flag: bool = False # If true, terminate at the current epoch
         self.enable_speed_limit_flag: bool = False # If true, enable speed restriction
 
-        self.to_resume: bool = False # TODO: Include it in the mode when expanding modes to a global concept
-
         self.move_accum: int = 0
         self.curr_direction: str = None
         self.next_direction: str = None
 
         self.state_layouts: Dict[int, UILayout] = {}
-        self.resume_layout: UILayout = None
         self.boards: Dict[str, Board] = {}
 
         self.init_ui()
@@ -90,7 +86,6 @@ class AIPilotGame:
         # about state layouts
         state_layout_rect = RelativeRect(0, 0.3, 1, 0.35).to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.init_states_layout(state_layout_rect)
-        self.resume_layout = self.create_resume_layout(state_layout_rect)
 
         # about instructions
         instruction_rect = RelativeRect(0, 0.5, 0.25, 0.5).to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -108,8 +103,7 @@ class AIPilotGame:
 
         button_layout_name = "button_layout"
         layout.add_layout(button_layout_name, RelativeRect(0.25, 0.7, 0.5, 0.3), (0, 0, 0, 0))
-        layout.layouts[button_layout_name].add_button(RelativeRect(0.1, 0, 0.35, 1), "New", self.scene.restart_new_game)
-        layout.layouts[button_layout_name].add_button(RelativeRect(0.55, 0, 0.35, 1), "Add Epoch", self.set_to_resume)
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.3, 0, 0.4, 1), "New", self.scene.restart_new_game)
 
         return layout
     
@@ -120,8 +114,8 @@ class AIPilotGame:
 
         button_layout_name = "button_layout"
         layout.add_layout(button_layout_name, RelativeRect(0.25, 0.7, 0.5, 0.3), (0, 0, 0, 0))
-        layout.layouts[button_layout_name].add_button(RelativeRect(0.025, 0, 0.3, 1), "New", self.scene.restart_new_game)
-        layout.layouts[button_layout_name].add_button(RelativeRect(0.35, 0, 0.3, 1), "Add Epoch", self.set_to_resume)
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.025, 0, 0.3, 1), "Continue", self.restart_game)
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.35, 0, 0.3, 1), "New", self.scene.restart_new_game)
         layout.layouts[button_layout_name].add_button(RelativeRect(0.675, 0, 0.3, 1), "Save")
 
         return layout
@@ -133,26 +127,11 @@ class AIPilotGame:
 
         button_layout_name = "button_layout"
         layout.add_layout(button_layout_name, RelativeRect(0.25, 0.7, 0.5, 0.3), (0, 0, 0, 0))
-        layout.layouts[button_layout_name].add_button(RelativeRect(0.025, 0, 0.3, 1), "New", self.scene.restart_new_game)
-        layout.layouts[button_layout_name].add_button(RelativeRect(0.35, 0, 0.3, 1), "Add Epoch", self.set_to_resume)
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.025, 0, 0.3, 1), "Continue", self.restart_game)
+        layout.layouts[button_layout_name].add_button(RelativeRect(0.35, 0, 0.3, 1), "New", self.scene.restart_new_game)
         layout.layouts[button_layout_name].add_button(RelativeRect(0.675, 0, 0.3, 1), "Save")
 
         return layout
-
-    def create_resume_layout(self, rect: pygame.Rect):
-        layout: UILayout = UILayout((0, 0), rect, (0, 0, 0, 0))
-        
-        layout.add_scrollbar(RelativeRect(0.25, 0, 0.5, 0.6), "Additional Epoch", 500, 100000, 1000, 500)
-
-        button_layout_name = "button_layout"
-        layout.add_layout(button_layout_name, RelativeRect(0.25, 0.7, 0.5, 0.3), (0, 0, 0, 0))
-        layout.layouts[button_layout_name].add_button(RelativeRect(0.1, 0, 0.35, 1), "Resume", self.scene.restart_new_game)
-        layout.layouts[button_layout_name].add_button(RelativeRect(0.55, 0, 0.35, 1), "Back", partial(self.set_to_resume, False))
-
-        return layout
-
-    def set_to_resume(self, to_resume: bool = True):
-        self.to_resume = to_resume
 
     def start_game(self):
         self.cell_manager = CellManager(self.grid_size)
@@ -162,17 +141,11 @@ class AIPilotGame:
 
         self.epoch_count += 1
         self.boards["epoch"].update_content(self.epoch_count)
+
+        self.final_epoch_flag = False
+        self.enable_speed_limit_flag = False
         
         self.state = GameState.ACTIVE
-
-    def resume_game_at_epoch(self):
-        additional_epoch = self.resume_layout.get_scrollbar_values()["Additional Epoch"]
-
-        self.epoch_set_num += additional_epoch
-
-        self.set_to_resume(False)
-
-        self.restart_game()
     
     def restart_game(self):
         self.score = 0
@@ -226,13 +199,10 @@ class AIPilotGame:
 
     def is_on_move(self) -> bool:
         return self.is_on_move_delay() and self.is_decided_next_direction()
-
-    def is_all_epoch_completed(self) -> bool:
-        return self.epoch_set_num <= self.epoch_count
     
     def is_ended_process(self) -> bool:
         # If final_epoch_flag is true, terminate at the current epoch
-        return self.final_epoch_flag or self.is_all_epoch_completed()
+        return self.final_epoch_flag
 
     def check_collision(self, coord):
         if not self.is_in_bound(coord):
@@ -283,9 +253,7 @@ class AIPilotGame:
             if event.type == pygame.KEYDOWN:
                 self.handle_keydown(event.key)
         
-        if self.to_resume:
-            self.resume_layout.handle_events(events)
-        elif self.state in [GameState.PAUSED, GameState.GAMEOVER, GameState.CLEAR]:
+        if self.state in [GameState.PAUSED, GameState.GAMEOVER, GameState.CLEAR]:
             self.state_layouts[self.state].handle_events(events)
     
     def handle_keydown(self, key):
@@ -310,9 +278,7 @@ class AIPilotGame:
 
         self.map.render(surf, self.map_origin)
         
-        if self.to_resume:
-            self.resume_layout.render(surf)
-        elif self.state in [GameState.PAUSED, GameState.CLEAR, GameState.GAMEOVER]:
+        if self.state in [GameState.PAUSED, GameState.CLEAR, GameState.GAMEOVER]:
             self.state_layouts[self.state].render(surf)
 
         pygame.display.flip()

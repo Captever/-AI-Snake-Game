@@ -68,7 +68,6 @@ class AILabScene(Scene):
         game_init_layout.add_scrollbar(RelativeRect(0, 0.28, 0.45, 0.15), "Player Speed", 1, 5, 5)
         game_init_layout.add_scrollbar(RelativeRect(0.55, 0.28, 0.45, 0.15), "Feed Amount", 1, 5, 3)
         game_init_layout.add_scrollbar(RelativeRect(0, 0.56, 1, 0.15), "Clear Goal (%)", 50, 100, 75, 5)
-        game_init_layout.add_scrollbar(RelativeRect(0, 0.84, 1, 0.15), "Epoch", 500, 100000, 1000, 500)
 
     def add_ai_init_layout(self, parent_layout: UILayout):
         ai_init_layout_name = "ai_init"
@@ -94,8 +93,7 @@ class AILabScene(Scene):
         self.player_move_delay = MOVE_DELAY * (11 - player_speed * 2) # min: 1, max: 9
         feed_amount: int = int(settings['Feed Amount'])
         clear_goal: float = settings['Clear Goal (%)'] / 100.0
-        self.epoch_num: int = settings['Epoch']
-        self.game = AIPilotGame(self, self.ai, self.player_move_delay, grid_size, feed_amount, clear_goal, self.epoch_num)
+        self.game = AIPilotGame(self, self.ai, self.player_move_delay, grid_size, feed_amount, clear_goal)
         self.ai.set_current_game(self.game)
 
     def init_plt(self):
