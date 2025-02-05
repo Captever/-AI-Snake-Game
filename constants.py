@@ -16,9 +16,16 @@ YELLOW = (255, 255, 0)
 # ui size
 FONT_SIZE_RATIO = 0.075
 UI_LAYOUT = {
-    "default_color": (15, 15, 15, 255),
+    "default_color": (0, 0, 0, 0),
 }
-
+UI_INSTRUCTION = {
+    "default_color": (0, 0, 0, 0),
+    "title_ratio": 0.1,
+    "content_ratio": 0.8,
+    "each_content_ratio": 0.1,
+    "each_content_margin": 0.05,
+    "inner_padding": 0.1
+}
 UI_BOARD = {
     "title_ratio": 0.4,
     "content_ratio": 0.3,
