@@ -108,9 +108,11 @@ class AILabScene(Scene):
         self.epochs = []
         self.scores = []
         self.average_score_last_100 = []
+        self.overall_average_score = []
 
-        self.plot_scores, = self.ax.plot([], [], label="Scores", marker='o')
-        self.plot_average_scores, = self.ax.plot([], [], label="Average Score(Last 100)", linestyle='--')
+        self.plot_scores, = self.ax.plot([], [], label="Scores", marker='o', color='skyblue')
+        self.plot_average_scores_last_100, = self.ax.plot([], [], label="Average Score(Last 100)", linestyle='--', color='red')
+        self.plot_overall_average_scores, = self.ax.plot([], [], label="Overall Average Score", color='moccasin')
 
         self.ax.set_xlabel("Epochs")
         self.ax.set_ylabel("Score")
@@ -166,9 +168,11 @@ class AILabScene(Scene):
         self.scores.append(score)
         last_data_num = min(len(self.scores), 100)
         self.average_score_last_100.append(sum(self.scores[-last_data_num:]) / last_data_num)
+        self.overall_average_score.append(self.get_average_score())
 
         self.plot_scores.set_data(self.epochs[-last_data_num:], self.scores[-last_data_num:])
-        self.plot_average_scores.set_data(self.epochs[-last_data_num:], self.average_score_last_100[-last_data_num:])
+        self.plot_average_scores_last_100.set_data(self.epochs[-last_data_num:], self.average_score_last_100[-last_data_num:])
+        self.plot_overall_average_scores.set_data(self.epochs[-last_data_num:], self.overall_average_score[-last_data_num:])
 
         self.ax.relim()
         self.ax.autoscale_view()

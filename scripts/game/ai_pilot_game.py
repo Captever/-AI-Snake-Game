@@ -23,7 +23,7 @@ board_list = [ # key, title, content format
     ("score", "Score", "{:,}"),
     ("epoch", "Epoch", "{:,}"),
     ("avg_score_last_100", "Average Last 100", "{:,.3f}"),
-    ("total_avg_score", "Total Average", "{:,.3f}")
+    ("overall_avg_score", "Overall Average", "{:,.3f}")
 ]
 instruction_list = [ # key, act
     ("P", "Pause"),
@@ -243,7 +243,7 @@ class AIPilotGame:
         self.scene.add_score_to_figure(self.epoch_count, self.score)
 
         self.boards["avg_score_last_100"].update_content(self.scene.get_last_average_score_last_100())
-        self.boards["total_avg_score"].update_content(self.scene.get_average_score())
+        self.boards["overall_avg_score"].update_content(self.scene.get_average_score())
 
         if not self.is_ended_process():
             self.restart_game()
