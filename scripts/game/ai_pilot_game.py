@@ -75,7 +75,7 @@ class AIPilotGame:
 
         for idx, (board_key, board_title, board_format) in enumerate(board_list):
             board_offset = (board_relative_offset[0] * idx, board_relative_offset[1] * idx)
-            curr_board_relative_rect = RelativeRect(board_relative_rect.x + board_offset[0], board_relative_rect.y + board_offset[1], board_relative_rect.width, board_relative_rect.height)
+            curr_board_relative_rect = RelativeRect(board_relative_rect.relative_x + board_offset[0], board_relative_rect.relative_y + board_offset[1], board_relative_rect.relative_width, board_relative_rect.relative_height)
             board_rect = curr_board_relative_rect.to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
             self.boards[board_key] = Board(board_rect, board_title, WHITE, format=board_format)
 

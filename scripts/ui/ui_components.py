@@ -8,7 +8,7 @@ from constants import *
 from typing import Tuple, Dict, List
 
 class RelativeRect:
-    def __init__(self, x: float, y: float, width: float, height: float):
+    def __init__(self, x: float = 0.0, y: float = 0.0, width: float = 1.0, height: float = 1.0):
         """
         Represents a rectangle using relative values (fractions of a parent surface).
         
@@ -18,10 +18,10 @@ class RelativeRect:
             width (float): Relative width (0.0 to 1.0).
             height (float): Relative height (0.0 to 1.0).
         """
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+        self.relative_x = x
+        self.relative_y = y
+        self.relative_width = width
+        self.relative_height = height
 
     def to_absolute(self, parent_size: Tuple[int, int]) -> pygame.Rect:
         """
@@ -33,10 +33,17 @@ class RelativeRect:
         Returns:
             pygame.Rect: Absolute rectangle.
         """
-        abs_x = int(self.x * parent_size[0])
-        abs_y = int(self.y * parent_size[1])
-        abs_width = int(self.width * parent_size[0])
-        abs_height = int(self.height * parent_size[1])
+        abs_x = int(self.relative_x * parent_size[0])
+        abs_y = int(self.relative_y * parent_size[1])
+        abs_width = int(self.relative_width * parent_size[0])
+        abs_height = int(self.relative_height * parent_size[1])
+        return pygame.Rect(abs_x, abs_y, abs_width, abs_height)
+    
+    def to_absolute_with_inner_padding(self, parent_size: Tuple[int, int], relative_inner_padding: float) -> pygame.Rect:
+        abs_x = int((self.relative_x + relative_inner_padding) * parent_size[0])
+        abs_y = int((self.relative_y + relative_inner_padding) * parent_size[1])
+        abs_width = int((self.relative_width - relative_inner_padding * 2) * parent_size[0])
+        abs_height = int((self.relative_height - relative_inner_padding * 2) * parent_size[1])
         return pygame.Rect(abs_x, abs_y, abs_width, abs_height)
 
 class UILayout:
@@ -309,7 +316,7 @@ class Board:
         self.init_font()
 
     def init_font(self):
-        font_area_rect = RelativeRect(UI_BOARD["inner_padding"], UI_BOARD["inner_padding"], 1 - UI_BOARD["inner_padding"] * 2, 1 - UI_BOARD["inner_padding"] * 2).to_absolute(self.rect.size)
+        font_area_rect = RelativeRect().to_absolute_with_inner_padding(self.rect.size, UI_BOARD["inner_padding"])
 
         title_rect_height = round(font_area_rect.height * UI_BOARD["title_ratio"])
         content_rect_height = round(font_area_rect.height * UI_BOARD["content_ratio"])
