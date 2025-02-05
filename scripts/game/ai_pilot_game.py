@@ -5,6 +5,7 @@ from constants import *
 
 from scripts.ui.ui_components import UILayout, RelativeRect, Board
 from scripts.ui.map_structure import Map
+from scripts.ui.instruction import Instruction
 from scripts.entity.player import Player
 from scripts.entity.feed_system import FeedSystem
 from scripts.manager.cell_manager import CellManager
@@ -24,6 +25,11 @@ board_list = [ # key, title, content format
     ("avg_score_last_100", "Average Last 100", "{:,.3f}"),
     ("total_avg_score", "Total Average", "{:,.3f}")
 ]
+instruction_list = [ # key, act
+    ("P", "Pause"),
+    ("E", "Set as final epoch"),
+    ("Q", "Enable speed limit")
+]
 
 class AIPilotGame:
     def __init__(self, scene, pilot_ai: BaseAI, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float, epoch_num: int):
@@ -37,13 +43,15 @@ class AIPilotGame:
 
         self.state: GameState = None
         self.clock: pygame.time.Clock = pygame.time.Clock()
-        self.running: bool = False
         self.player: Player = None
         self.fs: FeedSystem = None
         self.cell_manager: CellManager = None
         self.score: int = 0
         self.top_score: int = 0
         self.epoch_count: int = 0
+
+        self.final_epoch_flag: bool = False # If true, terminate at the current epoch
+        self.enable_speed_limit_flag: bool = False # If true, enable speed restriction
 
         self.to_resume: bool = False # TODO: Include it in the mode when expanding modes to a global concept
 
@@ -79,17 +87,22 @@ class AIPilotGame:
             board_rect = curr_board_relative_rect.to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
             self.boards[board_key] = Board(board_rect, board_title, WHITE, format=board_format)
 
-        self.state_layout_rect = RelativeRect(0, 0.3, 1, 0.35).to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
-        self.init_states_layout()
-        self.resume_layout = self.create_resume_layout()
+        # about state layouts
+        state_layout_rect = RelativeRect(0, 0.3, 1, 0.35).to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.init_states_layout(state_layout_rect)
+        self.resume_layout = self.create_resume_layout(state_layout_rect)
 
-    def init_states_layout(self):
-        self.state_layouts[GameState.PAUSED] = self.create_paused_layout()
-        self.state_layouts[GameState.GAMEOVER] = self.create_gameover_layout()
-        self.state_layouts[GameState.CLEAR] = self.create_clear_layout()
+        # about instructions
+        instruction_rect = RelativeRect(0, 0.5, 0.25, 0.5).to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.instruction = Instruction(instruction_rect, "Key Instruction", instruction_list, WHITE)
+
+    def init_states_layout(self, rect: pygame.Rect):
+        self.state_layouts[GameState.PAUSED] = self.create_paused_layout(rect)
+        self.state_layouts[GameState.GAMEOVER] = self.create_gameover_layout(rect)
+        self.state_layouts[GameState.CLEAR] = self.create_clear_layout(rect)
     
-    def create_paused_layout(self):
-        layout: UILayout = UILayout((0, 0), self.state_layout_rect, (0, 0, 0, 0))
+    def create_paused_layout(self, rect: pygame.Rect):
+        layout: UILayout = UILayout((0, 0), rect, (0, 0, 0, 0))
 
         layout.add_textbox(RelativeRect(0, 0, 1, 0.6), "PAUSED", WHITE)
 
@@ -100,8 +113,8 @@ class AIPilotGame:
 
         return layout
     
-    def create_gameover_layout(self):
-        layout: UILayout = UILayout((0, 0), self.state_layout_rect, (0, 0, 0, 0))
+    def create_gameover_layout(self, rect: pygame.Rect):
+        layout: UILayout = UILayout((0, 0), rect, (0, 0, 0, 0))
 
         layout.add_textbox(RelativeRect(0, 0, 1, 0.6), "GAME OVER", WHITE)
 
@@ -113,8 +126,8 @@ class AIPilotGame:
 
         return layout
     
-    def create_clear_layout(self):
-        layout: UILayout = UILayout((0, 0), self.state_layout_rect, (0, 0, 0, 0))
+    def create_clear_layout(self, rect: pygame.Rect):
+        layout: UILayout = UILayout((0, 0), rect, (0, 0, 0, 0))
 
         layout.add_textbox(RelativeRect(0, 0, 1, 0.6), "CLEAR", WHITE)
 
@@ -126,8 +139,8 @@ class AIPilotGame:
 
         return layout
 
-    def create_resume_layout(self):
-        layout: UILayout = UILayout((0, 0), self.state_layout_rect, (0, 0, 0, 0))
+    def create_resume_layout(self, rect: pygame.Rect):
+        layout: UILayout = UILayout((0, 0), rect, (0, 0, 0, 0))
         
         layout.add_scrollbar(RelativeRect(0.25, 0, 0.5, 0.6), "Additional Epoch", 500, 100000, 1000, 500)
 
@@ -147,6 +160,9 @@ class AIPilotGame:
         self.fs = FeedSystem(self, self.feed_amount)
         self.fs.add_feed_random_coord(self.feed_amount)
 
+        self.epoch_count += 1
+        self.boards["epoch"].update_content(self.epoch_count)
+        
         self.state = GameState.ACTIVE
 
     def resume_game_at_epoch(self):
@@ -176,21 +192,47 @@ class AIPilotGame:
                 self.player.set_direction(self.next_direction, False)
 
     def move_sequence(self):
-        if self.move_accum >= self.player_move_delay:
+        if self.is_on_move():
             self.move_accum = 0
             self.player.move()
             self.next_direction = None
         else:
             self.move_accum += 1
     
+    def flip_final_epoch_flag(self):
+        self.final_epoch_flag = not self.final_epoch_flag
+
+    def flip_speed_limit_flag(self):
+        self.enable_speed_limit_flag = not self.enable_speed_limit_flag
+
+    def flip_game_pause(self):
+        if self.state == GameState.PAUSED:
+            self.set_state(GameState.ACTIVE)
+        elif self.state == GameState.ACTIVE:
+            self.set_state(GameState.PAUSED)
+    
     def is_active(self) -> bool:
         return self.state == GameState.ACTIVE
     
     def is_in_bound(self, coord) -> bool:
         return self.map.is_inside(coord)
+    
+    def is_on_move_delay(self) -> bool:
+        # If enable_speed_limit_flag is true, enable speed restriction
+        return not self.enable_speed_limit_flag or self.move_accum >= self.player_move_delay
+    
+    def is_decided_next_direction(self) -> bool:
+        return self.next_direction is not None
 
-    def is_epoch_completed(self) -> bool:
+    def is_on_move(self) -> bool:
+        return self.is_on_move_delay() and self.is_decided_next_direction()
+
+    def is_all_epoch_completed(self) -> bool:
         return self.epoch_set_num <= self.epoch_count
+    
+    def is_ended_process(self) -> bool:
+        # If final_epoch_flag is true, terminate at the current epoch
+        return self.final_epoch_flag or self.is_all_epoch_completed()
 
     def check_collision(self, coord):
         if not self.is_in_bound(coord):
@@ -228,13 +270,12 @@ class AIPilotGame:
             self.handle_game_end()
     
     def handle_game_end(self):
-        self.scene.add_score_to_figure(self.epoch_count + 1, self.score)
+        self.scene.add_score_to_figure(self.epoch_count, self.score)
 
-        self.epoch_count += 1
-        self.boards["epoch"].update_content(self.epoch_count)
         self.boards["avg_score_last_100"].update_content(self.scene.get_last_average_score_last_100())
         self.boards["total_avg_score"].update_content(self.scene.get_average_score())
-        if not self.is_epoch_completed():
+
+        if not self.is_ended_process():
             self.restart_game()
 
     def handle_events(self, events):
@@ -249,19 +290,25 @@ class AIPilotGame:
     
     def handle_keydown(self, key):
         if key == pygame.K_p:
-            if self.state == GameState.PAUSED:
-                self.state = GameState.ACTIVE
-            elif self.state == GameState.ACTIVE:
-                self.state = GameState.PAUSED
+            if self.state in [GameState.PAUSED, GameState.ACTIVE]:
+                self.flip_game_pause()
+        if key == pygame.K_e:
+            if self.state in [GameState.PAUSED, GameState.ACTIVE]:
+                self.flip_final_epoch_flag()
+        if key == pygame.K_q:
+            if self.state in [GameState.PAUSED, GameState.ACTIVE]:
+                self.flip_speed_limit_flag()
 
     def render(self, surf: pygame.Surface):
         surf.fill((0, 0, 0))
 
         self.player.render()
         self.fs.render()
-        self.map.render(surf, self.map_origin)
         for board in self.boards.values():
             board.render(surf)
+        self.instruction.render(surf)
+
+        self.map.render(surf, self.map_origin)
         
         if self.to_resume:
             self.resume_layout.render(surf)
