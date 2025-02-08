@@ -7,6 +7,7 @@ from scripts.manager.scene_manager import SceneManager
 from scripts.scene.main_scene import MainScene
 from scripts.scene.single_game_scene import SingleGameScene
 from scripts.scene.ai_lab_scene import AILabScene
+from scripts.scene.record_scene import RecordScene
 
 class Main:
     def __init__(self):
@@ -29,6 +30,8 @@ class Main:
         self.scene_manager.add_scene("GameScene", game_scene)
         ai_lab_scene = AILabScene(self.scene_manager)
         self.scene_manager.add_scene("AILabScene", ai_lab_scene)
+        record_scene = RecordScene(self.scene_manager)
+        self.scene_manager.add_scene("RecordScene", record_scene)
         
         self.scene_manager.set_active_scene("MainScene")
 
