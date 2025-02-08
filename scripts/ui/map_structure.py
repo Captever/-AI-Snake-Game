@@ -2,6 +2,8 @@ import pygame
 
 from constants import *
 
+from scripts.ui.ui_components import Outerline
+
 from typing import Tuple, Dict, List
 
 class Map:
@@ -52,6 +54,7 @@ class Map:
         self.grid.render(self.surf, self.grid_offset)
 
         surf.blit(self.surf, offset)
+        
         if self.outerline is not None:
             self.outerline.render(surf, offset)
         
@@ -117,22 +120,6 @@ class Cell:
     
     def get_size(self) -> Tuple[int, int]:
         return (self.side_length, self.side_length)
-
-class Outerline:
-    def __init__(self, size: Tuple[int, int], thickness: int = 1, color=(255, 255, 255)):
-        self.thickness = thickness
-
-        outer_rect = pygame.Rect(0, 0, size[0] + thickness * 2, size[1] + thickness * 2)
-
-        self.surf = pygame.Surface((outer_rect.width, outer_rect.height), pygame.SRCALPHA)
-        self.surf.fill((0, 0, 0, 0))
-
-        pygame.draw.rect(self.surf, color, outer_rect, max(1, thickness)) # minimum value of width: 1
-
-    def render(self, surf, offset=(0, 0)):
-        adjusted_pos = (offset[0] - self.thickness, offset[1] - self.thickness)
-
-        surf.blit(self.surf, adjusted_pos)
         
 class Arrow:
     def __init__(self, cell_size: Tuple[int, int], color=WHITE, width=0):

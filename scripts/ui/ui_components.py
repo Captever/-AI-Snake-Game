@@ -1,6 +1,5 @@
 import pygame
 
-import re
 import warnings
 
 from constants import *
@@ -46,6 +45,22 @@ class RelativeRect:
         abs_height = int((self.relative_height - relative_inner_padding * 2) * parent_size[1])
         return pygame.Rect(abs_x, abs_y, abs_width, abs_height)
 
+class Outerline:
+    def __init__(self, size: Tuple[int, int], thickness: int = 1, color=(255, 255, 255)):
+        self.thickness = thickness
+
+        outer_rect = pygame.Rect(0, 0, size[0] + thickness * 2, size[1] + thickness * 2)
+
+        self.surf = pygame.Surface((outer_rect.width, outer_rect.height), pygame.SRCALPHA)
+        self.surf.fill((0, 0, 0, 0))
+
+        pygame.draw.rect(self.surf, color, outer_rect, max(1, thickness)) # minimum value of width: 1
+
+    def render(self, surf, offset=(0, 0)):
+        adjusted_pos = (offset[0] - self.thickness, offset[1] - self.thickness)
+
+        surf.blit(self.surf, adjusted_pos)
+
 class UILayout:
     def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, bg_color=UI_LAYOUT["default_color"]):
         """
@@ -61,6 +76,14 @@ class UILayout:
         self.bg_color = bg_color
         self.elements = []
         self.layouts: Dict[str, UILayout] = {} # sub layout
+
+        self.outerline: Outerline = None
+
+    def get_size(self):
+        return self.rect.size
+    
+    def add_outerline(self, outline_thickness: int = 1, outline_color=(255, 255, 255)):
+        self.outerline = Outerline(self.get_size(), outline_thickness, outline_color)
 
     def add_layout(self, name: str, relative_rect: RelativeRect, bg_color=UI_LAYOUT["default_color"]):
         """
@@ -151,7 +174,11 @@ class UILayout:
                 element.is_hovered(pygame.mouse.get_pos())
             element.render(layout_surf)
         
-        surf.blit(layout_surf, self.rect.topleft)
+        render_offset = self.rect.topleft
+        surf.blit(layout_surf, render_offset)
+
+        if self.outerline is not None:
+            self.outerline.render(surf, render_offset)
 
 class Button:
     def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, callback=None, auto_lined_str: List[str]=None):
