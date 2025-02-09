@@ -23,7 +23,8 @@ class SingleGame:
 
         self.state: GameState = None
         self.clock: pygame.time.Clock = pygame.time.Clock()
-        self.running: bool = False
+
+        self.map: Map = None
         self.player: Player = None
         self.fs: FeedSystem = None
         self.cell_manager: CellManager = None
