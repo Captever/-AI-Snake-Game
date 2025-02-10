@@ -112,20 +112,16 @@ class BaseGame(ABC):
     def set_clear_layout(self, layout: UILayout):
         self.state_layouts[GameState.CLEAR] = layout
     
-    def set_state_active(self):
-        self.state = GameState.ACTIVE
-    
-    def set_state_countdown(self):
-        self.state = GameState.COUNTDOWN
-    
-    def set_state_paused(self):
-        self.state = GameState.PAUSED
-    
-    def set_state_gameover(self):
-        self.state = GameState.GAMEOVER
-    
-    def set_state_clear(self):
-        self.state = GameState.CLEAR
+    def set_state(self, state: GameState):
+        if state not in GameState:
+            raise ValueError(f"Invalid GameState on `set_state()`: {state}")
+        
+        self.state = state
+        self.on_state_change() # hooking
+
+    def on_state_change(self):
+        """Methods to be overridden in subclasses"""
+        pass
 
 
     def get_state_layout_rect(self):
@@ -134,20 +130,11 @@ class BaseGame(ABC):
     def get_instruction_layout_rect(self):
         return RelativeRect(0, 0.5, 0.25, 0.5).to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
     
-    def is_state_active(self) -> bool:
-        return self.state == GameState.ACTIVE
-    
-    def is_state_countdown(self):
-        return self.state == GameState.COUNTDOWN
-    
-    def is_state_paused(self):
-        return self.state == GameState.PAUSED
-    
-    def is_state_gameover(self):
-        return self.state == GameState.GAMEOVER
-    
-    def is_state_clear(self):
-        return self.state == GameState.CLEAR
+    def is_state(self, state: GameState) -> bool:
+        if state not in GameState:
+            raise ValueError(f"Invalid GameState on `is_state()`: {state}")
+        
+        return self.state == state
     
     def is_in_bound(self, coord) -> bool:
         return self.map.is_inside(coord)
@@ -158,10 +145,10 @@ class BaseGame(ABC):
 
     # flip
     def flip_game_pause(self):
-        if self.is_state_paused():
-            self.set_state_active()
-        elif self.is_state_active():
-            self.set_state_paused()
+        if self.is_state(GameState.PAUSED):
+            self.set_state(GameState.ACTIVE)
+        elif self.is_state(GameState.ACTIVE):
+            self.set_state(GameState.PAUSED)
     
     # about start
     def start_game(self):
@@ -171,7 +158,7 @@ class BaseGame(ABC):
         self.fs.add_feed_random_coord(self.feed_amount)
 
     def start_countdown(self, count_ms: int = 3000):
-        self.set_state_countdown()
+        self.set_state(GameState.COUNTDOWN)
         self.countdown_remaining_time = count_ms / 1000.0
         self.countdown_end_ticks = (pygame.time.get_ticks() + count_ms) / 1000.0
     
@@ -180,13 +167,13 @@ class BaseGame(ABC):
         self.countdown_remaining_time = max(0.0, self.countdown_end_ticks - current_ticks)
         self.countdown_textbox.update_content(str(round(self.countdown_remaining_time, 1)))
         if not self.countdown_remaining_time:
-            self.set_state_active()
+            self.set_state(GameState.ACTIVE)
 
     # about every frame routine
     def update(self):
-        if self.is_state_active():
+        if self.is_state(GameState.ACTIVE):
             self.move_sequence()
-        elif self.is_state_countdown():
+        elif self.is_state(GameState.COUNTDOWN):
             self.countdown()
         
     def move_sequence(self):
@@ -217,7 +204,7 @@ class BaseGame(ABC):
         self.boards["score"].update_content(self.score)
         
         if self.clear_condition is not None and self.score >= self.clear_condition:
-            self.set_state_clear()
+            self.set_state(GameState.CLEAR)
 
     def end_of_game(self):
         pygame.quit()
@@ -253,5 +240,5 @@ class BaseGame(ABC):
         if self.state in [GameState.PAUSED, GameState.CLEAR, GameState.GAMEOVER]:
             self.state_layouts[self.state].render(surf)
             
-        elif self.is_state_countdown():
+        elif self.is_state(GameState.COUNTDOWN):
             self.countdown_textbox.render(surf)

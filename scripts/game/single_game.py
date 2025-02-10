@@ -6,6 +6,8 @@ from constants import *
 
 from scripts.ui.ui_components import UILayout, RelativeRect
 
+from scripts.manager.game_manager import GameState
+
 from typing import Tuple
 
 class SingleGame(BaseGame):
@@ -76,7 +78,7 @@ class SingleGame(BaseGame):
     def update(self):
         super().update()
 
-        if self.is_state_countdown():
+        if self.is_state(GameState.COUNTDOWN):
             self.countdown()
 
     
@@ -91,7 +93,7 @@ class SingleGame(BaseGame):
         if key == pygame.K_p:
             self.flip_game_pause()
 
-        elif self.is_state_active() or self.is_state_countdown():
+        elif self.is_state(GameState.ACTIVE) or self.is_state(GameState.COUNTDOWN):
             self.handle_movement_keydown(key)
     
     def handle_movement_keydown(self, key):

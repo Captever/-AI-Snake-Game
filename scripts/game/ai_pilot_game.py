@@ -7,6 +7,8 @@ from constants import *
 
 from scripts.ui.ui_components import UILayout, RelativeRect
 
+from scripts.manager.game_manager import GameState
+
 from typing import Tuple
 
 from scripts.ai.q_learning import QLearningAI
@@ -80,17 +82,14 @@ class AIPilotGame(BaseGame):
         self.set_clear_layout(layout)
 
 
-    def set_state_gameover(self):
-        super().set_state_gameover()
+    def on_state_change(self):
+        if self.is_state(GameState.GAMEOVER):
+            if isinstance(self.pilot_ai, QLearningAI):
+                self.pilot_ai.learn(-1, None)
+            self.handle_game_end()
 
-        if isinstance(self.pilot_ai, QLearningAI):
-            self.pilot_ai.learn(-1, None)
-        self.handle_game_end()
-    
-    def set_state_clear(self):
-        super().set_state_clear()
-
-        self.handle_game_end()
+        elif self.is_state(GameState.CLEAR):
+            self.handle_game_end()
 
     
     def is_on_move_delay(self) -> bool:
@@ -116,7 +115,7 @@ class AIPilotGame(BaseGame):
 
         self.final_epoch_flag = False
         
-        self.set_state_active()
+        self.set_state(GameState.ACTIVE)
     
     def restart_game(self):
         self.score = 0
@@ -126,7 +125,7 @@ class AIPilotGame(BaseGame):
     def update(self):
         super().update()
 
-        if self.player is not None and self.is_state_active() and self.next_direction is None:
+        if self.player is not None and self.is_state(GameState.ACTIVE) and self.next_direction is None:
             self.next_direction = self.pilot_ai.decide_direction()
             if self.next_direction == "surrender": # Maintain previous movement upon surrender
                 self.next_direction = self.curr_direction
@@ -166,7 +165,7 @@ class AIPilotGame(BaseGame):
                 self.handle_keydown(event.key)
     
     def handle_keydown(self, key):
-        if self.is_state_paused() or self.is_state_active():
+        if self.is_state(GameState.PAUSED) or self.is_state(GameState.ACTIVE):
             if key == pygame.K_p:
                 self.flip_game_pause()
             if key == pygame.K_e:

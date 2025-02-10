@@ -5,6 +5,7 @@ import random
 from constants import *
 
 from scripts.entity.feed_system import Feed
+from scripts.manager.game_manager import GameState
 
 from typing import List, Tuple
 
@@ -110,7 +111,7 @@ class Player:
         collision = self.check_collision(new_head)
         # game over when colliding with walls or the player's own body
         if collision[0] in ['wall', 'body']:
-            self.game.set_state_gameover()
+            self.game.set_state(GameState.GAMEOVER)
             return
         
         # length increases when eat feed
