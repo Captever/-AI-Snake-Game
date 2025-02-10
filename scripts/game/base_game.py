@@ -134,7 +134,7 @@ class BaseGame(ABC):
     def get_instruction_layout_rect(self):
         return RelativeRect(0, 0.5, 0.25, 0.5).to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
     
-    def is_state_active(self):
+    def is_state_active(self) -> bool:
         return self.state == GameState.ACTIVE
     
     def is_state_countdown(self):
@@ -148,9 +148,6 @@ class BaseGame(ABC):
     
     def is_state_clear(self):
         return self.state == GameState.CLEAR
-    
-    def is_active(self) -> bool:
-        return self.state == GameState.ACTIVE
     
     def is_in_bound(self, coord) -> bool:
         return self.map.is_inside(coord)
@@ -187,7 +184,7 @@ class BaseGame(ABC):
 
     # about every frame routine
     def update(self):
-        if self.is_active():
+        if self.is_state_active():
             self.move_sequence()
         elif self.is_state_countdown():
             self.countdown()

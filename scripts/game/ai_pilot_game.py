@@ -126,7 +126,7 @@ class AIPilotGame(BaseGame):
     def update(self):
         super().update()
 
-        if self.player is not None and self.is_active() and self.next_direction is None:
+        if self.player is not None and self.is_state_active() and self.next_direction is None:
             self.next_direction = self.pilot_ai.decide_direction()
             if self.next_direction == "surrender": # Maintain previous movement upon surrender
                 self.next_direction = self.curr_direction
@@ -166,7 +166,7 @@ class AIPilotGame(BaseGame):
                 self.handle_keydown(event.key)
     
     def handle_keydown(self, key):
-        if self.is_state_paused() or self.is_active():
+        if self.is_state_paused() or self.is_state_active():
             if key == pygame.K_p:
                 self.flip_game_pause()
             if key == pygame.K_e:

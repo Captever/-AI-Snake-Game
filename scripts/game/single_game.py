@@ -91,7 +91,7 @@ class SingleGame(BaseGame):
         if key == pygame.K_p:
             self.flip_game_pause()
 
-        elif self.is_active() or self.is_state_countdown():
+        elif self.is_state_active() or self.is_state_countdown():
             self.handle_movement_keydown(key)
     
     def handle_movement_keydown(self, key):
