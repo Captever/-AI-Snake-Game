@@ -11,6 +11,7 @@ class RecordScene(Scene):
     def __init__(self, manager):
         super().__init__(manager)
 
+        self.replay_visualizer_layout = self.create_replay_visualizer_layout()
         self.replay_list_layout = self.create_replay_list_layout()
         self.playback_tool_layout = self.create_playback_tool_layout()
     
@@ -20,6 +21,21 @@ class RecordScene(Scene):
 
         offset = tuple(base_size[i] * offset_ratio[i] for i in [0, 1])
         return pygame.Rect((origin_pos[0] + offset[0], origin_pos[1] + offset[1]) + base_size)
+    
+    def create_replay_visualizer_layout(self):
+        layout_relative_rect: RelativeRect
+
+        if IS_LANDSCAPE:
+            layout_relative_rect = RelativeRect(0.35, 0.05, 0.6, 0.6)
+        else:
+            layout_relative_rect = RelativeRect(0.05, 0.025, 0.9, 0.375)
+
+        layout_rect: pygame.Rect = layout_relative_rect.to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
+        bg_color = (50, 50, 50, 50)
+
+        layout = UILayout((0, 0), layout_rect, bg_color)
+
+        return layout
 
     def create_replay_list_layout(self):
         layout_relative_rect: RelativeRect
@@ -27,7 +43,7 @@ class RecordScene(Scene):
         if IS_LANDSCAPE:
             layout_relative_rect = RelativeRect(0.05, 0.05, 0.25, 0.9)
         else:
-            layout_relative_rect = RelativeRect(0.1, 0.5, 0.8, 0.25)
+            layout_relative_rect = RelativeRect(0.15, 0.45, 0.7, 0.3)
 
         layout_rect: pygame.Rect = layout_relative_rect.to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
         bg_color = (50, 50, 50, 50)
@@ -46,7 +62,7 @@ class RecordScene(Scene):
         layout_relative_rect: RelativeRect
 
         if IS_LANDSCAPE:
-            layout_relative_rect = RelativeRect(0.35, 0.8, 0.6, 0.15)
+            layout_relative_rect = RelativeRect(0.35, 0.7, 0.6, 0.25)
         else:
             layout_relative_rect = RelativeRect(0.05, 0.8, 0.9, 0.15)
 
@@ -60,6 +76,7 @@ class RecordScene(Scene):
     def handle_events(self, events):
         super().handle_events(events)
         
+        self.replay_visualizer_layout.handle_events(events)
         self.replay_list_layout.handle_events(events)
         self.playback_tool_layout.handle_events(events)
 
@@ -70,5 +87,6 @@ class RecordScene(Scene):
     def render(self, surf):
         surf.fill((0, 0, 0))
 
+        self.replay_visualizer_layout.render(surf)
         self.replay_list_layout.render(surf)
         self.playback_tool_layout.render(surf)
