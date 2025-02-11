@@ -23,10 +23,10 @@ class SingleGame(BaseGame):
     
     def init_instruction_list(self):
         self.instruction_list = [ # key, act
-            ("W", "Up"),
-            ("A", "Left"),
-            ("S", "Down"),
-            ("D", "Right"),
+            ("W/Up", "Up"),
+            ("A/Left", "Left"),
+            ("S/Down", "Down"),
+            ("D/Right", "Right"),
             ("P", "Pause")
         ]
     
@@ -97,13 +97,13 @@ class SingleGame(BaseGame):
             self.handle_movement_keydown(key)
     
     def handle_movement_keydown(self, key):
-        if key == pygame.K_UP:
+        if key == pygame.K_UP or key == pygame.K_w:
             self.next_direction = 'N'
-        elif key == pygame.K_DOWN:
+        elif key == pygame.K_DOWN or key == pygame.K_s:
             self.next_direction = 'S'
-        elif key == pygame.K_LEFT:
+        elif key == pygame.K_LEFT or key == pygame.K_a:
             self.next_direction = 'W'
-        elif key == pygame.K_RIGHT:
+        elif key == pygame.K_RIGHT or key == pygame.K_d:
             self.next_direction = 'E'
         else:
             return
