@@ -14,8 +14,8 @@ CONFIG = "config"
 IN_GAME = "in_game"
 
 class SingleGameScene(Scene):
-    def __init__(self, manager):
-        super().__init__(manager)
+    def __init__(self, manager, size: Tuple[int, int]):
+        super().__init__(manager, size)
         self.game: SingleGame = None
         
         self.ui_state = CONFIG
@@ -26,12 +26,12 @@ class SingleGameScene(Scene):
         layout_pos: Tuple[int, int]
         layout_size: Tuple[int, int]
 
-        if IS_LANDSCAPE:
-            layout_pos = (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 6)
-            layout_size = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 1.5)
+        if self.is_landscape:
+            layout_pos = (self.size[0] // 4, self.size[1] // 6)
+            layout_size = (self.size[0] // 2, self.size[1] // 1.5)
         else:
-            layout_pos = (0, SCREEN_HEIGHT // 4)
-            layout_size = (SCREEN_WIDTH, SCREEN_HEIGHT // 2)
+            layout_pos = (0, self.size[1] // 4)
+            layout_size = (self.size[0], self.size[1] // 2)
 
         layout_rect: pygame.Rect = pygame.Rect(layout_pos + layout_size)
         bg_color = (50, 50, 50, 50)
@@ -61,7 +61,8 @@ class SingleGameScene(Scene):
         move_delay = MOVE_DELAY * (10 - player_speed) # min: 2, max: 9
         feed_amount: int = int(settings['Feed Amount'])
         clear_goal: float = settings['Clear Goal (%)'] / 100.0
-        self.game = SingleGame(self, move_delay, grid_size, feed_amount, clear_goal)
+        game_rect = pygame.Rect((0, 0), self.size)
+        self.game = SingleGame(self, game_rect, move_delay, grid_size, feed_amount, clear_goal)
 
     def handle_events(self, events):
         super().handle_events(events)
@@ -99,8 +100,6 @@ class SingleGameScene(Scene):
             self.game.update()
 
     def render(self, surf):
-        surf.fill((0, 0, 0))
-
         ui_state = self.get_ui_state()
         if ui_state == CONFIG:
             self.config_layout.render(surf)

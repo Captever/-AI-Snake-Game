@@ -8,13 +8,13 @@ from scripts.ui.ui_components import UILayout, RelativeRect
 from typing import Tuple
 
 class MainScene(Scene):
-    def __init__(self, manager):
-        super().__init__(manager)
+    def __init__(self, manager, size: Tuple[int, int]):
+        super().__init__(manager, size)
 
         self.menu_layout = self.create_menu_layout()
     
     def get_centered_rect(self, base_size: Tuple[int, int], offset_ratio: Tuple[float, float]) -> pygame.Rect:
-        screen_center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+        screen_center = (self.size[0] // 2, self.size[1] // 2)
         origin_pos = (screen_center[0] - base_size[0] // 2, screen_center[1] - base_size[1] // 2)
 
         offset = tuple(base_size[i] * offset_ratio[i] for i in [0, 1])
@@ -24,12 +24,12 @@ class MainScene(Scene):
         layout_pos: Tuple[int, int]
         layout_size: Tuple[int, int]
 
-        if IS_LANDSCAPE:
-            layout_pos = (SCREEN_WIDTH // 4, SCREEN_HEIGHT // 6)
-            layout_size = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 1.5)
+        if self.is_landscape:
+            layout_pos = (self.size[0] // 4, self.size[1] // 6)
+            layout_size = (self.size[0] // 2, self.size[1] // 1.5)
         else:
-            layout_pos = (0, SCREEN_HEIGHT // 4)
-            layout_size = (SCREEN_WIDTH, SCREEN_HEIGHT // 2)
+            layout_pos = (0, self.size[1] // 4)
+            layout_size = (self.size[0], self.size[1] // 2)
 
         layout_rect: pygame.Rect = pygame.Rect(layout_pos + layout_size)
         bg_color = (50, 50, 50, 50)
@@ -58,6 +58,4 @@ class MainScene(Scene):
         self.manager.set_active_scene("RecordScene")
 
     def render(self, surf):
-        surf.fill((0, 0, 0))
-
         self.menu_layout.render(surf)

@@ -22,15 +22,17 @@ class Main:
         self.running: bool = False
 
     def init_scenes(self):
+        scene_size = self.screen.get_size()
+
         self.scene_manager = SceneManager()
 
-        main_scene = MainScene(self.scene_manager)
+        main_scene = MainScene(self.scene_manager, scene_size)
         self.scene_manager.add_scene("MainScene", main_scene)
-        game_scene = SingleGameScene(self.scene_manager)
+        game_scene = SingleGameScene(self.scene_manager, scene_size)
         self.scene_manager.add_scene("GameScene", game_scene)
-        ai_lab_scene = AILabScene(self.scene_manager)
+        ai_lab_scene = AILabScene(self.scene_manager, scene_size)
         self.scene_manager.add_scene("AILabScene", ai_lab_scene)
-        record_scene = RecordScene(self.scene_manager)
+        record_scene = RecordScene(self.scene_manager, scene_size)
         self.scene_manager.add_scene("RecordScene", record_scene)
         
         self.scene_manager.set_active_scene("MainScene")
