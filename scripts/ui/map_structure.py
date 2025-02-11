@@ -10,6 +10,8 @@ class Map:
     def __init__(self, game: 'Game', map_side_length: int, grid_thickness: int = 1, grid_color=(255, 255, 255, 128)):
         self.game: 'Game' = game
         self.side_length: int = map_side_length
+        
+        self.surf = pygame.Surface(self.get_size())
 
         self.outerline: Outerline = None
 
@@ -49,7 +51,7 @@ class Map:
         return (self.cell_side_length, self.cell_side_length)
 
     def render(self, surf, offset=(0, 0)):
-        self.surf = pygame.Surface(self.get_size())
+        self.surf.fill((0, 0, 0))
 
         self.grid.render(self.surf, self.grid_offset)
 
@@ -67,6 +69,8 @@ class Grid:
         self.size = tuple(cell_side_length * grid_num[i] for i in [0, 1])
         self.grid_num = grid_num
 
+        self.surf = pygame.Surface(self.size)
+
         self.outerline = None
 
         self.cells: Dict[Tuple[int, int], Cell] = {}
@@ -82,7 +86,7 @@ class Grid:
         self.outerline = Outerline(self.size, outline_thickness, outline_color)
     
     def render(self, surf, offset=(0, 0)):
-        self.surf = pygame.Surface(self.size)
+        self.surf.fill((0, 0, 0))
 
         for coord, cell in self.cells.items():
             x, y = coord
@@ -98,6 +102,8 @@ class Cell:
         self.side_length = cell_side_length
         self.outline_thickness = outline_thickness
         self.outline_color = outline_color
+        
+        self.surf = pygame.Surface(self.get_size(), pygame.SRCALPHA)
 
         self.surfs: List[Tuple[pygame.Surface, Tuple[int, int]]] = []
     
@@ -105,7 +111,7 @@ class Cell:
         self.surfs.append((surf, offset))
 
     def render(self, surf, offset=(0, 0)):
-        self.surf = pygame.Surface(self.get_size(), pygame.SRCALPHA)
+        self.surf.fill((0, 0, 0, 0))
 
         for target_surf, target_offset in self.surfs:
             self.surf.blit(target_surf, target_offset)

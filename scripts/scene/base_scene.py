@@ -1,12 +1,14 @@
 import pygame, sys
 from abc import ABC, abstractmethod
 
-from typing import Tuple
-
 class Scene(ABC):
-    def __init__(self, manager, size: Tuple[int, int]):
+    def __init__(self, manager, rect: pygame.Rect):
         self.manager = manager
-        self.size = size
+        self.rect = rect
+        self.size = rect.size
+        self.origin = rect.topleft
+
+        self.surf = pygame.Surface(self.size)
 
         self.is_landscape: bool = self.size[0] >= self.size[1]
 
@@ -19,9 +21,9 @@ class Scene(ABC):
                 sys.exit()
 
     @abstractmethod
-    def render(self, screen):
+    def render(self, surf):
         """Render the scene."""
-        pass
+        self.surf.fill((0, 0, 0))
 
     def update(self):
         """Update game logic."""

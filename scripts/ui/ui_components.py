@@ -77,6 +77,9 @@ class UILayout:
         self.elements = []
         self.layouts: Dict[str, UILayout] = {} # sub layout
 
+        self.surf = pygame.Surface(self.rect.size, pygame.SRCALPHA)
+        self.offset = self.rect.topleft
+        
         self.outerline: Outerline = None
 
     def get_size(self):
@@ -163,22 +166,20 @@ class UILayout:
         Args:
             surf (pygame.Surface): Surface to render on.
         """
-        layout_surf = pygame.Surface(self.rect.size, pygame.SRCALPHA)
-        layout_surf.fill(self.bg_color)
+        self.surf.fill(self.bg_color)
         
         for layout in self.layouts.values():
-            layout.render(layout_surf)
+            layout.render(self.surf)
 
         for element in self.elements:
             if isinstance(element, Button) or isinstance(element, ScrollBar):
                 element.is_hovered(pygame.mouse.get_pos())
-            element.render(layout_surf)
+            element.render(self.surf)
         
-        render_offset = self.rect.topleft
-        surf.blit(layout_surf, render_offset)
+        surf.blit(self.surf, self.offset)
 
         if self.outerline is not None:
-            self.outerline.render(surf, render_offset)
+            self.outerline.render(surf, self.offset)
 
 class Button:
     def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, callback=None, auto_lined_str: List[str]=None):
@@ -333,10 +334,11 @@ class Board:
     def __init__(self, rect: pygame.Rect, title, font_color, default: int=0, format: str=None, custom_ttf_file_path=None):
         self.rect = rect
         self.title = title
-        self.surf = pygame.Surface(rect.size, pygame.SRCALPHA)
         self.font_color = font_color
         self.format = format
         self.custom_ttf_file_path = custom_ttf_file_path
+        
+        self.surf = pygame.Surface(rect.size, pygame.SRCALPHA)
 
         self.default = default
 

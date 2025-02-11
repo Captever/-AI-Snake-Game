@@ -14,8 +14,8 @@ CONFIG = "config"
 IN_GAME = "in_game"
 
 class SingleGameScene(Scene):
-    def __init__(self, manager, size: Tuple[int, int]):
-        super().__init__(manager, size)
+    def __init__(self, manager, rect: pygame.Rect):
+        super().__init__(manager, rect)
         self.game: SingleGame = None
         
         self.ui_state = CONFIG
@@ -61,7 +61,7 @@ class SingleGameScene(Scene):
         move_delay = MOVE_DELAY * (10 - player_speed) # min: 2, max: 9
         feed_amount: int = int(settings['Feed Amount'])
         clear_goal: float = settings['Clear Goal (%)'] / 100.0
-        game_rect = pygame.Rect((0, 0), self.size)
+        game_rect = self.rect
         self.game = SingleGame(self, game_rect, move_delay, grid_size, feed_amount, clear_goal)
 
     def handle_events(self, events):
@@ -100,8 +100,12 @@ class SingleGameScene(Scene):
             self.game.update()
 
     def render(self, surf):
+        super().render(surf)
+        
         ui_state = self.get_ui_state()
         if ui_state == CONFIG:
-            self.config_layout.render(surf)
+            self.config_layout.render(self.surf)
         elif ui_state == IN_GAME:
-            self.game.render(surf)
+            self.game.render(self.surf)
+
+        surf.blit(self.surf, self.origin)

@@ -14,8 +14,8 @@ from typing import Tuple
 from scripts.ai.q_learning import QLearningAI
 
 class AIPilotGame(BaseGame):
-    def __init__(self, scene, pilot_ai: BaseAI, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
-        super().__init__(scene, player_move_delay, grid_size, feed_amount, clear_goal)
+    def __init__(self, scene, rect: pygame.Rect, pilot_ai: BaseAI, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
+        super().__init__(scene, rect, player_move_delay, grid_size, feed_amount, clear_goal)
         self.pilot_ai = pilot_ai
         
         self.top_score: int = 0

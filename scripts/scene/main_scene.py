@@ -8,8 +8,8 @@ from scripts.ui.ui_components import UILayout, RelativeRect
 from typing import Tuple
 
 class MainScene(Scene):
-    def __init__(self, manager, size: Tuple[int, int]):
-        super().__init__(manager, size)
+    def __init__(self, manager, rect: pygame.Rect):
+        super().__init__(manager, rect)
 
         self.menu_layout = self.create_menu_layout()
     
@@ -58,4 +58,8 @@ class MainScene(Scene):
         self.manager.set_active_scene("RecordScene")
 
     def render(self, surf):
-        self.menu_layout.render(surf)
+        super().render(surf)
+
+        self.menu_layout.render(self.surf)
+
+        surf.blit(self.surf, self.origin)

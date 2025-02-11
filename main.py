@@ -16,23 +16,25 @@ class Main:
         pygame.display.set_caption("Snake")
 
         self.screen: pygame.Surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        
+        self.clock: pygame.time.Clock = pygame.time.Clock()
 
         self.init_scenes()
 
         self.running: bool = False
 
     def init_scenes(self):
-        scene_size = self.screen.get_size()
+        scene_rect = pygame.Rect((0, 0), self.screen.get_size())
 
         self.scene_manager = SceneManager()
 
-        main_scene = MainScene(self.scene_manager, scene_size)
+        main_scene = MainScene(self.scene_manager, scene_rect)
         self.scene_manager.add_scene("MainScene", main_scene)
-        game_scene = SingleGameScene(self.scene_manager, scene_size)
+        game_scene = SingleGameScene(self.scene_manager, scene_rect)
         self.scene_manager.add_scene("GameScene", game_scene)
-        ai_lab_scene = AILabScene(self.scene_manager, scene_size)
+        ai_lab_scene = AILabScene(self.scene_manager, scene_rect)
         self.scene_manager.add_scene("AILabScene", ai_lab_scene)
-        record_scene = RecordScene(self.scene_manager, scene_size)
+        record_scene = RecordScene(self.scene_manager, scene_rect)
         self.scene_manager.add_scene("RecordScene", record_scene)
         
         self.scene_manager.set_active_scene("MainScene")
@@ -49,9 +51,12 @@ class Main:
         self.end_of_game()
     
     def render(self):
+        self.screen.fill((0, 0, 0))
+
         self.scene_manager.render(self.screen)
 
         pygame.display.flip()
+        self.clock.tick(60)
 
     def end_of_game(self):
         pygame.quit()

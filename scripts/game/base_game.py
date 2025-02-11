@@ -17,15 +17,17 @@ from scripts.manager.game_manager import GameState
 from typing import List, Tuple, Dict
 
 class BaseGame(ABC):
-    def __init__(self, scene, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
+    def __init__(self, scene, rect: pygame.Rect, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
         self.scene = scene
+        self.rect = rect
         self.player_move_delay = player_move_delay
         self.grid_size = grid_size
         self.feed_amount = feed_amount
         self.clear_condition: int = round(self.grid_size[0] * self.grid_size[1] * clear_goal) - INIT_LENGTH
 
+        self.surf = pygame.Surface(rect.size)
+
         self.state: GameState = None
-        self.clock: pygame.time.Clock = pygame.time.Clock()
 
         self.map: Map = None
         self.player: Player = None
@@ -76,15 +78,16 @@ class BaseGame(ABC):
         self.init_clear_layout(state_rect)
 
     def init_ui(self):
-        if IS_LANDSCAPE:
-            map_side_length = (SCREEN_WIDTH // 2)
+        is_landscape = self.rect.size[0] >= self.rect.size[1]
+        if is_landscape:
+            map_side_length = (self.rect.size[0] // 2)
             board_relative_rect = RelativeRect(0.75, 0.1, 0.25, 0.15)
             board_relative_offset = (0, 0.16)
         else:
-            map_side_length = SCREEN_WIDTH
+            map_side_length = self.rect.size[0]
             board_relative_rect = RelativeRect(0.1, 0.75, 0.15, 0.25)
             board_relative_offset = (0.16, 0)
-        self.map_origin = (SCREEN_WIDTH // 2 - map_side_length // 2, SCREEN_HEIGHT // 2 - map_side_length // 2)
+        self.map_origin = (self.rect.size[0] // 2 - map_side_length // 2, self.rect.size[1] // 2 - map_side_length // 2)
 
         self.map = Map(self, map_side_length, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
         self.map.add_outerline(MAP_OUTERLINE_THICKNESS, WHITE)
@@ -92,7 +95,7 @@ class BaseGame(ABC):
         for idx, (board_key, board_title, board_format) in enumerate(self.board_list):
             board_offset = (board_relative_offset[0] * idx, board_relative_offset[1] * idx)
             curr_board_relative_rect = RelativeRect(board_relative_rect.relative_x + board_offset[0], board_relative_rect.relative_y + board_offset[1], board_relative_rect.relative_width, board_relative_rect.relative_height)
-            board_rect = curr_board_relative_rect.to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
+            board_rect = curr_board_relative_rect.to_absolute(self.rect.size)
             self.boards[board_key] = Board(board_rect, board_title, WHITE, format=board_format)
 
         # about state layouts
@@ -125,10 +128,10 @@ class BaseGame(ABC):
 
 
     def get_state_layout_rect(self):
-        return RelativeRect(0, 0.3, 1, 0.35).to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
+        return RelativeRect(0, 0.3, 1, 0.35).to_absolute(self.rect.size)
     
     def get_instruction_layout_rect(self):
-        return RelativeRect(0, 0.5, 0.25, 0.5).to_absolute((SCREEN_WIDTH, SCREEN_HEIGHT))
+        return RelativeRect(0, 0.5, 0.25, 0.5).to_absolute(self.rect.size)
     
     def is_state(self, state: GameState) -> bool:
         if state not in GameState:
@@ -221,20 +224,19 @@ class BaseGame(ABC):
     
 
     def render(self, surf: pygame.Surface):
-        surf.fill((0, 0, 0))
+        self.surf.fill((0, 0, 0))
 
         self.player.render()
         self.fs.render()
         for board in self.boards.values():
-            board.render(surf)
-        self.instruction.render(surf)
+            board.render(self.surf)
+        self.instruction.render(self.surf)
 
-        self.map.render(surf, self.map_origin)
+        self.map.render(self.surf, self.map_origin)
 
-        self.render_state_objects(surf)
+        self.render_state_objects(self.surf)
 
-        pygame.display.flip()
-        self.clock.tick(60)
+        surf.blit(self.surf, self.rect)
 
     def render_state_objects(self, surf):
         if self.state in [GameState.PAUSED, GameState.CLEAR, GameState.GAMEOVER]:

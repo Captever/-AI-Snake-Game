@@ -10,8 +10,8 @@ from scripts.game.replay_game import ReplayGame
 from typing import Tuple
 
 class RecordScene(Scene):
-    def __init__(self, manager, size: Tuple[int, int]):
-        super().__init__(manager, size)
+    def __init__(self, manager, rect: pygame.Rect):
+        super().__init__(manager, rect)
 
         self.replay_game_layout = self.create_replay_game_layout()
         self.replay_list_layout = self.create_replay_list_layout()
@@ -29,7 +29,7 @@ class RecordScene(Scene):
     def create_replay_game_layout(self):
         layout_relative_rect: RelativeRect
 
-        if IS_LANDSCAPE:
+        if self.is_landscape:
             layout_relative_rect = RelativeRect(0.35, 0.05, 0.6, 0.6)
         else:
             layout_relative_rect = RelativeRect(0.05, 0.025, 0.9, 0.375)
@@ -44,7 +44,7 @@ class RecordScene(Scene):
     def create_replay_list_layout(self):
         layout_relative_rect: RelativeRect
 
-        if IS_LANDSCAPE:
+        if self.is_landscape:
             layout_relative_rect = RelativeRect(0.05, 0.05, 0.25, 0.9)
         else:
             layout_relative_rect = RelativeRect(0.15, 0.45, 0.7, 0.3)
@@ -65,7 +65,7 @@ class RecordScene(Scene):
     def create_playback_tool_layout(self):
         layout_relative_rect: RelativeRect
 
-        if IS_LANDSCAPE:
+        if self.is_landscape:
             layout_relative_rect = RelativeRect(0.35, 0.7, 0.6, 0.25)
         else:
             layout_relative_rect = RelativeRect(0.05, 0.8, 0.9, 0.15)
@@ -89,7 +89,10 @@ class RecordScene(Scene):
         self.target_ai_name = replay_index
 
     def render(self, surf):
+        super().render(surf)
 
-        self.replay_game_layout.render(surf)
-        self.replay_list_layout.render(surf)
-        self.playback_tool_layout.render(surf)
+        self.replay_game_layout.render(self.surf)
+        self.replay_list_layout.render(self.surf)
+        self.playback_tool_layout.render(self.surf)
+
+        surf.blit(self.surf, self.origin)

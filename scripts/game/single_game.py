@@ -11,8 +11,8 @@ from scripts.manager.game_manager import GameState
 from typing import Tuple
 
 class SingleGame(BaseGame):
-    def __init__(self, scene, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
-        super().__init__(scene, player_move_delay, grid_size, feed_amount, clear_goal)
+    def __init__(self, scene, rect: pygame.Rect, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
+        super().__init__(scene, rect, player_move_delay, grid_size, feed_amount, clear_goal)
 
         self.start_game()
 
