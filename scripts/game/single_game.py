@@ -105,4 +105,6 @@ class SingleGame(BaseGame):
             self.next_direction = 'W'
         elif key == pygame.K_RIGHT:
             self.next_direction = 'E'
+        else:
+            return
         self.player.set_direction(self.next_direction)
