@@ -35,17 +35,14 @@ class AILabScene(Scene):
         self.config_layout = self.create_config_layout()
 
     def create_config_layout(self):
-        layout_pos: Tuple[int, int]
-        layout_size: Tuple[int, int]
+        layout_relative_rect: RelativeRect
 
         if self.is_landscape:
-            layout_pos = (self.size[0] // 6, self.size[1] // 6)
-            layout_size = (self.size[0] // 1.5, self.size[1] // 1.5)
+            layout_relative_rect = RelativeRect(0.16, 0.16, 0.68, 0.68)
         else:
-            layout_pos = (0, self.size[1] // 6)
-            layout_size = (self.size[0], self.size[1] // 1.5)
+            layout_relative_rect = RelativeRect(0, 0.16, 1, 0.68)
 
-        layout_rect: pygame.Rect = pygame.Rect(layout_pos + layout_size)
+        layout_rect: pygame.Rect = layout_relative_rect.to_absolute(self.size)
         bg_color = (50, 50, 50, 50)
 
         layout = UILayout((0, 0), layout_rect, bg_color)
