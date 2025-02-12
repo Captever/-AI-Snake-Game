@@ -95,13 +95,6 @@ class AILabScene(BaseScene):
         self.ai.set_current_game(self.game)
 
     def init_plt(self):
-        pixel_width = self.size[0]
-        pixel_height = self.size[1]
-        dpi = 100  # dots per inch
-        
-        plt.figure(figsize=(pixel_width / dpi, pixel_height / dpi), dpi=dpi)
-        plt.ion()
-
         self.fig, self.ax = plt.subplots()
         self.epochs = []
         self.scores = []
@@ -135,6 +128,9 @@ class AILabScene(BaseScene):
         if state not in [CONFIG, IN_GAME]:
             ValueError("invalid UI state")
         
+        if state == CONFIG and self.fig is not None:
+            plt.close(self.fig)
+
         self.ui_state = state
     
     def get_ui_state(self):
@@ -157,8 +153,6 @@ class AILabScene(BaseScene):
         self.target_ai_name = ai_name
     
     def return_to_main_scene(self):
-        if self.fig is not None:
-            plt.close(self.fig)
         self.manager.set_active_scene("MainScene")
     
     def add_score_to_figure(self, epoch: int, score: int):
