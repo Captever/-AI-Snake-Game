@@ -2,7 +2,7 @@ import pygame
 
 from constants import *
 
-from .base_scene import Scene
+from .base_scene import BaseScene
 from scripts.ui.ui_components import UILayout, RelativeRect
 
 from typing import Tuple, Dict
@@ -13,7 +13,7 @@ from scripts.game.single_game import SingleGame
 CONFIG = "config"
 IN_GAME = "in_game"
 
-class SingleGameScene(Scene):
+class SingleGameScene(BaseScene):
     def __init__(self, manager, rect: pygame.Rect):
         super().__init__(manager, rect)
         self.game: SingleGame = None

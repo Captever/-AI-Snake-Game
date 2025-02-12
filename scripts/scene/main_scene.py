@@ -2,12 +2,12 @@ import pygame
 
 from constants import *
 
-from .base_scene import Scene
+from .base_scene import BaseScene
 from scripts.ui.ui_components import UILayout, RelativeRect
 
 from typing import Tuple
 
-class MainScene(Scene):
+class MainScene(BaseScene):
     def __init__(self, manager, rect: pygame.Rect):
         super().__init__(manager, rect)
 

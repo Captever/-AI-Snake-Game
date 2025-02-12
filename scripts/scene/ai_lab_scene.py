@@ -5,7 +5,7 @@ from constants import *
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
-from .base_scene import Scene
+from .base_scene import BaseScene
 from scripts.ui.ui_components import UILayout, RelativeRect
 from scripts.manager.ai_manager import AIManager
 
@@ -18,7 +18,7 @@ from functools import partial
 CONFIG = "config"
 IN_GAME = "in_game"
 
-class AILabScene(Scene):
+class AILabScene(BaseScene):
     def __init__(self, manager, rect: pygame.Rect):
         super().__init__(manager, rect)
 

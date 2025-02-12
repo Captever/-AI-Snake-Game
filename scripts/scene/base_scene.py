@@ -1,7 +1,7 @@
 import pygame, sys
 from abc import ABC, abstractmethod
 
-class Scene(ABC):
+class BaseScene(ABC):
     def __init__(self, manager, rect: pygame.Rect):
         self.manager = manager
         self.rect = rect
