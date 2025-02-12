@@ -58,7 +58,7 @@ class SingleGameScene(BaseScene):
         move_delay = MOVE_DELAY * (10 - player_speed) # min: 2, max: 9
         feed_amount: int = int(settings['Feed Amount'])
         clear_goal: float = settings['Clear Goal (%)'] / 100.0
-        game_rect = self.rect
+        game_rect = pygame.Rect(self.rect)
         self.game = SingleGame(self, game_rect, move_delay, grid_size, feed_amount, clear_goal)
 
     def handle_events(self, events):
