@@ -31,7 +31,7 @@ class MainScene(Scene):
         layout_rect: pygame.Rect = layout_relative_rect.to_absolute(self.size)
         bg_color = (50, 50, 50, 50)
 
-        layout = UILayout((0, 0), layout_rect, bg_color)
+        layout = UILayout(self.origin, layout_rect, bg_color)
 
         layout.add_button(RelativeRect(0.25, 0.1, 0.5, 0.15), "Game Start", self.activate_game_scene)
         layout.add_button(RelativeRect(0.25, 0.4, 0.5, 0.15), "AI Lab", self.activate_ai_lab_scene)

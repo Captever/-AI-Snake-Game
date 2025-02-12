@@ -45,7 +45,7 @@ class AILabScene(Scene):
         layout_rect: pygame.Rect = layout_relative_rect.to_absolute(self.size)
         bg_color = (50, 50, 50, 50)
 
-        layout = UILayout((0, 0), layout_rect, bg_color)
+        layout = UILayout(self.origin, layout_rect, bg_color)
 
         self.add_game_init_layout(layout)
         self.add_ai_init_layout(layout)
@@ -90,7 +90,7 @@ class AILabScene(Scene):
         self.player_move_delay = MOVE_DELAY * (11 - player_speed * 2) # min: 1, max: 9
         feed_amount: int = int(settings['Feed Amount'])
         clear_goal: float = settings['Clear Goal (%)'] / 100.0
-        game_rect = self.rect
+        game_rect = pygame.Rect(self.rect)
         self.game = AIPilotGame(self, game_rect, self.ai, self.player_move_delay, grid_size, feed_amount, clear_goal)
         self.ai.set_current_game(self.game)
 

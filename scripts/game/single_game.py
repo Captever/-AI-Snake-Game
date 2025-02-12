@@ -31,7 +31,7 @@ class SingleGame(BaseGame):
         ]
     
     def init_paused_layout(self, rect):
-        layout: UILayout = UILayout((0, 0), rect, (0, 0, 0, 0))
+        layout: UILayout = UILayout(self.origin, rect, (0, 0, 0, 0))
 
         layout.add_textbox(RelativeRect(0, 0, 1, 0.6), "PAUSED", WHITE)
 
@@ -42,7 +42,7 @@ class SingleGame(BaseGame):
         self.set_paused_layout(layout)
     
     def init_gameover_layout(self, rect):
-        layout: UILayout = UILayout((0, 0), rect, (0, 0, 0, 0))
+        layout: UILayout = UILayout(self.origin, rect, (0, 0, 0, 0))
 
         layout.add_textbox(RelativeRect(0, 0, 1, 0.6), "GAME OVER", WHITE)
 
@@ -54,7 +54,7 @@ class SingleGame(BaseGame):
         self.set_gameover_layout(layout)
     
     def init_clear_layout(self, rect):
-        layout: UILayout = UILayout((0, 0), rect, (0, 0, 0, 0))
+        layout: UILayout = UILayout(self.size, rect, (0, 0, 0, 0))
 
         layout.add_textbox(RelativeRect(0, 0, 1, 0.6), "CLEAR", WHITE)
 

@@ -33,7 +33,7 @@ class SingleGameScene(Scene):
         layout_rect: pygame.Rect = layout_relative_rect.to_absolute(self.size)
         bg_color = (50, 50, 50, 50)
 
-        layout = UILayout((0, 0), layout_rect, bg_color)
+        layout = UILayout(self.origin, layout_rect, bg_color)
 
         game_init_layout_name = "game_init"
         layout.add_layout(game_init_layout_name, RelativeRect(0.2, 0.1, 0.6, 0.5), (0, 0, 0, 0))

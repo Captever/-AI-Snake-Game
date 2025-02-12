@@ -16,16 +16,21 @@ from scripts.manager.game_manager import GameState
 
 from typing import List, Tuple, Dict
 
+from scripts.scene.base_scene import Scene
+
 class BaseGame(ABC):
-    def __init__(self, scene, rect: pygame.Rect, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
+    def __init__(self, scene: Scene, rect: pygame.Rect, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
         self.scene = scene
         self.rect = rect
+        self.size = rect.size
+        self.origin: Tuple[int, int] = tuple(scene.origin[i] + rect.topleft[i] for i in [0, 1])
+
         self.player_move_delay = player_move_delay
         self.grid_size = grid_size
         self.feed_amount = feed_amount
         self.clear_condition: int = round(self.grid_size[0] * self.grid_size[1] * clear_goal) - INIT_LENGTH
 
-        self.surf = pygame.Surface(rect.size)
+        self.surf = pygame.Surface(self.size)
 
         self.state: GameState = None
 

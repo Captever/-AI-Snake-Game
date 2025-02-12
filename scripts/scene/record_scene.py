@@ -52,7 +52,7 @@ class RecordScene(Scene):
         layout_rect: pygame.Rect = layout_relative_rect.to_absolute(self.size)
         bg_color = (50, 50, 50, 50)
 
-        layout = UILayout((0, 0), layout_rect, bg_color)
+        layout = UILayout(self.origin, layout_rect, bg_color)
 
         outerline_thickness = 1
         layout.add_outerline(outerline_thickness)
@@ -73,7 +73,7 @@ class RecordScene(Scene):
         layout_rect: pygame.Rect = layout_relative_rect.to_absolute(self.size)
         bg_color = (50, 50, 50, 50)
 
-        layout = UILayout((0, 0), layout_rect, bg_color)
+        layout = UILayout(self.origin, layout_rect, bg_color)
 
         return layout
     
