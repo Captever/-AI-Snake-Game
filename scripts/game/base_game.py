@@ -94,7 +94,7 @@ class BaseGame(ABC):
             board_relative_offset = (0.16, 0)
         self.map_origin = (self.rect.size[0] // 2 - map_side_length // 2, self.rect.size[1] // 2 - map_side_length // 2)
 
-        self.map = Map(self, map_side_length, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
+        self.map = Map(self.grid_size, map_side_length, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
         self.map.add_outerline(MAP_OUTERLINE_THICKNESS, WHITE)
 
         for idx, (board_key, board_title, board_format) in enumerate(self.board_list):

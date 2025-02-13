@@ -7,21 +7,20 @@ from scripts.ui.ui_components import Outerline
 from typing import Tuple, Dict, List
 
 class Map:
-    def __init__(self, game: 'Game', map_side_length: int, grid_thickness: int = 1, grid_color=(255, 255, 255, 128)):
-        self.game: 'Game' = game
+    def __init__(self, grid_size: Tuple[int, int], map_side_length: int, grid_thickness: int = 1, grid_color=(255, 255, 255, 128)):
         self.side_length: int = map_side_length
         
         self.surf = pygame.Surface(self.get_size())
 
         self.outerline: Outerline = None
 
-        self.grid_num = self.game.grid_size
+        self.grid_size = grid_size
 
         # divide by grid height for vertical rect, grid width for horizontal rect
-        grid_diff = self.grid_num[0] - self.grid_num[1]
-        self.cell_side_length = map_side_length // (self.grid_num[0] if grid_diff > 0 else self.grid_num[1])
+        grid_diff = self.grid_size[0] - self.grid_size[1]
+        self.cell_side_length = map_side_length // (self.grid_size[0] if grid_diff > 0 else self.grid_size[1])
         
-        self.grid = Grid(self.cell_side_length, self.grid_num, grid_thickness, grid_color)
+        self.grid = Grid(self.cell_side_length, self.grid_size, grid_thickness, grid_color)
         self.grid.add_outerline(GRID_OUTERLINE_THICKNESS, WHITE)
 
         self.grid_offset = tuple((self.side_length - self.grid.size[i]) // 2 for i in [0, 1])
@@ -37,8 +36,8 @@ class Map:
         self.arrow_pos = tuple(coord[i] * self.cell_side_length for i in [0, 1])
 
     def is_inside(self, coord) -> bool:
-        is_in_x = 0 <= coord[0] < self.grid_num[0]
-        is_in_y = 0 <= coord[1] < self.grid_num[1]
+        is_in_x = 0 <= coord[0] < self.grid_size[0]
+        is_in_y = 0 <= coord[1] < self.grid_size[1]
         return is_in_x and is_in_y
 
     def get_cells(self):
