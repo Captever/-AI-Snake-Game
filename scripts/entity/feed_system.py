@@ -44,6 +44,9 @@ class FeedSystem:
     def get_nearest_feed(self, target: Tuple[int, int]):
         return min(self.feeds, key=lambda feed: get_dist(feed, target))
 
+    def get_feeds_as_list(self):
+        return [[list(feed_pos), feed.to_list()] for feed_pos, feed in self.feeds.items()]
+
     def add_feed(self, coord: Tuple[int, int], feed_type: str = 'normal'):
         self.feeds[coord] = Feed(coord=coord, feed_type=feed_type)
         self.game.cell_manager.mark_cell_used(coord)
@@ -76,6 +79,9 @@ class FeedSystem:
             self.game.map.get_cells()[feed_coord].put_surf(self.feed_surf)
 
 class Feed:
-    def __init__(self, coord, feed_type):
+    def __init__(self, coord: Tuple[int, int], feed_type: str):
         self.coord = coord
         self.type = feed_type
+
+    def to_list(self):
+        return [self.coord, self.type]

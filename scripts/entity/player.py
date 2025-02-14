@@ -102,6 +102,9 @@ class Player:
         (excluding the tail).
         """
         return coord in self.bodies[:-1]
+    
+    def get_bodies_as_list(self):
+        return [list(body) for body in self.bodies]
 
     def move(self):
         head, tail = self.bodies[0], self.bodies[-1]
