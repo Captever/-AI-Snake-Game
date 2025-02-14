@@ -1,3 +1,4 @@
+import pygame
 import json
 
 from scripts.entity.feed_system import Feed
@@ -90,23 +91,37 @@ class ReplayBuffer:
 
 class ReplayManager:
     def __init__(self):
-        pass
-        
-    def show_replay(self):
-        pass
+        self.buffer = ReplayBuffer()
 
-    def go_to_step(self):
-        pass
+        self.current_replay: Replay = None
 
-    def go_to_next_step(self):
-        pass
+        self.replay_file_list: List[str] = None
 
-    def go_to_prev_step(self):
+    def add_step(self, player_bodies: List[Tuple[int, int]], player_direction: str, feeds: Dict[Tuple[int, int], Feed], scores: List[Tuple[str, any]]):
+        self.current_replay.add_step(player_bodies, player_direction, feeds, scores)
+
+    def get_replay_list(self):
+        """
+        Load the replay list
+        """
         pass
 
     def save_replay(self):
-        pass
+        """
+        Save the current game as a replay
+        """
+        self.buffer.save_to_file(self.current_replay)
 
-    def load_replay(self):
-        pass
+    def load_replay(self, index: int):
+        """
+        Load a specific replay
+        """
+        self.current_replay = self.buffer.load_from_file(self.replay_file_list[index])
 
+    def show_replay(self, replay_index: int, rect: pygame.Rect):
+        """
+        Show the loaded replay
+        """
+        self.load_replay(replay_index)
+
+        return ReplayGame(rect, self.current_replay)
