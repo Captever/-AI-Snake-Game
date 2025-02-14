@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 
 import pygame
-import sys
 
 from constants import *
 
@@ -32,17 +31,12 @@ class BaseGame(ABC):
 
         self.surf = pygame.Surface(self.size)
 
-        self.state: GameState = None
-
         self.map: Map = None
         self.player: Player = None
         self.fs: FeedSystem = None
         self.cell_manager: CellManager = None
 
         self.score: int = 0
-
-        self.move_accum: int = 0
-        self.next_direction: str = None
         
         self.board_list: List[Tuple[str, str, str]] = []
         self.instruction_list: List[Tuple[str, str]] = []
@@ -54,6 +48,13 @@ class BaseGame(ABC):
         self.init_instruction_list()
 
         self.init_ui()
+
+        self.init_replay_manager()
+
+        self.state: GameState = None
+
+        self.move_accum: int = 0
+        self.next_direction: str = None
     
     @abstractmethod
     def init_board_list(self):
@@ -158,7 +159,7 @@ class BaseGame(ABC):
         elif self.is_state(GameState.ACTIVE):
             self.set_state(GameState.PAUSED)
     
-    # about start
+    # about progress
     def start_game(self):
         self.cell_manager = CellManager(self.grid_size)
         self.player = Player(self, INIT_LENGTH)
@@ -213,10 +214,6 @@ class BaseGame(ABC):
         
         if self.clear_condition is not None and self.score >= self.clear_condition:
             self.set_state(GameState.CLEAR)
-
-    def end_of_game(self):
-        pygame.quit()
-        sys.exit()
 
 
     @abstractmethod
