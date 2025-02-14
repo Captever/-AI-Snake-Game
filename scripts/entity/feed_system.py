@@ -84,4 +84,4 @@ class Feed:
         self.type = feed_type
 
     def to_list(self):
-        return [self.coord, self.type]
+        return [list(self.coord), self.type]
