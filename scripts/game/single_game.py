@@ -49,7 +49,7 @@ class SingleGame(BaseGame):
         button_layout_name = "button_layout"
         layout.add_layout(button_layout_name, RelativeRect(0.25, 0.7, 0.5, 0.3), (0, 0, 0, 0))
         layout.layouts[button_layout_name].add_button(RelativeRect(0.1, 0, 0.35, 1), "New", self.scene.restart_new_game)
-        layout.layouts[button_layout_name].add_button(RelativeRect(0.55, 0, 0.35, 1), "Save")
+        self.save_buttons.append(layout.layouts[button_layout_name].add_button(RelativeRect(0.55, 0, 0.35, 1), "Save", self.save_game))
 
         self.set_gameover_layout(layout)
     
@@ -61,7 +61,7 @@ class SingleGame(BaseGame):
         button_layout_name = "button_layout"
         layout.add_layout(button_layout_name, RelativeRect(0.25, 0.7, 0.5, 0.3), (0, 0, 0, 0))
         layout.layouts[button_layout_name].add_button(RelativeRect(0.1, 0, 0.35, 1), "New", self.scene.restart_new_game)
-        layout.layouts[button_layout_name].add_button(RelativeRect(0.55, 0, 0.35, 1), "Save")
+        self.save_buttons.append(layout.layouts[button_layout_name].add_button(RelativeRect(0.55, 0, 0.35, 1), "Save", self.save_game))
 
         self.set_clear_layout(layout)
 
@@ -72,6 +72,8 @@ class SingleGame(BaseGame):
 
     def start_game(self):
         super().start_game()
+
+        self.start_to_record("Single")
 
         self.start_countdown(3000)
 

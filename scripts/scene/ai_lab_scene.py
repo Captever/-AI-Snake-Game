@@ -91,7 +91,7 @@ class AILabScene(BaseScene):
         feed_amount: int = int(settings['Feed Amount'])
         clear_goal: float = settings['Clear Goal (%)'] / 100.0
         game_rect = pygame.Rect(self.rect)
-        self.game = AIPilotGame(self, game_rect, self.ai, self.player_move_delay, grid_size, feed_amount, clear_goal)
+        self.game = AIPilotGame(self, game_rect, self.ai, self.target_ai_name, self.player_move_delay, grid_size, feed_amount, clear_goal)
         self.ai.set_current_game(self.game)
 
     def init_plt(self):
@@ -145,6 +145,7 @@ class AILabScene(BaseScene):
     
     def restart_new_game(self):
         self.set_ui_state(CONFIG)
+        self.manager.finish_to_record()
         self.game = None
         self.ai = None
     

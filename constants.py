@@ -86,3 +86,5 @@ MOVE_DELAY = 3 # frame
 INIT_LENGTH = 3 # initial length of snake
 MAP_OUTERLINE_THICKNESS = 1
 GRID_OUTERLINE_THICKNESS = 3
+
+REPLAY_DIRECTORY = "replays"

@@ -14,9 +14,10 @@ from typing import Tuple
 from scripts.ai.q_learning import QLearningAI
 
 class AIPilotGame(BaseGame):
-    def __init__(self, scene, rect: pygame.Rect, pilot_ai: BaseAI, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
+    def __init__(self, scene, rect: pygame.Rect, pilot_ai: BaseAI, pilot_ai_name: str, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
         super().__init__(scene, rect, player_move_delay, grid_size, feed_amount, clear_goal)
         self.pilot_ai = pilot_ai
+        self.pilot_ai_name = pilot_ai_name
 
         self.final_epoch_flag: bool = False # If true, terminate at the current epoch
         self.enable_speed_limit_flag: bool = False # If true, enable speed restriction
@@ -61,7 +62,7 @@ class AIPilotGame(BaseGame):
         layout.add_layout(button_layout_name, RelativeRect(0.25, 0.7, 0.5, 0.3), (0, 0, 0, 0))
         layout.layouts[button_layout_name].add_button(RelativeRect(0.025, 0, 0.3, 1), "Continue", self.restart_game)
         layout.layouts[button_layout_name].add_button(RelativeRect(0.35, 0, 0.3, 1), "New", self.scene.restart_new_game)
-        layout.layouts[button_layout_name].add_button(RelativeRect(0.675, 0, 0.3, 1), "Save")
+        self.save_buttons.append(layout.layouts[button_layout_name].add_button(RelativeRect(0.675, 0, 0.3, 1), "Save", self.save_game))
 
         self.set_gameover_layout(layout)
     
@@ -74,7 +75,7 @@ class AIPilotGame(BaseGame):
         layout.add_layout(button_layout_name, RelativeRect(0.25, 0.7, 0.5, 0.3), (0, 0, 0, 0))
         layout.layouts[button_layout_name].add_button(RelativeRect(0.025, 0, 0.3, 1), "Continue", self.restart_game)
         layout.layouts[button_layout_name].add_button(RelativeRect(0.35, 0, 0.3, 1), "New", self.scene.restart_new_game)
-        layout.layouts[button_layout_name].add_button(RelativeRect(0.675, 0, 0.3, 1), "Save")
+        self.save_buttons.append(layout.layouts[button_layout_name].add_button(RelativeRect(0.675, 0, 0.3, 1), "Save", self.save_game))
 
         self.set_clear_layout(layout)
 
@@ -109,6 +110,8 @@ class AIPilotGame(BaseGame):
 
         self.scores["epoch"] += 1
         self.boards["epoch"].update_content(self.scores["epoch"])
+
+        self.start_to_record(self.pilot_ai_name)
 
         self.final_epoch_flag = False
         

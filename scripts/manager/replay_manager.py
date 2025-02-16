@@ -1,5 +1,9 @@
 import pygame
 import json
+import os
+from datetime import datetime
+
+from constants import REPLAY_DIRECTORY
 
 from scripts.entity.feed_system import Feed
 
@@ -8,7 +12,7 @@ from scripts.game.replay_game import ReplayGame
 from typing import List, Tuple, Dict
 
 class Step:
-    def __init__(self, player_bodies: List[Tuple[int, int]], player_direction: str, feeds: Dict[Tuple[int, int], Feed], scores: List[Tuple[str, any]]):
+    def __init__(self, player_bodies: List[Tuple[int, int]], player_direction: str, feeds: List[Feed], scores: List[Tuple[str, any]]):
         self.player_bodies = player_bodies
         self.player_direction = player_direction
         self.feeds = feeds
@@ -18,7 +22,7 @@ class Step:
         return {
             "player_bodies": [list(body) for body in self.player_bodies],
             "player_direction": self.player_direction,
-            "feeds": [[list(feed_coord), feed.to_list()] for feed_coord, feed in self.feeds.items()],
+            "feeds": [feed.to_list() for feed in self.feeds],
             "scores": [list(score) for score in self.scores]
         }
     
@@ -32,7 +36,8 @@ class Step:
         )
 
 class Replay:
-    def __init__(self, grid_size: Tuple[int, int], game_version: str = "1.0.0"):
+    def __init__(self, name: str, grid_size: Tuple[int, int], game_version: str = "1.0.0"):
+        self.name = name
         self.grid_size = grid_size
         self.game_version = game_version
 
@@ -45,7 +50,7 @@ class Replay:
 
         self.steps: List[Step] = steps
         
-    def add_step(self, player_bodies: List[Tuple[int, int]], player_direction: str, feeds: Dict[Tuple[int, int], Feed], scores: List[Tuple[str, any]]):
+    def add_step(self, player_bodies: List[Tuple[int, int]], player_direction: str, feeds: List[Feed], scores: List[Tuple[str, any]]):
         self.steps.append(Step(player_bodies, player_direction, feeds, scores))
 
     def get_step_state(self, step: int):
@@ -59,10 +64,17 @@ class ReplayBuffer:
         """
 
     def save_to_file(self, replay: Replay):
-        filename: str = None
+        formatted_date = datetime.now().strftime("%Y-%m-%d_%H%M")
+
+        filename: str = '_'.join([formatted_date, replay.name])
+        suffix: str = ".json"
+        file_path = REPLAY_DIRECTORY + '/' + filename + suffix
         data = self.convert_to_json(replay)
 
-        with open(filename, "w") as f:
+        if not os.path.exists(REPLAY_DIRECTORY):
+            os.makedirs(REPLAY_DIRECTORY)
+
+        with open(file_path, "w") as f:
             json.dump(data, f, indent=4)
 
     def convert_to_json(self, replay: Replay):
@@ -73,8 +85,10 @@ class ReplayBuffer:
         }
 
     def load_from_file(self, filename: str) -> Replay:
+        file_path = REPLAY_DIRECTORY + '/' + filename
+
         try:
-            with open(filename, "r") as f:
+            with open(file_path, "r") as f:
                 data = json.load(f)
             
             return self.convert_from_json(data)
@@ -97,8 +111,17 @@ class ReplayManager:
 
         self.replay_file_list: List[str] = None
 
-    def add_step(self, player_bodies: List[Tuple[int, int]], player_direction: str, feeds: Dict[Tuple[int, int], Feed], scores: List[Tuple[str, any]]):
+    def start_to_record(self, replay_name: str, grid_size: Tuple[int, int]):
+        self.current_replay = Replay(replay_name, grid_size)
+
+    def add_step(self, player_bodies: List[Tuple[int, int]], player_direction: str, feeds: List[Feed], scores: Dict[str, any]):
         self.current_replay.add_step(player_bodies, player_direction, feeds, scores)
+
+    def finish_to_record(self, is_saved: bool):
+        if is_saved:
+            self.save_replay()
+        else:
+            self.current_replay = None
 
     def get_replay_list(self):
         """

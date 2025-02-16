@@ -112,6 +112,8 @@ class UILayout:
 
         self.elements.append(button)
 
+        return button
+
     def add_scrollbar(self, relative_rect: RelativeRect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1):
         """
         Add a scroll bar to the layout with its relative position.
@@ -119,6 +121,8 @@ class UILayout:
         scrollbar = ScrollBar(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, min_val, max_val, default_val, val_step)
 
         self.elements.append(scrollbar)
+
+        return scrollbar
     
     def add_textbox(self, relative_rect: RelativeRect, text: str, font_color, bold: bool = False):
         """
@@ -127,6 +131,8 @@ class UILayout:
         textbox = TextBox(relative_rect.to_absolute(self.rect.size), text, font_color, bold=bold)
 
         self.elements.append(textbox)
+
+        return textbox
     
     def update_radio_selection(self, target_text: str):
         for element in self.elements:

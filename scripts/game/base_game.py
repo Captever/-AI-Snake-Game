@@ -4,7 +4,7 @@ import pygame
 
 from constants import *
 
-from scripts.ui.ui_components import UILayout, RelativeRect, Board, TextBox
+from scripts.ui.ui_components import UILayout, RelativeRect, Button, Board, TextBox
 from scripts.ui.map_structure import Map
 from scripts.ui.instruction import Instruction
 from scripts.entity.player import Player
@@ -45,6 +45,8 @@ class BaseGame(ABC):
 
         self.init_score_info_list()
         self.init_instruction_list()
+
+        self.save_buttons: List[Button] = []
 
         self.init_ui()
 
@@ -180,6 +182,21 @@ class BaseGame(ABC):
         self.countdown_textbox.update_content(str(round(self.countdown_remaining_time, 1)))
         if not self.countdown_remaining_time:
             self.set_state(GameState.ACTIVE)
+    
+    def start_to_record(self, replay_name: str):
+        self.scene.manager.start_to_record(replay_name, self.grid_size)
+
+    def add_replay_step(self):
+        self.scene.manager.add_replay_step(self.player.bodies, self.player.direction, self.fs.feeds.values(), self.scores.copy().items())
+    
+    def save_game(self):
+        self.set_save_buttons_selected()
+        self.scene.manager.finish_to_record(True)
+
+    def set_save_buttons_selected(self, is_selected: bool = True):
+        """ use to prevent duplicate save """
+        for btn in self.save_buttons:
+            btn.set_selected(is_selected)
 
     # functions to update every frame
     def update(self):
@@ -191,6 +208,7 @@ class BaseGame(ABC):
     def move_sequence(self):
         if self.is_on_move():
             self.move_accum = 0
+            self.add_replay_step()
             self.player.move()
             self.next_direction = None
         else:
