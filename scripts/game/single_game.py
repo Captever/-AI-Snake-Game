@@ -16,9 +16,9 @@ class SingleGame(BaseGame):
 
         self.start_game()
 
-    def init_board_list(self):
-        self.board_list = [ # key, title, content format
-            ("score", "Score", "{:,}")
+    def init_score_info_list(self):
+        self.score_info_list = [ # key, title, content format, default value
+            ("score", "Score", "{:,}", 0)
         ]
     
     def init_instruction_list(self):

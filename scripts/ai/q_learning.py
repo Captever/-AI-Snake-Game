@@ -56,7 +56,7 @@ class QLearningAI(BaseAI):
                 (self.get_neck_dir(head, neck), len(bodies)) + \
                 tuple(self.get_dists_from_wall(head, grid_size))
         feed_dist = get_dist(head, feed)
-        score = self.game.score
+        score = self.game.scores["score"]
         action = self.agent.choose_action(state)
 
         if self.last_state is not None:

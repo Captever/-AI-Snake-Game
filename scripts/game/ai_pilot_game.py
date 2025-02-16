@@ -28,13 +28,13 @@ class AIPilotGame(BaseGame):
 
         self.start_game()
 
-    def init_board_list(self):
-        self.board_list = [ # key, title, content format
-            ("top_score", "TOP", "{:,}"),
-            ("score", "Score", "{:,}"),
-            ("epoch", "Epoch", "{:,}"),
-            ("avg_score_last_100", "Average Last 100", "{:,.3f}"),
-            ("overall_avg_score", "Overall Average", "{:,.3f}")
+    def init_score_info_list(self):
+        self.score_info_list = [ # key, title, content format, default value
+            ("top_score", "TOP", "{:,}", 0),
+            ("score", "Score", "{:,}", 0),
+            ("epoch", "Epoch", "{:,}", 0),
+            ("avg_score_last_100", "Average Last 100", "{:,.3f}", 0.0),
+            ("overall_avg_score", "Overall Average", "{:,.3f}", 0.0)
         ]
     
     def init_instruction_list(self):
@@ -110,15 +110,15 @@ class AIPilotGame(BaseGame):
     def start_game(self):
         super().start_game()
 
-        self.epoch_count += 1
-        self.boards["epoch"].update_content(self.epoch_count)
+        self.scores["epoch"] += 1
+        self.boards["epoch"].update_content(self.scores["epoch"])
 
         self.final_epoch_flag = False
         
         self.set_state(GameState.ACTIVE)
     
     def restart_game(self):
-        self.score = 0
+        self.scores["score"] = 0
         self.boards["score"].reset()
         self.start_game()
     
@@ -133,6 +133,7 @@ class AIPilotGame(BaseGame):
                 self.curr_direction = self.next_direction
                 self.player.set_direction(self.next_direction, False)
     
+
     def flip_final_epoch_flag(self):
         self.final_epoch_flag = not self.final_epoch_flag
 
@@ -143,16 +144,19 @@ class AIPilotGame(BaseGame):
     def update_score(self, amount = 1):
         super().update_score(amount)
 
-        if self.score > self.top_score:
-            self.top_score = self.score
-            self.boards["top_score"].update_content(self.top_score)
+        if self.scores["score"] > self.scores["top_score"]:
+            self.scores["top_score"] = self.scores["score"]
+            self.boards["top_score"].update_content(self.scores["top_score"])
     
 
     def handle_game_end(self):
-        self.scene.add_score_to_figure(self.epoch_count, self.score)
+        self.scene.add_score_to_figure(self.scores["epoch"], self.scores["score"])
 
-        self.boards["avg_score_last_100"].update_content(self.scene.get_last_average_score_last_100())
-        self.boards["overall_avg_score"].update_content(self.scene.get_average_score())
+        self.scores["avg_score_last_100"] = self.scene.get_last_average_score_last_100()
+        self.scores["overall_avg_score"] = self.scene.get_average_score()
+
+        self.boards["avg_score_last_100"].update_content(self.scores["avg_score_last_100"])
+        self.boards["overall_avg_score"].update_content(self.scores["overall_avg_score"])
 
         if not self.is_ended_process():
             self.restart_game()

@@ -36,20 +36,17 @@ class BaseGame(ABC):
         self.fs: FeedSystem = None
         self.cell_manager: CellManager = None
 
-        self.score: int = 0
-        
-        self.board_list: List[Tuple[str, str, str]] = []
-        self.instruction_list: List[Tuple[str, str]] = []
+        self.score_info_list: List[Tuple[str, str, str, any]] = [] # key, title, content format, default value
+        self.instruction_list: List[Tuple[str, str]] = [] # key, act
 
         self.state_layouts: Dict[int, UILayout] = {}
+        self.scores: Dict[str, any] = {}
         self.boards: Dict[str, Board] = {}
 
-        self.init_board_list()
+        self.init_score_info_list()
         self.init_instruction_list()
 
         self.init_ui()
-
-        self.init_replay_manager()
 
         self.state: GameState = None
 
@@ -57,7 +54,7 @@ class BaseGame(ABC):
         self.next_direction: str = None
     
     @abstractmethod
-    def init_board_list(self):
+    def init_score_info_list(self):
         pass
 
     @abstractmethod
@@ -98,11 +95,13 @@ class BaseGame(ABC):
         self.map = Map(self.grid_size, map_side_length, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
         self.map.add_outerline(MAP_OUTERLINE_THICKNESS, WHITE)
 
-        for idx, (board_key, board_title, board_format) in enumerate(self.board_list):
+        for idx, (key, board_title, board_format, default_value) in enumerate(self.score_info_list):
             board_offset = (board_relative_offset[0] * idx, board_relative_offset[1] * idx)
             curr_board_relative_rect = RelativeRect(board_relative_rect.relative_x + board_offset[0], board_relative_rect.relative_y + board_offset[1], board_relative_rect.relative_width, board_relative_rect.relative_height)
             board_rect = curr_board_relative_rect.to_absolute(self.rect.size)
-            self.boards[board_key] = Board(board_rect, board_title, WHITE, format=board_format)
+
+            self.scores[key] = default_value
+            self.boards[key] = Board(board_rect, board_title, WHITE, format=board_format)
 
         # about state layouts
         self.init_states_layout()
@@ -112,6 +111,7 @@ class BaseGame(ABC):
         self.instruction = Instruction(self.get_instruction_layout_rect(), "Key Instruction", self.instruction_list, WHITE)
 
 
+    # about setter
     def set_paused_layout(self, layout: UILayout):
         self.state_layouts[GameState.PAUSED] = layout
 
@@ -133,6 +133,7 @@ class BaseGame(ABC):
         pass
 
 
+    # about getter
     def get_state_layout_rect(self):
         return RelativeRect(0, 0.3, 1, 0.35).to_absolute(self.rect.size)
     
@@ -152,6 +153,7 @@ class BaseGame(ABC):
     def is_on_move(self) -> bool:
         pass
 
+
     # flip
     def flip_game_pause(self):
         if self.is_state(GameState.PAUSED):
@@ -159,6 +161,7 @@ class BaseGame(ABC):
         elif self.is_state(GameState.ACTIVE):
             self.set_state(GameState.PAUSED)
     
+
     # about progress
     def start_game(self):
         self.cell_manager = CellManager(self.grid_size)
@@ -178,7 +181,7 @@ class BaseGame(ABC):
         if not self.countdown_remaining_time:
             self.set_state(GameState.ACTIVE)
 
-    # about every frame routine
+    # functions to update every frame
     def update(self):
         if self.is_state(GameState.ACTIVE):
             self.move_sequence()
@@ -194,6 +197,7 @@ class BaseGame(ABC):
             self.move_accum += 1
 
 
+    # about game logic
     def check_collision(self, coord):
         if not self.is_in_bound(coord):
             return 'wall', None
@@ -209,13 +213,14 @@ class BaseGame(ABC):
         self.fs.remove_feed(coord)
 
     def update_score(self, amount: int = 1):
-        self.score += amount
-        self.boards["score"].update_content(self.score)
+        self.scores["score"] += amount
+        self.boards["score"].update_content(self.scores["score"])
         
-        if self.clear_condition is not None and self.score >= self.clear_condition:
+        if self.clear_condition is not None and self.scores["score"] >= self.clear_condition:
             self.set_state(GameState.CLEAR)
 
 
+    # about handler
     @abstractmethod
     def handle_events(self, events):
         self.handle_state_events(events)
@@ -225,6 +230,7 @@ class BaseGame(ABC):
             self.state_layouts[self.state].handle_events(events)
     
 
+    # about renderer
     def render(self, surf: pygame.Surface):
         self.surf.fill((0, 0, 0))
 
