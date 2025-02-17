@@ -191,7 +191,7 @@ class BaseGame(ABC):
     
     def save_game(self):
         self.set_save_buttons_selected()
-        self.scene.manager.finish_to_record(True)
+        self.scene.manager.finish_to_record(True) # save replay
 
     def set_save_buttons_selected(self, is_selected: bool = True):
         """ use to prevent duplicate save """

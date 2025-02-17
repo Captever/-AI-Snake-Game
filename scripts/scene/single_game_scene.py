@@ -86,7 +86,7 @@ class SingleGameScene(BaseScene):
     
     def restart_new_game(self):
         self.set_ui_state(CONFIG)
-        self.manager.finish_to_record()
+        self.manager.finish_to_record() # discard replay
         self.game = None
     
     def activate_main_scene(self):
