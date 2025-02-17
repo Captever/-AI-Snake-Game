@@ -28,6 +28,12 @@ class SceneManager:
 
     def add_replay_step(self, player_bodies: List[Tuple[int, int]], player_direction: str, feeds: List['Feed'], scores: List[Tuple[str, any]]):
         self.replay_manager.add_step(player_bodies, player_direction, feeds, scores)
+        
+    def get_replay_list(self):
+        return self.replay_manager.get_replay_list()
+
+    def load_replay(self, replay_index: int):
+        self.replay_manager.load_replay(replay_index)
 
 
     # functions to update every frame

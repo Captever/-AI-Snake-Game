@@ -3,7 +3,7 @@ import json
 import os
 from datetime import datetime
 
-from constants import REPLAY_DIRECTORY
+from constants import REPLAY_DIRECTORY, REPLAY_PREFIX, REPLAY_EXTENSION
 
 from scripts.entity.feed_system import Feed
 
@@ -63,12 +63,8 @@ class ReplayBuffer:
         A buffer that manages the input and output of replays.
         """
 
-    def save_to_file(self, replay: Replay):
-        formatted_date = datetime.now().strftime("%Y-%m-%d_%H%M")
-
-        filename: str = '_'.join([formatted_date, replay.name])
-        suffix: str = ".json"
-        file_path = REPLAY_DIRECTORY + '/' + filename + suffix
+    def save_to_file(self, replay: Replay, filename: str):
+        file_path = REPLAY_DIRECTORY + '/' + filename
         data = self.convert_to_json(replay)
 
         if not os.path.exists(REPLAY_DIRECTORY):
@@ -111,6 +107,14 @@ class ReplayManager:
 
         self.replay_file_list: List[str] = None
 
+    def wrap_filename(self, filename):
+        return REPLAY_PREFIX + filename + REPLAY_EXTENSION
+
+    def unwrap_filename(self, filename):
+        start_idx = len(REPLAY_PREFIX)
+        end_idx = len(REPLAY_EXTENSION)
+        return filename[start_idx:][:-end_idx]
+
     def start_to_record(self, replay_name: str, grid_size: Tuple[int, int]):
         self.current_replay = Replay(replay_name, grid_size)
 
@@ -123,23 +127,40 @@ class ReplayManager:
         else:
             self.current_replay = None
 
+    def update_replay_list(self):
+        """
+        Update the replay file list
+        """
+        self.replay_file_list = [
+            self.unwrap_filename(f) for f in os.listdir(REPLAY_DIRECTORY)
+            if f.startswith(REPLAY_PREFIX) and f.endswith(REPLAY_EXTENSION)
+        ]
+    
     def get_replay_list(self):
         """
-        Load the replay list
+        Get the replay file list
         """
-        pass
+        self.update_replay_list()
+
+        return self.replay_file_list
 
     def save_replay(self):
         """
         Save the current game as a replay
         """
-        self.buffer.save_to_file(self.current_replay)
+        formatted_date = datetime.now().strftime("%Y%m%d_%H%M%s")
+
+        filename: str = self.wrap_filename('_'.join([formatted_date, self.current_replay.name]))
+
+        self.buffer.save_to_file(self.current_replay, filename)
 
     def load_replay(self, index: int):
         """
         Load a specific replay
         """
-        self.current_replay = self.buffer.load_from_file(self.replay_file_list[index])
+        filename = self.wrap_filename(self.replay_file_list[index])
+
+        self.current_replay = self.buffer.load_from_file(filename)
 
     def show_replay(self, replay_index: int, rect: pygame.Rect):
         """
