@@ -1,8 +1,13 @@
 import pygame, sys
 from abc import ABC, abstractmethod
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from scripts.manager.scene_manager import SceneManager
+
 class BaseScene(ABC):
-    def __init__(self, manager, rect: pygame.Rect):
+    def __init__(self, manager: "SceneManager", rect: pygame.Rect):
         self.manager = manager
         self.rect = rect
         self.size = rect.size

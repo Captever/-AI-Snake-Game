@@ -7,15 +7,18 @@ from constants import *
 from scripts.entity.feed_system import Feed
 from scripts.manager.game_manager import GameState
 
-from typing import List, Tuple
+from typing import List, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from scripts.game.base_game import BaseGame
 
 class Player:
-    def __init__(self, game, initial_length):
+    def __init__(self, game: "BaseGame", initial_length):
         """
         Initialize Player Class
 
         Args:
-            game (Game): Current Game object
+            game (BaseGame): Current Game object
             initial_length (int): initial length of the player
         """
         self.game = game

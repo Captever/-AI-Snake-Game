@@ -2,7 +2,10 @@ from scripts.scene.base_scene import BaseScene
 
 from scripts.manager.replay_manager import ReplayManager
 
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from scripts.entity.feed_system import Feed
 
 class SceneManager:
     def __init__(self):
@@ -26,7 +29,7 @@ class SceneManager:
     def finish_to_record(self, is_saved: bool = False):
         self.replay_manager.finish_to_record(is_saved)
 
-    def add_replay_step(self, player_bodies: List[Tuple[int, int]], player_direction: str, feeds: List['Feed'], scores: List[Tuple[str, any]]):
+    def add_replay_step(self, player_bodies: List[Tuple[int, int]], player_direction: str, feeds: List["Feed"], scores: List[Tuple[str, any]]):
         self.replay_manager.add_step(player_bodies, player_direction, feeds, scores)
         
     def get_replay_list(self):

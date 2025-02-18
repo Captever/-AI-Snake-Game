@@ -5,15 +5,19 @@ from scripts.plugin.custom_func import get_dist
 
 from scripts.manager.game_manager import GameState
 
-from typing import Tuple, Dict
+from typing import Tuple, Dict, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from scripts.game.base_game import BaseGame
 
 class FeedSystem:
-    def __init__(self, game, feed_amount: int):
+    def __init__(self, game: "BaseGame", feed_amount: int):
         """
         Initialize FeedSystem Class
 
         Args:
-            game (Game): Current Game object
+            game (BaseGame): Current Game object
+            feed_amount (int): Amount of feeds
         """
         self.feeds: Dict[Tuple[int, int], Feed] = {}
         self.game = game
