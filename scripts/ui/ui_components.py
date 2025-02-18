@@ -104,6 +104,8 @@ class UILayout:
         
         self.layouts[name] = layout
 
+        return layout
+
     def add_button(self, relative_rect: RelativeRect, text: str, callback=None, auto_lined_str: List[str]=None):
         """
         Add a button to the layout with its relative position.
@@ -114,11 +116,11 @@ class UILayout:
 
         return button
 
-    def add_scrollbar(self, relative_rect: RelativeRect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1):
+    def add_scrollbar(self, relative_rect: RelativeRect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1, show_max_val: bool = False):
         """
         Add a scroll bar to the layout with its relative position.
         """
-        scrollbar = ScrollBar(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, min_val, max_val, default_val, val_step)
+        scrollbar = ScrollBar(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, min_val, max_val, default_val, val_step, show_max_val)
 
         self.elements.append(scrollbar)
 
@@ -246,7 +248,34 @@ class Button:
         TextBox(font_rect, text, BLACK).render(surf)
 
 class ScrollBar:
-    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1):
+    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1, display_max_val: bool = False):
+        self.rect: pygame.Rect = pygame.Rect(rect)
+        self.abs_pos: Tuple[int, int] = tuple(parent_abs_pos[i] + rect.topleft[i] for i in [0, 1])
+        self.text: str = text
+
+        self.min_val: int = None
+        self.max_val: int = None
+        self.value: int = None
+        self.val_step: int = None
+        self.display_max_val: bool = None
+        self.config_values(min_val=min_val, max_val=max_val, default_val=default_val, val_step=val_step, display_max_val=display_max_val)
+
+        self.bar_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height * (1.0 - UI_SCROLLBAR["bar_ratio"]), self.rect.width, self.rect.height * UI_SCROLLBAR["bar_ratio"])
+        handle_width = round(min(self.bar_rect.width * 0.05, self.bar_rect.width / ((self.max_val - self.min_val) / self.val_step)))
+        self.handle_rect = pygame.Rect((self.bar_rect.topleft) + (handle_width, self.bar_rect.height))
+        self.update_handle()
+
+    def update_handle(self):
+        handle_x = int(self.bar_rect.x + ((self.value - self.min_val) / (self.max_val - self.min_val)) * self.bar_rect.width)
+        self.handle_rect.topleft = (handle_x - self.handle_rect.width // 2, self.bar_rect.y)
+
+    def config_values(self, min_val: int = None, max_val: int = None, default_val: int = None, val_step: int = None, display_max_val: bool = None):
+        self.min_val = min_val if min_val is not None else self.min_val
+        self.max_val = max_val if max_val is not None else self.max_val
+        self.value = default_val if default_val is not None else self.value
+        self.val_step = val_step if val_step is not None else self.val_step
+        self.display_max_val = display_max_val if display_max_val is not None else self.display_max_val
+
         # handling exception
         if (min_val > max_val) or (default_val < min_val) or (default_val > max_val):
             error_param = []
@@ -258,7 +287,7 @@ class ScrollBar:
             if default_val > max_val:
                 error_param.append("default_val > max_val")
 
-            error_message = f"Scrollbar({text}) value error: {' / '.join(error_param)}"
+            error_message = f"Scrollbar({self.text}) value error: {' / '.join(error_param)}"
 
             raise ValueError(error_message)
 
@@ -276,24 +305,9 @@ class ScrollBar:
                 default_val = (default_val // val_step) * val_step
                 warn_param.append("default_val")
 
-            warn_message = f"Scrollbar({text}) value warning: items({', '.join(warn_param)}) does not align with the value step."
+            warn_message = f"Scrollbar({self.text}) value warning: items({', '.join(warn_param)}) does not align with the value step."
             
             warnings.warn(warn_message, UserWarning)
-
-        self.rect: pygame.Rect = pygame.Rect(rect)
-        self.abs_pos: Tuple[int, int] = tuple(parent_abs_pos[i] + rect.topleft[i] for i in [0, 1])
-        self.text: str = text
-        self.min_val: int = min_val
-        self.max_val: int = max_val
-        self.value: int = default_val
-        self.val_step: int = val_step
-        self.bar_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height * (1.0 - UI_SCROLLBAR["bar_ratio"]), self.rect.width, self.rect.height * UI_SCROLLBAR["bar_ratio"])
-        self.handle_rect = pygame.Rect((self.bar_rect.topleft) + (self.bar_rect.width * 0.05, self.bar_rect.height))
-        self.update_handle()
-
-    def update_handle(self):
-        handle_x = int(self.bar_rect.x + ((self.value - self.min_val) / (self.max_val - self.min_val)) * self.bar_rect.width)
-        self.handle_rect.topleft = (handle_x - self.handle_rect.width // 2, self.bar_rect.y)
     
     def get_abs_bar_rect(self) -> pygame.Rect:
         return pygame.Rect(
@@ -324,7 +338,7 @@ class ScrollBar:
             self.update_handle()
 
     def render(self, surf: pygame.Surface):
-        text = f"{self.text}: {int(self.value):,}"
+        text = f"{self.text}: {int(self.value):,}/{int(self.max_val):,}" if self.display_max_val else f"{self.text}: {int(self.value):,}"
         font_height = self.rect.height * UI_SCROLLBAR["font_ratio"]
         font_rect = pygame.Rect(self.rect.left, self.rect.top, self.rect.width, font_height)
         TextBox(font_rect, text, WHITE).render(surf)
