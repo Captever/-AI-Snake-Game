@@ -3,7 +3,7 @@ import pygame
 from constants import *
 
 from .base_scene import BaseScene
-from scripts.ui.ui_components import UILayout, RelativeRect
+from scripts.ui.ui_components import UILayout, RelativeRect, ScrollBar
 
 from scripts.game.replay_game import ReplayGame
 
@@ -13,7 +13,8 @@ class RecordScene(BaseScene):
     def __init__(self, manager, rect: pygame.Rect):
         super().__init__(manager, rect)
 
-        self.replay_game_layout = self.create_replay_game_layout()
+        self.progress_scrollbar: ScrollBar = None
+
         self.replay_list_layout = self.create_replay_list_layout()
         self.playback_tool_layout = self.create_playback_tool_layout()
 
@@ -66,22 +67,42 @@ class RecordScene(BaseScene):
         layout_relative_rect: RelativeRect
 
         if self.is_landscape:
-            layout_relative_rect = RelativeRect(0.35, 0.7, 0.6, 0.25)
+            layout_relative_rect = RelativeRect(0.35, 0.72, 0.6, 0.18)
+            progress_layout_relative_rect = RelativeRect(0, 0, 1, 0.35)
+            tool_layout_relative_rect = RelativeRect(0.25, 0.55, 0.5, 0.45)
         else:
             layout_relative_rect = RelativeRect(0.05, 0.8, 0.9, 0.15)
+            progress_layout_relative_rect = RelativeRect(0, 0, 1, 0.4)
+            tool_layout_relative_rect = RelativeRect(0.1, 0.65, 0.8, 0.35)
 
         layout_rect: pygame.Rect = layout_relative_rect.to_absolute(self.size)
         bg_color = (50, 50, 50, 50)
 
         layout = UILayout(self.origin, layout_rect, bg_color)
 
+        progress_layout = layout.add_layout("progress", progress_layout_relative_rect, (20,20,20,255))
+        if self.is_landscape:
+            self.progress_scrollbar = progress_layout.add_scrollbar(RelativeRect(0.06, 0.2, 0.88, 0.6), "Step", 1, 99, 1, show_max_val=True)
+            progress_layout.add_button(RelativeRect(0, 0.5, 0.03, 0.5), "◀")
+            progress_layout.add_button(RelativeRect(0.97, 0.5, 0.03, 0.5), "▶")
+        else:
+            self.progress_scrollbar = progress_layout.add_scrollbar(RelativeRect(0.1, 0.2, 0.8, 0.6), "Step", 1, 99, 1, show_max_val=True)
+            progress_layout.add_button(RelativeRect(0, 0.5, 0.08, 0.5), "◀")
+            progress_layout.add_button(RelativeRect(0.92, 0.5, 0.08, 0.5), "▶")
+
+        tool_layout = layout.add_layout("tool", tool_layout_relative_rect, (20,20,20,255))
+        tool_text_list = ["I◀", "◀◀", "▶/II", "▶▶", "▶I"]
+        for idx, text in enumerate(tool_text_list):
+            tool_layout.add_button(RelativeRect(idx * 0.2125, 0, 0.15, 1), text=text)
+
         return layout
     
     def handle_events(self, events):
         super().handle_events(events)
         
-        self.replay_game_layout.handle_events(events)
-        self.replay_list_layout.handle_events(events)
+        if self.replay_game is not None:
+            self.replay_game.handle_events(events)
+            self.replay_list_layout.handle_events(events)
         self.playback_tool_layout.handle_events(events)
 
     def set_selected_replay(self, replay_list_layout: UILayout, replay_index: str):
@@ -91,8 +112,9 @@ class RecordScene(BaseScene):
     def render(self, surf):
         super().render(surf)
 
-        self.replay_game_layout.render(self.surf)
-        self.replay_list_layout.render(self.surf)
+        if self.replay_game is not None:
+            self.replay_game.render(self.surf)
+            self.replay_list_layout.render(self.surf)
         self.playback_tool_layout.render(self.surf)
 
         surf.blit(self.surf, self.origin)
