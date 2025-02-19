@@ -11,6 +11,7 @@ from typing import List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from scripts.game.base_game import BaseGame
+    from scripts.ui.map_structure import Map
 
 class Player:
     def __init__(self, game: "BaseGame", initial_length):
@@ -136,12 +137,12 @@ class Player:
 
         self.game.update_score(1)
     
-    def render(self):
+    def render(self, map: "Map"):
         for body_coord in self.bodies:
-            self.game.map.get_cells()[body_coord].put_surf(self.body_surf)
+            map.get_cells()[body_coord].put_surf(self.body_surf)
 
         head = self.bodies[0]
         dir_offset = DIR_OFFSET_DICT[self.direction]
 
         arrow_coord = (head[0] + dir_offset[0], head[1] + dir_offset[1])
-        self.game.map.set_arrow(arrow_coord, DIR_ANGLE_DICT[self.direction])
+        map.set_arrow(arrow_coord, DIR_ANGLE_DICT[self.direction])

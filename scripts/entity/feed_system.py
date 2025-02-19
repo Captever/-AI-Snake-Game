@@ -9,6 +9,7 @@ from typing import Tuple, Dict, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from scripts.game.base_game import BaseGame
+    from scripts.ui.map_structure import Map
 
 class FeedSystem:
     def __init__(self, game: "BaseGame", feed_amount: int):
@@ -78,9 +79,9 @@ class FeedSystem:
 
         self.game.cell_manager.mark_cell_free(coord)
     
-    def render(self):
+    def render(self, map: "Map"):
         for feed_coord, feed in self.feeds.items():
-            self.game.map.get_cells()[feed_coord].put_surf(self.feed_surf)
+            map.get_cells()[feed_coord].put_surf(self.feed_surf)
 
 class Feed:
     def __init__(self, coord: Tuple[int, int], feed_type: str):
