@@ -5,20 +5,20 @@ class CellManager:
     """
     Manages grid size, available cells.
     """
-    def __init__(self, grid_num: Tuple[int, int]):
+    def __init__(self, grid_size: Tuple[int, int]):
         """
         Initialize the game state manager with the given grid size.
 
         Args:
             grid_size (Tuple[int, int]): Size of the grid as (width, height).
         """
-        self.grid_num: Tuple[int, int] = grid_num
+        self.grid_size: Tuple[int, int] = grid_size
         self.available_cells: Set[Tuple[int, int]] = set(
-            (x, y) for x in range(grid_num[0]) for y in range(grid_num[1])
+            (x, y) for x in range(grid_size[0]) for y in range(grid_size[1])
         )
     
-    def get_grid_num(self):
-        return self.grid_num
+    def get_grid_size(self):
+        return self.grid_size
 
     def mark_cell_used(self, coord: Tuple[int, int]) -> None:
         """
@@ -77,5 +77,5 @@ class CellManager:
         Reset all cells in the grid to available state.
         """
         self.available_cells = set(
-            (x, y) for x in range(self.grid_num[0]) for y in range(self.grid_num[1])
+            (x, y) for x in range(self.grid_size[0]) for y in range(self.grid_size[1])
         )

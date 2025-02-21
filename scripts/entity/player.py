@@ -30,7 +30,7 @@ class Player:
         self.bodies: List[Tuple[int, int]] = self.make_bodies()
     
     def make_bodies(self):
-        grid_num = self.game.cell_manager.get_grid_num()
+        grid_num = self.game.cell_manager.get_grid_size()
         rand_coord = (random.randint(0, grid_num[0] - 1), random.randint(0, grid_num[1] - 1))
         ret = [rand_coord]
         self.game.cell_manager.mark_cell_used(rand_coord)
