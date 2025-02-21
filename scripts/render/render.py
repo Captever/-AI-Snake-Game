@@ -30,17 +30,17 @@ class Renderer:
 
         grid_rect = map.grid_rect
         grid_origin = grid_rect.topleft
-        grid_outerline_thickness = 1
-        grid_outerline_color = (255, 255, 255, 255)
+        grid_outerline_thickness = map.grid_outerline_thickness
+        grid_outerline_color = map.grid_outerline_color
 
-        cell_size = map.cell_size
-        cell_outerline_thickness = 1
-        cell_outerline_color = (255, 255, 255, 128)
+        cell_side_len: int = map.cell_side_len
+        cell_outerline_thickness = map.grid_thickness
+        cell_outerline_color = map.grid_color
 
         for y_coord in range(grid_size[1]):
             for x_coord in range(grid_size[0]):
-                cell_origin = (grid_origin[0] + cell_size * x_coord, grid_origin[1] + cell_size * y_coord)
-                cell_rect = pygame.Rect(cell_origin, (cell_size, cell_size))
+                cell_origin = (grid_origin[0] + cell_side_len * x_coord, grid_origin[1] + cell_side_len * y_coord)
+                cell_rect = pygame.Rect(cell_origin, (cell_side_len, cell_side_len))
                 self.render_outerline(surf, cell_rect, cell_outerline_thickness, cell_outerline_color)
 
         self.render_outerline(surf, grid_rect, grid_outerline_thickness, grid_outerline_color)
