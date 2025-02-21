@@ -9,12 +9,15 @@ from scripts.ui.ui_components import UILayout, RelativeRect
 
 from scripts.manager.game_manager import GameState
 
-from typing import Tuple
+from typing import Tuple, TYPE_CHECKING
 
 from scripts.ai.q_learning import QLearningAI
 
+if TYPE_CHECKING:
+    from scripts.scene.base_scene import BaseScene
+
 class AIPilotGame(BaseGame):
-    def __init__(self, scene, rect: pygame.Rect, pilot_ai: BaseAI, pilot_ai_name: str, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
+    def __init__(self, scene: "BaseScene", rect: pygame.Rect, pilot_ai: BaseAI, pilot_ai_name: str, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
         super().__init__(scene, rect, player_move_delay, grid_size, feed_amount, clear_goal)
         self.pilot_ai = pilot_ai
         self.pilot_ai_name = pilot_ai_name
