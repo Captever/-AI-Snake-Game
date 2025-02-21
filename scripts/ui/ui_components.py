@@ -46,20 +46,16 @@ class RelativeRect:
         return pygame.Rect(abs_x, abs_y, abs_width, abs_height)
 
 class Outerline:
-    def __init__(self, size: Tuple[int, int], thickness: int = 1, color=(255, 255, 255)):
+    def __init__(self, rect: pygame.Rect, thickness: int = 1, color=(255, 255, 255)):
+        self.size = (rect.width + thickness * 2, rect.height + thickness * 2)
+        self.origin = (rect.left - thickness, rect.top - thickness)
+        self.rect = pygame.Rect(self.origin, self.size)
+
         self.thickness = thickness
+        self.color = color
 
-        outer_rect = pygame.Rect(0, 0, size[0] + thickness * 2, size[1] + thickness * 2)
-
-        self.surf = pygame.Surface((outer_rect.width, outer_rect.height), pygame.SRCALPHA)
-        self.surf.fill((0, 0, 0, 0))
-
-        pygame.draw.rect(self.surf, color, outer_rect, max(1, thickness)) # minimum value of width: 1
-
-    def render(self, surf, offset=(0, 0)):
-        adjusted_pos = (offset[0] - self.thickness, offset[1] - self.thickness)
-
-        surf.blit(self.surf, adjusted_pos)
+    def render(self, surf):
+        pygame.draw.rect(surf, self.color, self.rect, max(1, self.thickness)) # minimum value of width: 1
 
 class UILayout:
     def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, bg_color=UI_LAYOUT["default_color"]):
