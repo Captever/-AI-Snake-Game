@@ -1,6 +1,6 @@
 import pygame
 
-from constants import DIR_ANGLE_DICT, OBJECT_OUTLINE_RATIO, BODY_OUTLINE_COLOR, BODY_COLOR, FEED_OUTLINE_COLOR, FEED_COLOR
+from constants import DIR_OFFSET_DICT, DIR_COLOR, DIR_ARROW_RATIO, OBJECT_OUTLINE_RATIO, BODY_OUTLINE_COLOR, BODY_COLOR, FEED_OUTLINE_COLOR, FEED_COLOR
 
 from scripts.ui.ui_components import Outerline
 
@@ -39,8 +39,29 @@ class Renderer:
                 pygame.draw.rect(surf, FEED_OUTLINE_COLOR, outline_rect)
                 pygame.draw.rect(surf, FEED_COLOR, fill_rect)
 
-    def render_direction(self, surf, coord: Tuple[int, int], direction: str):
-        pass
+    def render_direction_arrow(self, surf, head_coord: Tuple[int, int], direction: str):
+        dir_offset = DIR_OFFSET_DICT[direction]
+        arrow_coord = tuple(head_coord[i] + dir_offset[i] for i in [0, 1])
+        cell_mid_dist = self.cell_side_len // 2
+        center_x, center_y = tuple(self.grid_origin[i] + arrow_coord[i] * self.cell_side_len + cell_mid_dist for i in [0, 1])
+
+        arrow_size = self.cell_side_len * DIR_ARROW_RATIO
+
+        points = self.get_arrow_points(center_x, center_y, arrow_size, direction)
+        pygame.draw.polygon(surf, DIR_COLOR, points)
+
+    def get_arrow_points(self, center_x: int, center_y: int, size: int, direction: str) -> List[Tuple[int, int]]:
+        point_offset = size * 4 // 5  # size * 0.8
+
+        if direction == 'E':
+            return [(center_x - size, center_y + point_offset), (center_x - size, center_y - point_offset), (center_x, center_y)]
+        elif direction == 'W':
+            return [(center_x + size, center_y + point_offset), (center_x + size, center_y - point_offset), (center_x, center_y)]
+        elif direction == 'S':
+            return [(center_x + point_offset, center_y - size), (center_x - point_offset, center_y - size), (center_x, center_y)]
+        else:
+            return [(center_x + point_offset, center_y + size), (center_x - point_offset, center_y + size), (center_x, center_y)]
+
 
     def render_map(self, surf: pygame.Surface, map: "Map"):
         grid_size = map.grid_size

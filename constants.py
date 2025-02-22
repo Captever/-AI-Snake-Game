@@ -60,22 +60,15 @@ BODY_OUTLINE_COLOR = (59, 92, 70)
 BODY_COLOR = (7, 255, 82)
 FEED_OUTLINE_COLOR = (187, 113, 40)
 FEED_COLOR = (255, 255, 15)
-DIR_COLOR = (255, 255, 255)
+DIR_COLOR = (99, 132, 110)
 
 # direction
-DIR_ARROW_RATIO = 0.5
+DIR_ARROW_RATIO = 0.3
 DIR_OFFSET_DICT = {
     'E': (1, 0),
     'W': (-1, 0),
     'S': (0, 1),
     'N': (0, -1)
-}
-DIR_ANGLE_DICT = {
-# pygame.transform.rotate operates counterclockwise
-    'E': 0,
-    'W': 180,
-    'S': 270,
-    'N': 90
 }
 
 # etc
