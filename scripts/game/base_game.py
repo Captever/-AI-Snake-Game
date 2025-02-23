@@ -253,8 +253,8 @@ class BaseGame(ABC):
     def render(self, surf: pygame.Surface):
         self.surf.fill((0, 0, 0))
 
-        self.player.render()
-        self.fs.render()
+        # self.player.render(self.map)
+        # self.fs.render(self.map)
         for board in self.boards.values():
             board.render(self.surf)
         self.instruction.render(self.surf)

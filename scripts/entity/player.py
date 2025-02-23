@@ -24,10 +24,11 @@ class Player:
         """
         self.game = game
         self.length: int = initial_length
-        self.direction: str = None
 
-        self.body_surf: pygame.Surface = self.create_body_surface()
         self.bodies: List[Tuple[int, int]] = self.make_bodies()
+
+    def get_head_coord(self) -> Tuple[int, int]:
+        return self.bodies[0]
     
     def make_bodies(self):
         grid_num = self.game.cell_manager.get_grid_size()
@@ -66,20 +67,6 @@ class Player:
         
         return ret
 
-    def create_body_surface(self) -> pygame.Surface:
-        """
-        Create body surface
-
-        Returns:
-            pygame.Surface: Surface object to render the body
-        """
-        size = self.game.map.get_cell_size()
-        outline_thickness = round(size[0] * OBJECT_OUTLINE_RATIO)
-        body_surface = pygame.Surface(size)
-        pygame.draw.rect(body_surface, BODY_OUTLINE_COLOR, body_surface.get_rect())
-        pygame.draw.rect(body_surface, BODY_COLOR, pygame.Rect(outline_thickness, outline_thickness, size[0] - outline_thickness * 2, size[1] - outline_thickness * 2))
-        return body_surface
-
     def set_direction(self, dir: str, with_validate: bool = True):
         if dir not in DIR_OFFSET_DICT:
             raise ValueError("parameter(dir) must be the one of [EWSN]")
@@ -110,9 +97,9 @@ class Player:
     def get_bodies_as_list(self):
         return [list(body) for body in self.bodies]
 
-    def move(self):
+    def move(self, direction: str):
         head, tail = self.bodies[0], self.bodies[-1]
-        dir_offset = DIR_OFFSET_DICT[self.direction]
+        dir_offset = DIR_OFFSET_DICT[direction]
         new_head = (head[0] + dir_offset[0], head[1] + dir_offset[1])
 
         collision = self.check_collision(new_head)
@@ -136,13 +123,3 @@ class Player:
         self.game.remove_feed(feed.coord)
 
         self.game.update_score(1)
-    
-    def render(self, map: "Map"):
-        for body_coord in self.bodies:
-            map.get_cells()[body_coord].put_surf(self.body_surf)
-
-        head = self.bodies[0]
-        dir_offset = DIR_OFFSET_DICT[self.direction]
-
-        arrow_coord = (head[0] + dir_offset[0], head[1] + dir_offset[1])
-        map.set_arrow(arrow_coord, DIR_ANGLE_DICT[self.direction])

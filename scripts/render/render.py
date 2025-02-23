@@ -62,10 +62,8 @@ class Renderer:
         else:
             return [(center_x + point_offset, center_y + size), (center_x - point_offset, center_y + size), (center_x, center_y)]
 
-
     def render_map(self, surf: pygame.Surface, map: "Map"):
         grid_size = map.grid_size
-        arrow_pos = map.arrow_pos
 
         grid_rect = map.grid_rect
         grid_outerline_thickness = map.grid_outerline_thickness
