@@ -110,3 +110,6 @@ class GameRenderer:
     
     def update_board_content(self, key: str, value: any):
         self.boards[key].update_content(value)
+
+    def reset_board_content(self, key: str):
+        self.boards[key].reset()

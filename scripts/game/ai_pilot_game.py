@@ -112,7 +112,7 @@ class AIPilotGame(BaseGame):
         super().start_game()
 
         self.scores["epoch"] += 1
-        self.boards["epoch"].update_content(self.scores["epoch"])
+        self.renderer.update_board_content("epoch", self.scores["epoch"])
 
         self.start_to_record(self.pilot_ai_name)
 
@@ -122,7 +122,7 @@ class AIPilotGame(BaseGame):
     
     def restart_game(self):
         self.scores["score"] = 0
-        self.boards["score"].reset()
+        self.renderer.reset_board_content("score")
         self.start_game()
     
     def update(self):
@@ -149,7 +149,7 @@ class AIPilotGame(BaseGame):
 
         if self.scores["score"] > self.scores["top_score"]:
             self.scores["top_score"] = self.scores["score"]
-            self.boards["top_score"].update_content(self.scores["top_score"])
+            self.renderer.update_board_content("top_score", self.scores["top_score"])
     
 
     def handle_game_end(self):
@@ -158,8 +158,8 @@ class AIPilotGame(BaseGame):
         self.scores["avg_score_last_100"] = self.scene.get_last_average_score_last_100()
         self.scores["overall_avg_score"] = self.scene.get_average_score()
 
-        self.boards["avg_score_last_100"].update_content(self.scores["avg_score_last_100"])
-        self.boards["overall_avg_score"].update_content(self.scores["overall_avg_score"])
+        self.renderer.update_board_content("avg_score_last_100", self.scores["avg_score_last_100"])
+        self.renderer.update_board_content("overall_avg_score", self.scores["overall_avg_score"])
 
         if not self.is_ended_process():
             self.restart_game()

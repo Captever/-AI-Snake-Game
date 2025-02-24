@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 
 import pygame
 
+import random
+
 from constants import *
 
 from scripts.ui.ui_components import UILayout, RelativeRect, Button, Board, TextBox
@@ -18,6 +20,7 @@ from typing import List, Tuple, Dict, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from scripts.scene.base_scene import BaseScene
+    from scripts.entity.feed_system import Feed
 
 class BaseGame(ABC):
     def __init__(self, scene: "BaseScene", rect: pygame.Rect, player_move_delay: int, grid_size: Tuple[int, int], feed_amount: int, clear_goal: float):
@@ -56,9 +59,9 @@ class BaseGame(ABC):
 
         self.state: GameState = None
 
-        self.direction: str = 'E'
         self.move_accum: int = 0
-        self.next_direction: str = None
+        self.direction: str = 'E'
+        self.next_direction: str = None  # use for ai pilot game
     
     @abstractmethod
     def init_score_info_list(self):
@@ -198,7 +201,7 @@ class BaseGame(ABC):
     # about progress
     def start_game(self):
         self.cell_manager = CellManager(self.grid_size)
-        self.player = Player(self, INIT_LENGTH)
+        self.player = Player(self.create_random_bodies(INIT_LENGTH))
         self.fs = FeedSystem(self, self.feed_amount)
         self.fs.add_feed_random_coord(self.feed_amount)
 
@@ -218,7 +221,7 @@ class BaseGame(ABC):
         self.scene.manager.start_to_record(replay_name, self.grid_size)
 
     def add_replay_step(self):
-        self.scene.manager.add_replay_step(self.player.bodies, self.player.direction, self.fs.feeds.values(), self.scores.copy().items())
+        self.scene.manager.add_replay_step(self.player.get_bodies(), self.direction, self.fs.feeds.values(), self.scores.copy().items())
     
     def save_game(self):
         self.set_save_buttons_selected()
@@ -228,6 +231,7 @@ class BaseGame(ABC):
         """ use to prevent duplicate save """
         for btn in self.save_buttons:
             btn.set_selected(is_selected)
+
 
     # functions to update every frame
     def update(self):
@@ -240,32 +244,124 @@ class BaseGame(ABC):
         if self.is_on_move():
             self.move_accum = 0
             self.add_replay_step()
-            self.player.move()
-            self.next_direction = None
+            self.move_player()
+            self.next_direction = None  # valid for ai pilot game
         else:
             self.move_accum += 1
 
 
     # about game logic
+    ## about player logic
+    def create_random_bodies(self, length: int) -> List[Tuple[int, int]]:
+        grid_num = self.cell_manager.get_grid_size()
+        rand_coord = (random.randint(0, grid_num[0] - 1), random.randint(0, grid_num[1] - 1))
+        ret = [rand_coord]
+        self.cell_manager.mark_cell_used(rand_coord)
+        
+        dirs = ['E', 'W', 'S', 'N']
+        for _ in range(length - 1):
+            prev_body_coord = ret[-1]
+            dirs_copy = dirs.copy()
+            while True:
+                dir = dirs_copy[random.randint(0, len(dirs_copy) - 1)]
+                dir_offset = DIR_OFFSET_DICT[dir]
+                body_coord = (prev_body_coord[0] + dir_offset[0], prev_body_coord[1] + dir_offset[1])
+                # validation
+                if self.is_in_bound(body_coord) and body_coord not in ret:
+                    ret.append(body_coord)
+                    self.cell_manager.mark_cell_used(body_coord)
+
+                    # set the player's initial direction to
+                    #  the opposite direction of the second body part
+                    if self.direction == None:
+                        if dir == 'E':
+                            self.direction = 'W'
+                        elif dir == 'W':
+                            self.direction = 'E'
+                        elif dir == 'S':
+                            self.direction = 'N'
+                        else:
+                            self.direction = 'S'
+
+                    break
+                else:
+                    dirs_copy.remove(dir)
+        
+        return ret
+
+    def set_direction(self, dir: str, with_validate: bool = True):
+        if dir not in DIR_OFFSET_DICT:
+            raise ValueError("parameter(dir) must be the one of [EWSN]")
+        
+        if with_validate and not self.validate_direction(dir):
+            return
+        
+        self.direction = dir
+    
+    def validate_direction(self, dir: str) -> bool:
+        next_head = self.player.get_next_head(dir)
+        neck = self.player.get_neck()
+
+        # restrict movement towards walls or the neck direction
+        return self.is_in_bound(next_head) and next_head != neck
+    
+    def is_player_body_collision(self, coord: Tuple[int, int]) -> bool:
+        """
+        Check if the given coordinate collides with the player's body
+        (excluding the tail).
+        """
+        return coord in self.player.get_bodies_without_tail()
+    
+    def move_player(self):
+        tail = self.player.get_tail()
+        next_head = self.player.get_next_head(self.direction)
+
+        collision = self.check_collision(next_head)
+        # game over when colliding with walls or the player's own body
+        if collision[0] in ['wall', 'body']:
+            self.set_state(GameState.GAMEOVER)
+            return
+        
+        # length increases when eat feed
+        if collision[0] == 'feed':
+            curr_feed = collision[1]
+            self.eat_feed(tail, curr_feed)
+        else:
+            self.player.remove_tail()
+            self.cell_manager.mark_cell_free(tail)
+
+        self.player.add_head(next_head)
+        self.cell_manager.mark_cell_used(next_head)
+    
+    def eat_feed(self, new_tail: Tuple[int, int], feed: "Feed"):
+        self.player.add_tail(new_tail)
+        self.remove_feed(feed.coord)
+
+        self.update_score(1)
+
+    ## about feed system logic
+    def remove_feed(self, coord):
+        self.fs.remove_feed(coord)
+
+    ## about coordinate system
     def check_collision(self, coord):
         if not self.is_in_bound(coord):
             return 'wall', None
         # 'body' collision is not valid for tail
-        if self.player.is_body_collision(coord):
+        if self.is_player_body_collision(coord):
             return 'body', None
         if self.fs.is_feed_exist(coord):
             feed = self.fs.get_feed(coord)
             return 'feed', feed
         return 'none', None
-    
-    def remove_feed(self, coord):
-        self.fs.remove_feed(coord)
 
+    ## about game flow
     def update_score(self, amount: int = 1):
-        self.scores["score"] += amount
-        self.boards["score"].update_content(self.scores["score"])
+        key = "score"
+        self.scores[key] += amount
+        self.renderer.update_board_content(key, self.scores[key])
         
-        if self.clear_condition is not None and self.scores["score"] >= self.clear_condition:
+        if self.clear_condition is not None and self.scores[key] >= self.clear_condition:
             self.set_state(GameState.CLEAR)
 
 
@@ -286,11 +382,11 @@ class BaseGame(ABC):
         self.map_surface.fill((0, 0, 0, 0))
 
         # render entities
-        if self.player is not None:
-            self.renderer.render_player(self.map_surface, self.player.bodies)
-            self.renderer.render_direction_arrow(self.map_surface, self.player.get_head_coord(), self.direction)
         if self.fs is not None:
             self.renderer.render_feeds(self.map_surface, self.fs.feeds.values())
+        if self.player is not None:
+            self.renderer.render_player(self.map_surface, self.player.get_bodies())
+            self.renderer.render_direction_arrow(self.map_surface, self.player.get_head(), self.direction)
 
         # render map
         if self.map is not None:

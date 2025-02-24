@@ -103,13 +103,10 @@ class SingleGame(BaseGame):
     
     def handle_movement_keydown(self, key):
         if key == pygame.K_UP or key == pygame.K_w:
-            self.next_direction = 'N'
+            self.set_direction('N')
         elif key == pygame.K_DOWN or key == pygame.K_s:
-            self.next_direction = 'S'
+            self.set_direction('S')
         elif key == pygame.K_LEFT or key == pygame.K_a:
-            self.next_direction = 'W'
+            self.set_direction('W')
         elif key == pygame.K_RIGHT or key == pygame.K_d:
-            self.next_direction = 'E'
-        else:
-            return
-        self.player.set_direction(self.next_direction)
+            self.set_direction('E')
