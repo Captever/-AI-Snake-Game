@@ -4,18 +4,34 @@ from constants import DIR_OFFSET_DICT, DIR_COLOR, DIR_ARROW_RATIO, OBJECT_OUTLIN
 
 from scripts.ui.ui_components import Outerline
 
-from typing import List, Tuple, TYPE_CHECKING
+from typing import List, Tuple, Dict, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from scripts.entity.feed_system import Feed
     from scripts.ui.map_structure import Map
+    from scripts.ui.ui_components import Board
+    from scripts.ui.instruction import Instruction
 
-class Renderer:
-    def __init__(self, cell_side_len: int, grid_origin: Tuple[int, int]):
+class GameRenderer:
+    def __init__(self):
+        self.cell_side_len: int = None
+        self.grid_origin: Tuple[int, int] = None
+        self.boards: Dict[str, "Board"] = None
+        self.instruction: Instruction = None
+
+    def set_cell_side_len(self, cell_side_len: int):
         self.cell_side_len = cell_side_len
+    
+    def set_grid_origin(self, grid_origin: Tuple[int, int]):
         self.grid_origin = grid_origin
 
-    def render_player(self, surf, bodies: List[Tuple[int, int]]):
+    def set_boards(self, boards: Dict[str, "Board"]):
+        self.boards = boards
+
+    def set_instruction(self, instruction: "Instruction"):
+        self.instruction = instruction
+
+    def render_player(self, surf: pygame.Surface, bodies: List[Tuple[int, int]]):
         for coord_x, coord_y in bodies:
             outline_thickness = round(self.cell_side_len * OBJECT_OUTLINE_RATIO)
             outline_rect = pygame.Rect(self.grid_origin[0] + coord_x * self.cell_side_len, self.grid_origin[1] + coord_y * self.cell_side_len,
@@ -25,7 +41,7 @@ class Renderer:
             pygame.draw.rect(surf, BODY_OUTLINE_COLOR, outline_rect)
             pygame.draw.rect(surf, BODY_COLOR, fill_rect)
 
-    def render_feeds(self, surf, feeds: List["Feed"]):
+    def render_feeds(self, surf: pygame.Surface, feeds: List["Feed"]):
         for feed in feeds:
             coord_x, coord_y = feed.coord
             type = feed.type
@@ -39,7 +55,7 @@ class Renderer:
                 pygame.draw.rect(surf, FEED_OUTLINE_COLOR, outline_rect)
                 pygame.draw.rect(surf, FEED_COLOR, fill_rect)
 
-    def render_direction_arrow(self, surf, head_coord: Tuple[int, int], direction: str):
+    def render_direction_arrow(self, surf: pygame.Surface, head_coord: Tuple[int, int], direction: str):
         dir_offset = DIR_OFFSET_DICT[direction]
         arrow_coord = tuple(head_coord[i] + dir_offset[i] for i in [0, 1])
         cell_mid_dist = self.cell_side_len // 2
@@ -82,11 +98,15 @@ class Renderer:
         # render outerline of grid
         self.render_outerline(surf, grid_rect, grid_outerline_thickness, grid_outerline_color)
     
-    def render_outerline(self, surf, rect: pygame.Rect, thickness: int = 1, color = (255, 255, 255, 255)):
+    def render_outerline(self, surf: pygame.Surface, rect: pygame.Rect, thickness: int = 1, color = (255, 255, 255, 255)):
         Outerline(rect, thickness, color).render(surf)
 
-    def render_instruction(self, surf):
-        pass
-
-    def render_board(self, surf):
-        pass
+    def render_ui(self, surf: pygame.Surface):
+        if self.boards is not None:
+            for board in self.boards.values():
+                board.render(surf)
+        if self.instruction is not None:
+            self.instruction.render(surf)
+    
+    def update_board_content(self, key: str, value: any):
+        self.boards[key].update_content(value)
