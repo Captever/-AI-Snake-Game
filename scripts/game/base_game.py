@@ -12,6 +12,7 @@ from scripts.entity.feed_system import FeedSystem
 from scripts.manager.cell_manager import CellManager
 
 from scripts.manager.game_manager import GameState
+from scripts.render.render import GameRenderer
 
 from typing import List, Tuple, Dict, TYPE_CHECKING
 
@@ -25,6 +26,8 @@ class BaseGame(ABC):
         self.size = rect.size
         self.origin: Tuple[int, int] = tuple(scene.origin[i] + rect.topleft[i] for i in [0, 1])
 
+        self.renderer = GameRenderer()
+
         self.player_move_delay = player_move_delay
         self.grid_size = grid_size
         self.feed_amount = feed_amount
@@ -33,19 +36,19 @@ class BaseGame(ABC):
         self.surf = pygame.Surface(self.size)
 
         self.map: Map = None
+        self.map_surface: pygame.Surface = None
         self.player: Player = None
         self.fs: FeedSystem = None
         self.cell_manager: CellManager = None
 
-        self.score_info_list: List[Tuple[str, str, str, any]] = [] # key, title, content format, default value
+        self.score_info_list: List[Tuple[str, str, str]] = [] # key, title, content format
         self.instruction_list: List[Tuple[str, str]] = [] # key, act
-
-        self.state_layouts: Dict[int, UILayout] = {}
         self.scores: Dict[str, any] = {}
-        self.boards: Dict[str, Board] = {}
 
         self.init_score_info_list()
         self.init_instruction_list()
+
+        self.state_layouts: Dict[int, UILayout] = {}
 
         self.save_buttons: List[Button] = []
 
@@ -53,6 +56,7 @@ class BaseGame(ABC):
 
         self.state: GameState = None
 
+        self.direction: str = 'E'
         self.move_accum: int = 0
         self.next_direction: str = None
     
@@ -86,25 +90,23 @@ class BaseGame(ABC):
     def init_ui(self):
         is_landscape = self.rect.size[0] >= self.rect.size[1]
         if is_landscape:
-            map_side_length = (self.rect.size[0] // 2)
+            map_side_len = (self.rect.size[0] // 2)
             board_relative_rect = RelativeRect(0.75, 0.1, 0.25, 0.15)
             board_relative_offset = (0, 0.16)
+            instruction_relative_rect = RelativeRect(0, 0.5, 0.25, 0.5)
         else:
-            map_side_length = self.rect.size[0]
+            map_side_len = self.rect.size[0]
             board_relative_rect = RelativeRect(0.1, 0.75, 0.15, 0.25)
             board_relative_offset = (0.16, 0)
-        self.map_origin = (self.rect.size[0] // 2 - map_side_length // 2, self.rect.size[1] // 2 - map_side_length // 2)
+            instruction_relative_rect = RelativeRect(0, 0.5, 0.25, 0.5)
+        self.map_origin = (self.rect.size[0] // 2 - map_side_len // 2, self.rect.size[1] // 2 - map_side_len // 2)
 
-        self.map = Map(self.grid_size, map_side_length, GRID_THICKNESS, WHITE + (GRID_ALPHA,))
-        self.map.add_outerline(MAP_OUTERLINE_THICKNESS, WHITE)
+        self.map, self.map_surface = self.create_map(map_side_len, self.grid_size)
 
-        for idx, (key, board_title, board_format, default_value) in enumerate(self.score_info_list):
-            board_offset = (board_relative_offset[0] * idx, board_relative_offset[1] * idx)
-            curr_board_relative_rect = RelativeRect(board_relative_rect.relative_x + board_offset[0], board_relative_rect.relative_y + board_offset[1], board_relative_rect.relative_width, board_relative_rect.relative_height)
-            board_rect = curr_board_relative_rect.to_absolute(self.rect.size)
-
-            self.scores[key] = default_value
-            self.boards[key] = Board(board_rect, board_title, WHITE, format=board_format)
+        self.renderer.set_cell_side_len(self.map.cell_side_len)
+        self.renderer.set_grid_origin(self.map.grid_rect.topleft)
+        self.renderer.set_boards(self.create_boards(board_relative_rect, board_relative_offset))
+        self.renderer.set_instruction(self.create_instruction(instruction_relative_rect, "Key Instruction", self.instruction_list))
 
         # about state layouts
         self.init_states_layout()
@@ -112,6 +114,34 @@ class BaseGame(ABC):
 
         # about instructions
         self.instruction = Instruction(self.get_instruction_layout_rect(), "Key Instruction", self.instruction_list, WHITE)
+
+
+    # about class object creation
+    def create_map(self, map_side_len: int, grid_size: Tuple[int, int], map_outerline_thickness: int = 3, map_outerline_color = (255, 255, 255, 255), grid_outerline_thickness: int = 1, grid_outerline_color=(255, 255, 255, 255), grid_thickness: int = 1, grid_color = (255, 255, 255, 128)) -> Tuple[Map, pygame.Surface]:
+        map_rect = pygame.Rect(0, 0, map_side_len, map_side_len)
+        map = Map(map_rect, grid_size, map_outerline_thickness, map_outerline_color, grid_outerline_thickness, grid_outerline_color, grid_thickness, grid_color)
+        
+        surf_size = (map_side_len, map_side_len)
+        map_surface = pygame.Surface(surf_size, pygame.SRCALPHA)
+        return (map, map_surface)
+    
+    def create_boards(self, relative_rect: RelativeRect, relative_offset: Tuple[float, float]):
+        boards: Dict[str, "Board"] = {}
+
+        for idx, (key, board_title, board_format) in enumerate(self.score_info_list):
+            board_offset = (relative_offset[0] * idx, relative_offset[1] * idx)
+            curr_board_relative_rect = RelativeRect(relative_rect.relative_x + board_offset[0], relative_rect.relative_y + board_offset[1], relative_rect.relative_width, relative_rect.relative_height)
+            board_rect = curr_board_relative_rect.to_absolute(self.size)
+
+            boards[key] = Board(board_rect, board_title, WHITE, format=board_format)
+        
+        return boards
+
+    def create_instruction(self, relative_rect: RelativeRect, title: str, instruction_list: List[Tuple[str, str]]):
+        instruction_rect = relative_rect.to_absolute(self.size)
+        instruction = Instruction(instruction_rect, title, instruction_list, WHITE)
+
+        return instruction
 
 
     # about setter
@@ -253,13 +283,26 @@ class BaseGame(ABC):
     def render(self, surf: pygame.Surface):
         self.surf.fill((0, 0, 0))
 
-        # self.player.render(self.map)
-        # self.fs.render(self.map)
-        for board in self.boards.values():
-            board.render(self.surf)
-        self.instruction.render(self.surf)
+        self.map_surface.fill((0, 0, 0, 0))
 
-        self.map.render(self.surf, self.map_origin)
+        # render entities
+        if self.player is not None:
+            self.renderer.render_player(self.map_surface, self.player.bodies)
+            self.renderer.render_direction_arrow(self.map_surface, self.player.get_head_coord(), self.direction)
+        if self.fs is not None:
+            self.renderer.render_feeds(self.map_surface, self.fs.feeds.values())
+
+        # render map
+        if self.map is not None:
+            self.renderer.render_map(self.map_surface, self.map)
+            map_rect = self.map_surface.get_rect()
+            map_rect.center = self.surf.get_rect().center
+            self.renderer.render_outerline(self.surf, map_rect,
+                                           self.map.outerline_thickness, self.map.outerline_color)
+
+            self.surf.blit(self.map_surface, map_rect)
+
+        self.renderer.render_ui(self.surf)
 
         self.render_state_objects(self.surf)
 

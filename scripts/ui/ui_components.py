@@ -77,12 +77,9 @@ class UILayout:
         self.offset = self.rect.topleft
         
         self.outerline: Outerline = None
-
-    def get_size(self):
-        return self.rect.size
     
     def add_outerline(self, outline_thickness: int = 1, outline_color=(255, 255, 255)):
-        self.outerline = Outerline(self.get_size(), outline_thickness, outline_color)
+        self.outerline = Outerline(self.rect, outline_thickness, outline_color)
 
     def add_layout(self, name: str, relative_rect: RelativeRect, bg_color=UI_LAYOUT["default_color"]):
         """

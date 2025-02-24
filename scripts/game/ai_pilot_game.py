@@ -30,12 +30,12 @@ class AIPilotGame(BaseGame):
         self.start_game()
 
     def init_score_info_list(self):
-        self.score_info_list = [ # key, title, content format, default value
-            ("top_score", "TOP", "{:,}", 0),
-            ("score", "Score", "{:,}", 0),
-            ("epoch", "Epoch", "{:,}", 0),
-            ("avg_score_last_100", "Average Last 100", "{:,.3f}", 0.0),
-            ("overall_avg_score", "Overall Average", "{:,.3f}", 0.0)
+        self.score_info_list = [ # key, title, content format
+            ("top_score", "TOP", "{:,}"),
+            ("score", "Score", "{:,}"),
+            ("epoch", "Epoch", "{:,}"),
+            ("avg_score_last_100", "Average Last 100", "{:,.3f}"),
+            ("overall_avg_score", "Overall Average", "{:,.3f}")
         ]
     
     def init_instruction_list(self):
