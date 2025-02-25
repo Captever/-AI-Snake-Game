@@ -51,58 +51,14 @@ class Replay:
         step_index: int = min(max(0, step - 1), len(self.steps))
         return self.steps[step_index]
 
-class ReplayBuffer:
-    def __init__(self):
-        """
-        A buffer that manages the input and output of replays.
-        """
-
-    def save_to_file(self, replay: Replay, filename: str):
-        file_path = REPLAY_DIRECTORY + '/' + filename
-        data = self.convert_to_json(replay)
-
-        if not os.path.exists(REPLAY_DIRECTORY):
-            os.makedirs(REPLAY_DIRECTORY)
-
-        with open(file_path, "w") as f:
-            json.dump(data, f, indent=4)
-
-    def convert_to_json(self, replay: Replay):
-        return {
-            "grid_size": list(replay.grid_size),
-            "score_info_list": [list(score_info) for score_info in replay.score_info_list],
-            "game_version": replay.game_version,
-            "steps": [step.to_json_dict() for step in replay.steps]
-        }
-
-    def load_from_file(self, filename: str) -> Replay:
-        file_path = REPLAY_DIRECTORY + '/' + filename
-
-        try:
-            with open(file_path, "r") as f:
-                data = json.load(f)
-            
-            return self.convert_from_json(data)
-        except FileNotFoundError:
-            print(f"File({filename}) not found")
-            return None
-
-    def convert_from_json(self, data: any) -> Replay:
-        grid_size = data["grid_size"]
-        score_info_list = data["score_info_list"]
-        game_version = data["game_version"]
-        steps = [Step.from_json_dict(step) for step in data["steps"]]
-
-        return Replay('', grid_size, score_info_list, game_version, steps)
-
 class ReplayManager:
     def __init__(self):
-        self.buffer = ReplayBuffer()
-
         self.current_replay: Replay = None
 
         self.replay_file_list: List[str] = None
 
+
+    # about filename
     def wrap_filename(self, filename):
         return REPLAY_PREFIX + filename + REPLAY_EXTENSION
 
@@ -111,6 +67,8 @@ class ReplayManager:
         end_idx = len(REPLAY_EXTENSION)
         return filename[start_idx:][:-end_idx]
 
+
+    # about recording
     def start_to_record(self, replay_name: str, grid_size: Tuple[int, int], score_info_list: List[Tuple[int, int]]):
         self.current_replay = Replay(replay_name, grid_size, score_info_list)
 
@@ -123,6 +81,8 @@ class ReplayManager:
         else:
             self.current_replay = None
 
+
+    # about replay management
     def update_replay_list(self):
         """
         Update the replay file list
@@ -145,10 +105,16 @@ class ReplayManager:
         Save the current game as a replay
         """
         formatted_date = datetime.now().strftime("%Y%m%d_%H%M%S")
-
         filename: str = self.wrap_filename('_'.join([formatted_date, self.current_replay.name]))
 
-        self.buffer.save_to_file(self.current_replay, filename)
+        if not os.path.exists(REPLAY_DIRECTORY):
+            os.makedirs(REPLAY_DIRECTORY)
+
+        file_path = REPLAY_DIRECTORY + '/' + filename
+        data = self.convert_to_json(self.current_replay)
+
+        with open(file_path, "w") as f:
+            json.dump(data, f, indent=4)
 
     def load_replay(self, index: int):
         """
@@ -156,7 +122,14 @@ class ReplayManager:
         """
         filename = self.wrap_filename(self.replay_file_list[index])
 
-        self.current_replay = self.buffer.load_from_file(filename)
+        file_path = REPLAY_DIRECTORY + '/' + filename
+
+        try:
+            with open(file_path, "r") as f:
+                data = json.load(f)
+            self.current_replay = self.convert_from_json(data)
+        except FileNotFoundError:
+            print(f"File({filename}) not found")
 
     def get_replay_game(self, replay_index: int, rect: pygame.Rect) -> ReplayGame:
         """
@@ -165,3 +138,21 @@ class ReplayManager:
         self.load_replay(replay_index)
 
         return ReplayGame(rect, self.current_replay)
+    
+
+    # about JSON converting
+    def convert_to_json(self, replay: Replay):
+        return {
+            "grid_size": list(replay.grid_size),
+            "score_info_list": [list(score_info) for score_info in replay.score_info_list],
+            "game_version": replay.game_version,
+            "steps": [step.to_json_dict() for step in replay.steps]
+        }
+
+    def convert_from_json(self, data: any) -> Replay:
+        grid_size = data["grid_size"]
+        score_info_list = data["score_info_list"]
+        game_version = data["game_version"]
+        steps = [Step.from_json_dict(step) for step in data["steps"]]
+
+        return Replay('', grid_size, score_info_list, game_version, steps)
