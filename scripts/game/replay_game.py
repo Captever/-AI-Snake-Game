@@ -109,6 +109,8 @@ class ReplayGame:
             raise ValueError("Step change request exceeds the valid range.")
 
         self.step = step
+        for key, score in self.steps[step].scores:
+            self.renderer.update_board_content(key, score)
 
     def go_to_next_step(self):
         """
