@@ -114,13 +114,15 @@ class ReplayGame:
         """
         Move to the next step
         """
-        self.go_to_step(self.step + 1)
+        next_step = min(self.step + 1, len(self.steps) - 1)
+        self.go_to_step(next_step)
 
     def go_to_prev_step(self):
         """
         Move to the previous step
         """
-        self.go_to_step(self.step - 1)
+        prev_step = max(self.step - 1, 0)
+        self.go_to_step(prev_step)
 
     def rewind(self):
         pass
