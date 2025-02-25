@@ -13,7 +13,7 @@ from scripts.entity.player import Player
 from scripts.entity.feed_system import FeedSystem
 from scripts.manager.cell_manager import CellManager
 
-from scripts.manager.game_manager import GameState
+from scripts.manager.state_manager import GameState
 from scripts.render.render import GameRenderer
 
 from typing import List, Tuple, Dict, TYPE_CHECKING

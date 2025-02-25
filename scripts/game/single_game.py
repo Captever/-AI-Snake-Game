@@ -6,7 +6,7 @@ from constants import *
 
 from scripts.ui.ui_components import UILayout, RelativeRect
 
-from scripts.manager.game_manager import GameState
+from scripts.manager.state_manager import GameState
 
 from typing import Tuple, TYPE_CHECKING
 

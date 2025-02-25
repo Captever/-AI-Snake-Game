@@ -6,7 +6,7 @@ from scripts.ui.ui_components import RelativeRect, Board
 from scripts.ui.map_structure import Map
 from scripts.ui.instruction import Instruction
 
-from scripts.manager.game_manager import GameState
+from scripts.manager.state_manager import GameState
 from scripts.render.render import GameRenderer
 
 from typing import Dict, List, Tuple, TYPE_CHECKING
