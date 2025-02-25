@@ -36,19 +36,13 @@ class Step:
         )
 
 class Replay:
-    def __init__(self, name: str, grid_size: Tuple[int, int], game_version: str = "1.0.0"):
+    def __init__(self, name: str, grid_size: Tuple[int, int], score_info_list: List[Tuple[str, str, str]], game_version: str = "1.0.0", steps: List[Step] = None):
         self.name = name
         self.grid_size = grid_size
+        self.score_info_list = score_info_list
         self.game_version = game_version
 
-        self.steps: List[Step] = []
-
-    @classmethod
-    def with_steps(self, grid_size: Tuple[int, int], steps: List[Step], game_version: str = "1.0.0"):
-        self.grid_size = grid_size
-        self.game_version = game_version
-
-        self.steps: List[Step] = steps
+        self.steps: List[Step] = steps if steps is not None else []
         
     def add_step(self, player_bodies: List[Tuple[int, int]], player_direction: str, feeds: List[Feed], scores: List[Tuple[str, any]]):
         self.steps.append(Step(player_bodies, player_direction, feeds, scores))
@@ -75,7 +69,8 @@ class ReplayBuffer:
 
     def convert_to_json(self, replay: Replay):
         return {
-            "grid_size": replay.grid_size,
+            "grid_size": list(replay.grid_size),
+            "score_info_list": [list(score_info) for score_info in replay.score_info_list],
             "game_version": replay.game_version,
             "steps": [step.to_json_dict() for step in replay.steps]
         }
@@ -94,10 +89,11 @@ class ReplayBuffer:
 
     def convert_from_json(self, data: any) -> Replay:
         grid_size = data["grid_size"]
+        score_info_list = data["score_info_list"]
         game_version = data["game_version"]
         steps = [Step.from_json_dict(step) for step in data["steps"]]
 
-        return Replay.with_steps(grid_size, steps, game_version)
+        return Replay('', grid_size, score_info_list, game_version, steps)
 
 class ReplayManager:
     def __init__(self):
@@ -115,8 +111,8 @@ class ReplayManager:
         end_idx = len(REPLAY_EXTENSION)
         return filename[start_idx:][:-end_idx]
 
-    def start_to_record(self, replay_name: str, grid_size: Tuple[int, int]):
-        self.current_replay = Replay(replay_name, grid_size)
+    def start_to_record(self, replay_name: str, grid_size: Tuple[int, int], score_info_list: List[Tuple[int, int]]):
+        self.current_replay = Replay(replay_name, grid_size, score_info_list)
 
     def add_step(self, player_bodies: List[Tuple[int, int]], player_direction: str, feeds: List[Feed], scores: Dict[str, any]):
         self.current_replay.add_step(player_bodies, player_direction, feeds, scores)
@@ -148,7 +144,7 @@ class ReplayManager:
         """
         Save the current game as a replay
         """
-        formatted_date = datetime.now().strftime("%Y%m%d_%H%M%s")
+        formatted_date = datetime.now().strftime("%Y%m%d_%H%M%S")
 
         filename: str = self.wrap_filename('_'.join([formatted_date, self.current_replay.name]))
 
@@ -162,7 +158,7 @@ class ReplayManager:
 
         self.current_replay = self.buffer.load_from_file(filename)
 
-    def show_replay(self, replay_index: int, rect: pygame.Rect):
+    def get_replay_game(self, replay_index: int, rect: pygame.Rect) -> ReplayGame:
         """
         Show the loaded replay
         """
