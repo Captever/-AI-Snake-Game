@@ -129,13 +129,16 @@ class UILayout:
 
         return textbox
     
-    def update_radio_selection(self, target_text: str):
+    def update_radio_selection(self, target_btn_index: int):
+        btn_i_idx = 0
+
         for element in self.elements:
             if isinstance(element, Button):
-                if element.text == target_text:
+                if btn_i_idx == target_btn_index:
                     element.set_selected()
                 else:
                     element.set_selected(False)
+                btn_i_idx += 1
 
     def get_surface(self):
         return self.surf
