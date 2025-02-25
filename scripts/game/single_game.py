@@ -57,7 +57,7 @@ class SingleGame(BaseGame):
         self.set_gameover_layout(layout)
     
     def init_clear_layout(self, rect):
-        layout: UILayout = UILayout(self.size, rect, (0, 0, 0, 0))
+        layout: UILayout = UILayout(self.origin, rect, (0, 0, 0, 0))
 
         layout.add_textbox(RelativeRect(0, 0, 1, 0.6), "CLEAR", WHITE)
 
