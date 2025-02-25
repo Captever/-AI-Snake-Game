@@ -121,9 +121,6 @@ class BaseGame(ABC):
         self.init_states_layout()
         self.countdown_textbox = TextBox(self.get_state_layout_rect(), "0", YELLOW)
 
-        # about instructions
-        self.instruction = Instruction(self.get_instruction_layout_rect(), "Key Instruction", self.instruction_list, WHITE)
-
 
     # about class object creation
     def create_map(self, map_side_len: int, grid_size: Tuple[int, int], map_outerline_thickness: int = 3, map_outerline_color = (255, 255, 255, 255), grid_outerline_thickness: int = 1, grid_outerline_color=(255, 255, 255, 255), grid_thickness: int = 1, grid_color = (255, 255, 255, 128)) -> Tuple[Map, pygame.Surface]:
@@ -178,9 +175,6 @@ class BaseGame(ABC):
     # about getter
     def get_state_layout_rect(self):
         return RelativeRect(0, 0.3, 1, 0.35).to_absolute(self.rect.size)
-    
-    def get_instruction_layout_rect(self):
-        return RelativeRect(0, 0.5, 0.25, 0.5).to_absolute(self.rect.size)
     
     def is_state(self, state: GameState) -> bool:
         if state not in GameState:
