@@ -180,7 +180,7 @@ class UILayout:
         surf.blit(self.surf, self.offset)
 
         if self.outerline is not None:
-            self.outerline.render(surf, self.offset)
+            self.outerline.render(surf)
 
 class Button:
     def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, callback=None, auto_lined_str: List[str]=None):
