@@ -31,7 +31,7 @@ class Step:
         return cls(
             player_bodies=[tuple(body) for body in data["player_bodies"]],
             player_direction=data["player_direction"],
-            feeds={tuple(feed_coord): Feed(tuple(feed[0]), feed[1]) for feed_coord, feed in data["feeds"]},
+            feeds=[Feed(tuple(feed_coord), feed_type) for feed_coord, feed_type in data["feeds"]],
             scores=[tuple(score) for score in data["scores"]]
         )
 

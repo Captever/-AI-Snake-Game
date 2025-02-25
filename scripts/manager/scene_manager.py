@@ -1,3 +1,5 @@
+from pygame import Rect
+
 from scripts.scene.base_scene import BaseScene
 
 from scripts.manager.replay_manager import ReplayManager
@@ -35,8 +37,8 @@ class SceneManager:
     def get_replay_list(self):
         return self.replay_manager.get_replay_list()
 
-    def load_replay(self, replay_index: int):
-        self.replay_manager.load_replay(replay_index)
+    def get_replay_game(self, replay_index: int, rect: Rect):
+        return self.replay_manager.get_replay_game(replay_index, rect)
 
 
     # functions to update every frame

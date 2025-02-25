@@ -57,5 +57,5 @@ class Feed:
     def get_type(self) -> str:
         return self._type
 
-    def to_list(self):
+    def to_list(self) -> List[any]:
         return [list(self._coord), self._type]
