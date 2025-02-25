@@ -4,10 +4,10 @@ from constants import *
 
 from .base_scene import BaseScene
 from scripts.ui.ui_components import UILayout, RelativeRect, ScrollBar
+from scripts.manager.state_manager import ReplayState
 
 from scripts.game.replay_game import ReplayGame
 
-from typing import Tuple
 from functools import partial
 
 class RecordScene(BaseScene):
@@ -20,14 +20,15 @@ class RecordScene(BaseScene):
         self.replay_game_rect = self.create_replay_game_rect()
         self.replay_list_layout = self.create_replay_list_layout()
         self.playback_tool_layout = self.create_playback_tool_layout()
-    
-    def get_centered_rect(self, base_size: Tuple[int, int], offset_ratio: Tuple[float, float]) -> pygame.Rect:
-        screen_center = (self.size[0] // 2, self.size[1] // 2)
-        origin_pos = (screen_center[0] - base_size[0] // 2, screen_center[1] - base_size[1] // 2)
 
-        offset = tuple(base_size[i] * offset_ratio[i] for i in [0, 1])
-        return pygame.Rect((origin_pos[0] + offset[0], origin_pos[1] + offset[1]) + base_size)
+        self.state: ReplayState = None
 
+        self.step_delay: int = 16  # Ensure that 2x, 4x, 8x, and 16x speeds all divide evenly
+        self.step_accum: int = 0  # accumulate value for stepping
+
+        self.state = ReplayState.PLAY
+
+    # about creation ui object
     def create_replay_game_rect(self) -> pygame.Rect:
         game_relative_rect: RelativeRect
 
@@ -101,18 +102,87 @@ class RecordScene(BaseScene):
             tool_layout.add_button(RelativeRect(idx * 0.2125, 0, 0.15, 1), text=text)
 
         return layout
-    
-    def handle_events(self, events):
-        super().handle_events(events)
-        
-        if self.replay_game is not None:
-            self.replay_game.handle_events(events)
-        self.replay_list_layout.handle_events(events)
-        self.playback_tool_layout.handle_events(events)
 
+
+    # about setter
+    def set_state(self, state: ReplayState):
+        if state not in ReplayState:
+            raise ValueError(f"Invalid ReplayState on `set_state()`: {state}")
+        
+        self.state = state
+        self.on_state_change() # hooking
+
+    def on_state_change(self):
+        """Methods to be overridden in subclasses"""
+        pass
+
+
+    # about getter
+    def is_state(self, state: ReplayState) -> bool:
+        if state not in ReplayState:
+            raise ValueError(f"Invalid ReplayState on `is_state()`: {state}")
+        
+        return self.state == state
+
+    def is_on_step(self) -> bool:
+        is_on_delay: bool = self.step_accum >= self.step_delay
+        return is_on_delay and self.replay_game.is_stepable()
+
+
+    # flip
+    def flip_replay_pause(self):
+        if self.is_state(ReplayState.PAUSE):
+            self.set_state(ReplayState.PLAY)
+        else:
+            self.set_state(ReplayState.PAUSE)
+
+
+    # about replay system
     def set_selected_replay(self, replay_list_layout: UILayout, replay_index: int):
         replay_list_layout.update_radio_selection(replay_index)
         self.replay_game = self.manager.get_replay_game(replay_index, self.replay_game_rect)
+        
+
+    # functions to update every frame
+    def update(self):
+        if self.is_state(ReplayState.PLAY) and self.replay_game is not None:
+            self.step_sequence()
+
+    def step_sequence(self):
+        if self.is_on_step():
+            self.step_accum = 0
+            self.replay_game.go_to_next_step()
+        else:
+            self.step_accum += 1
+    
+
+    # about every frame routine
+    def handle_events(self, events):
+        super().handle_events(events)
+        
+        for event in events:
+            if event.type == pygame.KEYDOWN:
+                self.handle_keydown(event.key)
+                
+        self.replay_list_layout.handle_events(events)
+        self.playback_tool_layout.handle_events(events)
+    
+    def handle_keydown(self, key):
+        if key == pygame.K_SPACE or key == pygame.K_k:
+            # flip play/pause
+            self.flip_replay_pause()
+        elif key == pygame.K_j:
+            # prev step
+            self.replay_game.go_to_prev_step()
+        elif key == pygame.K_l:
+            # next step
+            self.replay_game.go_to_next_step()
+        elif key == pygame.K_LEFTBRACKET:
+            # rewind
+            self.replay_game.rewind()
+        elif key == pygame.K_RIGHTBRACKET:
+            # fast forward
+            self.replay_game.fastforward()
 
     def render(self, surf):
         super().render(surf)

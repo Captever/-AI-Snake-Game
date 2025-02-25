@@ -94,8 +94,9 @@ class AIPilotGame(BaseGame):
 
     
     def is_on_move_delay(self) -> bool:
+        is_on_delay: bool = self.move_accum >= self.player_move_delay
         # If enable_speed_limit_flag is true, enable speed restriction
-        return not self.enable_speed_limit_flag or self.move_accum >= self.player_move_delay
+        return not self.enable_speed_limit_flag or is_on_delay
     
     def is_decided_next_direction(self) -> bool:
         return self.next_direction is not None

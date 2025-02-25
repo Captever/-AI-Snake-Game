@@ -70,7 +70,8 @@ class SingleGame(BaseGame):
 
 
     def is_on_move(self) -> bool:
-        return self.move_accum >= self.player_move_delay
+        is_on_delay: bool = self.move_accum >= self.player_move_delay
+        return is_on_delay
 
 
     def start_game(self):

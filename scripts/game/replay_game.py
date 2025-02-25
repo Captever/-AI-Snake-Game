@@ -6,7 +6,6 @@ from scripts.ui.ui_components import RelativeRect, Board
 from scripts.ui.map_structure import Map
 from scripts.ui.instruction import Instruction
 
-from scripts.manager.state_manager import GameState
 from scripts.render.render import GameRenderer
 
 from typing import Dict, List, Tuple, TYPE_CHECKING
@@ -22,7 +21,6 @@ class ReplayGame:
 
         self.renderer = GameRenderer()
 
-        self.move_delay: int = 16 # Ensure that 2x, 4x, 8x, and 16x speeds all divide evenly
         self.grid_size = replay.grid_size
 
         self.surf = pygame.Surface(self.size)
@@ -32,16 +30,10 @@ class ReplayGame:
 
         self.score_info_list: List[Tuple[str, str, str]] = replay.score_info_list # key, title, content format
         self.instruction_list: List[Tuple[str, str]] = [] # key, act
-        self.scores: Dict[str, any] = {}
         
         self.init_instruction_list()
 
         self.init_ui()
-
-        self.state: GameState = None
-
-        self.move_accum: int = 0
-        self.direction: str = None
 
         self.step: int = 0
         self.steps = replay.steps
@@ -105,58 +97,30 @@ class ReplayGame:
         return instruction
 
 
-
-
-    # about setter
-    def set_state(self, state: GameState):
-        if state not in GameState:
-            raise ValueError(f"Invalid GameState on `set_state()`: {state}")
-        
-        self.state = state
-        self.on_state_change() # hooking
-
-    def on_state_change(self):
-        """Methods to be overridden in subclasses"""
-        pass
-
-
-    # about getter
-    def is_state(self, state: GameState) -> bool:
-        if state not in GameState:
-            raise ValueError(f"Invalid GameState on `is_state()`: {state}")
-        
-        return self.state == state
-
-    def is_on_move(self) -> bool:
-        return self.move_accum >= self.move_delay
-
-
-    # flip
-    def flip_game_pause(self):
-        if self.is_state(GameState.PAUSED):
-            self.set_state(GameState.ACTIVE)
-        elif self.is_state(GameState.ACTIVE):
-            self.set_state(GameState.PAUSED)
-
-
     # about progress
+    def is_stepable(self) -> bool:  # Able to move to the next step
+        return self.step < len(self.steps) - 1
+
     def go_to_step(self, step: int):
         """
         Go to a specific step
         """
-        pass
+        if not (0 <= step < len(self.steps)):
+            raise ValueError("Step change request exceeds the valid range.")
+
+        self.step = step
 
     def go_to_next_step(self):
         """
         Move to the next step
         """
-        pass
+        self.go_to_step(self.step + 1)
 
     def go_to_prev_step(self):
         """
         Move to the previous step
         """
-        pass
+        self.go_to_step(self.step - 1)
 
     def rewind(self):
         pass
@@ -164,41 +128,6 @@ class ReplayGame:
     def fastforward(self):
         pass
 
-
-    # functions to update every frame
-    def update(self):
-        if self.is_state(GameState.ACTIVE):
-            self.move_sequence()
-
-    def move_sequence(self):
-        if self.is_on_move():
-            self.move_accum = 0
-            self.go_to_next_step()
-        else:
-            self.move_accum += 1
-    
-    def handle_events(self, events):
-        for event in events:
-            if event.type == pygame.KEYDOWN:
-                self.handle_keydown(event.key)
-    
-    def handle_keydown(self, key):
-        if key == pygame.K_SPACE or key == pygame.K_k:
-            # flip play/pause
-            self.flip_game_pause()
-        elif key == pygame.K_j:
-            # prev step
-            self.go_to_step(self.step - 1)
-        elif key == pygame.K_l:
-            # next step
-            self.go_to_step(self.step + 1)
-        elif key == pygame.K_LEFTBRACKET:
-            # rewind
-            self.rewind()
-        elif key == pygame.K_RIGHTBRACKET:
-            # fast forward
-            self.fastforward()
-    
 
     # about renderer
     def render(self, surf: pygame.Surface):
