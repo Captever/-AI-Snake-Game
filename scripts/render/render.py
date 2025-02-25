@@ -43,8 +43,8 @@ class GameRenderer:
 
     def render_feeds(self, surf: pygame.Surface, feeds: List["Feed"]):
         for feed in feeds:
-            coord_x, coord_y = feed.coord
-            type = feed.type
+            coord_x, coord_y = feed.get_coord()
+            type = feed.get_type()
 
             if type == 'normal':
                 outline_thickness = round(self.cell_side_len * OBJECT_OUTLINE_RATIO)

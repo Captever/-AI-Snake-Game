@@ -48,10 +48,10 @@ def get_closest_dist_with_feed(coord: Tuple[int, int], feeds):
 
 class GreedyAI(BaseAI):
     def decide_direction(self):
-        bodies = self.game.player.bodies
+        bodies = self.game.player.get_bodies()
         head = bodies[0]
         grid_size = self.game.grid_size
-        feeds = self.game.fs.feeds
+        feeds = self.game.fs.get_feeds()
 
         secure_weight = 0.3
 

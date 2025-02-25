@@ -134,7 +134,7 @@ class AIPilotGame(BaseGame):
                 self.next_direction = self.curr_direction
             else: # No need to reset when maintaining the same direction
                 self.curr_direction = self.next_direction
-                self.player.set_direction(self.next_direction, False)
+                self.set_direction(self.next_direction, False)
     
 
     def flip_final_epoch_flag(self):

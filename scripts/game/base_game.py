@@ -49,6 +49,8 @@ class BaseGame(ABC):
         self.scores: Dict[str, any] = {}
 
         self.init_score_info_list()
+        self.init_scores()
+        
         self.init_instruction_list()
 
         self.state_layouts: Dict[int, UILayout] = {}
@@ -66,6 +68,10 @@ class BaseGame(ABC):
     @abstractmethod
     def init_score_info_list(self):
         pass
+
+    def init_scores(self):
+        for key, _, _ in self.score_info_list:
+            self.scores[key] = 0
 
     @abstractmethod
     def init_instruction_list(self):
@@ -202,8 +208,8 @@ class BaseGame(ABC):
     def start_game(self):
         self.cell_manager = CellManager(self.grid_size)
         self.player = Player(self.create_random_bodies(INIT_LENGTH))
-        self.fs = FeedSystem(self, self.feed_amount)
-        self.fs.add_feed_random_coord(self.feed_amount)
+        self.fs = FeedSystem()
+        self.add_feed_random_coord(self.feed_amount)
 
     def start_countdown(self, count_ms: int = 3000):
         self.set_state(GameState.COUNTDOWN)
@@ -221,7 +227,7 @@ class BaseGame(ABC):
         self.scene.manager.start_to_record(replay_name, self.grid_size)
 
     def add_replay_step(self):
-        self.scene.manager.add_replay_step(self.player.get_bodies(), self.direction, self.fs.feeds.values(), self.scores.copy().items())
+        self.scene.manager.add_replay_step(self.player.get_bodies(), self.direction, self.fs.get_feeds(), self.scores.copy().items())
     
     def save_game(self):
         self.set_save_buttons_selected()
@@ -320,28 +326,44 @@ class BaseGame(ABC):
         # game over when colliding with walls or the player's own body
         if collision[0] in ['wall', 'body']:
             self.set_state(GameState.GAMEOVER)
-            return
-        
-        # length increases when eat feed
-        if collision[0] == 'feed':
+        elif collision[0] == 'feed':
             curr_feed = collision[1]
-            self.eat_feed(tail, curr_feed)
+            self.eat_feed(next_head, curr_feed)
         else:
-            self.player.remove_tail()
-            self.cell_manager.mark_cell_free(tail)
+            self.basic_movement(next_head, tail)
+    
+    def eat_feed(self, new_head: Tuple[int, int], feed: "Feed"):
+        self.player.add_head(new_head)
+        self.fs.remove_feed(feed.get_coord())
 
+        if feed.get_type() == 'normal':
+            self.update_score(1)
+
+        # If no feed exists, generate
+        if self.is_state(GameState.ACTIVE) and self.fs.is_feed_empty(feed.get_type()):
+            self.add_feed_random_coord(self.feed_amount, feed.get_type())
+
+    def basic_movement(self, next_head: Tuple[int, int], tail: Tuple[int, int]):
         self.player.add_head(next_head)
         self.cell_manager.mark_cell_used(next_head)
-    
-    def eat_feed(self, new_tail: Tuple[int, int], feed: "Feed"):
-        self.player.add_tail(new_tail)
-        self.remove_feed(feed.coord)
 
-        self.update_score(1)
+        self.player.remove_tail()
+        self.cell_manager.mark_cell_free(tail)
+
 
     ## about feed system logic
-    def remove_feed(self, coord):
-        self.fs.remove_feed(coord)
+    def add_feed(self, coord: Tuple[int, int], feed_type: str = 'normal'):
+        self.fs.add_feed(coord, feed_type)
+        self.cell_manager.mark_cell_used(coord)
+    
+    def add_feed_random_coord(self, k: int, feed_type: str = 'normal'):
+        if k < 1:
+            return
+
+        random_cell_coords = self.cell_manager.get_random_available_cells(k)
+
+        for rand_coord in random_cell_coords:
+            self.add_feed(rand_coord, feed_type)
 
     ## about coordinate system
     def check_collision(self, coord):
@@ -357,11 +379,10 @@ class BaseGame(ABC):
 
     ## about game flow
     def update_score(self, amount: int = 1):
-        key = "score"
-        self.scores[key] += amount
-        self.renderer.update_board_content(key, self.scores[key])
+        self.scores["score"] += amount
+        self.renderer.update_board_content("score", self.scores["score"])
         
-        if self.clear_condition is not None and self.scores[key] >= self.clear_condition:
+        if self.clear_condition is not None and self.scores["score"] >= self.clear_condition:
             self.set_state(GameState.CLEAR)
 
 
@@ -383,7 +404,7 @@ class BaseGame(ABC):
 
         # render entities
         if self.fs is not None:
-            self.renderer.render_feeds(self.map_surface, self.fs.feeds.values())
+            self.renderer.render_feeds(self.map_surface, self.fs.get_feeds())
         if self.player is not None:
             self.renderer.render_player(self.map_surface, self.player.get_bodies())
             self.renderer.render_direction_arrow(self.map_surface, self.player.get_head(), self.direction)

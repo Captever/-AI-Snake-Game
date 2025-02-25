@@ -19,10 +19,20 @@ class FeedSystem:
         return coord in self._feeds
     
     def get_feeds(self) -> List["Feed"]:
-        return list(self._feeds.keys())
+        return list(self._feeds.values())
     
-    def get_feed(self, coord: Tuple[int, int]) -> 'Feed':
+    def get_feed(self, coord: Tuple[int, int]) -> "Feed":
         return self._feeds[coord]
+    
+    def get_nearest_feed_coord(self, coord: Tuple[int, int]) -> "Feed":
+        if not self._feeds:
+            return None  # return `None` if no feeds exist
+        
+        return min(self._feeds.keys(), key=lambda feed_coord: self._calculate_distance(feed_coord, coord))
+    
+    def _calculate_distance(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> int:
+        """ Calculate Manhatten distance """
+        return abs(pos2[0] - pos1[0]) + abs(pos2[1] - pos1[1])
 
     def add_feed(self, coord: Tuple[int, int], feed_type: str = 'normal'):
         if coord in self._feeds.keys():

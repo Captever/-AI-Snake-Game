@@ -5,7 +5,7 @@ from typing import List, Tuple
 class Player:
     def __init__(self, bodies: List[Tuple[int, int]]):
         """
-        Initialize Player Class
+        Create Player Class
 
         Args:
             bodies (List[Tuple[int, int]]): initial bodies of the player
