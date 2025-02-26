@@ -261,9 +261,15 @@ class ScrollBar:
         self.handle_rect = pygame.Rect((self.bar_rect.topleft) + (handle_width, self.bar_rect.height))
         self.update_handle()
 
+        self.hovered: bool = False
+
     def update_handle(self):
         handle_x = int(self.bar_rect.x + ((self.value - self.min_val) / (self.max_val - self.min_val)) * self.bar_rect.width)
         self.handle_rect.topleft = (handle_x - self.handle_rect.width // 2, self.bar_rect.y)
+    
+    def update_value(self, value: int):
+        self.value = value
+        self.update_handle()
 
     def config_values(self, min_val: int = None, max_val: int = None, default_val: int = None, val_step: int = None, display_max_val: bool = None):
         self.min_val = min_val if min_val is not None else self.min_val

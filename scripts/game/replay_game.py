@@ -35,7 +35,9 @@ class ReplayGame:
 
         self.init_ui()
 
-        self.step: int = 0
+        self.min_step: int = 1
+        self.max_step: int = len(replay.steps)
+        self.step: int = self.min_step  # use `-1` when accessing lists by index
         self.steps = replay.steps
     
     def init_instruction_list(self):
@@ -95,42 +97,27 @@ class ReplayGame:
         instruction = Instruction(instruction_rect, title, instruction_list, WHITE)
 
         return instruction
+    
+
+    # getter
+    def get_step_data(self, step: int):
+        return self.steps[step-1]
 
 
     # about progress
-    def is_stepable(self) -> bool:  # Able to move to the next step
-        return self.step < len(self.steps) - 1
+    def is_stepable(self, to_reverse: bool = False) -> bool:  # Able to move to the next step
+        return self.step > self.min_step if to_reverse else self.step < self.max_step
 
     def go_to_step(self, step: int):
         """
         Go to a specific step
         """
-        if not (0 <= step < len(self.steps)):
+        if not (self.min_step <= step <= self.max_step):
             raise ValueError("Step change request exceeds the valid range.")
 
         self.step = step
-        for key, score in self.steps[step].scores:
+        for key, score in self.get_step_data(step).scores:
             self.renderer.update_board_content(key, score)
-
-    def go_to_next_step(self):
-        """
-        Move to the next step
-        """
-        next_step = min(self.step + 1, len(self.steps) - 1)
-        self.go_to_step(next_step)
-
-    def go_to_prev_step(self):
-        """
-        Move to the previous step
-        """
-        prev_step = max(self.step - 1, 0)
-        self.go_to_step(prev_step)
-
-    def rewind(self):
-        pass
-
-    def fastforward(self):
-        pass
 
 
     # about renderer
@@ -139,7 +126,7 @@ class ReplayGame:
 
         self.map_surface.fill((0, 0, 0, 0))
 
-        curr_step_data = self.steps[self.step]
+        curr_step_data = self.get_step_data(self.step)
 
         # render entities
         self.renderer.render_feeds(self.map_surface, curr_step_data.feeds)
