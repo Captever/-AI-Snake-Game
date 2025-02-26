@@ -45,18 +45,17 @@ class QLearningAI(BaseAI):
     def decide_direction(self):
         grid_size = self.game.grid_size
 
-        bodies = self.game.player.bodies
+        bodies = self.game.player.get_bodies()
         head = bodies[0]
         neck = bodies[1]
-        tail = bodies[-1]
-        feed = self.game.fs.get_nearest_feed(head)
+        feed = self.game.fs.get_nearest_feed_coord(head)
 
         state = get_relative_x_y_dist(head, feed, grid_size) + \
                 tuple(self.get_collision_values(head)) + \
                 (self.get_neck_dir(head, neck), len(bodies)) + \
                 tuple(self.get_dists_from_wall(head, grid_size))
         feed_dist = get_dist(head, feed)
-        score = self.game.score
+        score = self.game.scores["score"]
         action = self.agent.choose_action(state)
 
         if self.last_state is not None:

@@ -5,7 +5,7 @@ from constants import *
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
-from .base_scene import Scene
+from .base_scene import BaseScene
 from scripts.ui.ui_components import UILayout, RelativeRect
 from scripts.manager.ai_manager import AIManager
 
@@ -18,9 +18,9 @@ from functools import partial
 CONFIG = "config"
 IN_GAME = "in_game"
 
-class AILabScene(Scene):
-    def __init__(self, manager):
-        super().__init__(manager)
+class AILabScene(BaseScene):
+    def __init__(self, manager, rect: pygame.Rect):
+        super().__init__(manager, rect)
 
         self.game: AIPilotGame = None
 
@@ -35,20 +35,17 @@ class AILabScene(Scene):
         self.config_layout = self.create_config_layout()
 
     def create_config_layout(self):
-        layout_pos: Tuple[int, int]
-        layout_size: Tuple[int, int]
+        layout_relative_rect: RelativeRect
 
-        if IS_LANDSCAPE:
-            layout_pos = (SCREEN_WIDTH // 6, SCREEN_HEIGHT // 6)
-            layout_size = (SCREEN_WIDTH // 1.5, SCREEN_HEIGHT // 1.5)
+        if self.is_landscape:
+            layout_relative_rect = RelativeRect(0.16, 0.16, 0.68, 0.68)
         else:
-            layout_pos = (0, SCREEN_HEIGHT // 6)
-            layout_size = (SCREEN_WIDTH, SCREEN_HEIGHT // 1.5)
+            layout_relative_rect = RelativeRect(0, 0.16, 1, 0.68)
 
-        layout_rect: pygame.Rect = pygame.Rect(layout_pos + layout_size)
+        layout_rect: pygame.Rect = layout_relative_rect.to_absolute(self.size)
         bg_color = (50, 50, 50, 50)
 
-        layout = UILayout((0, 0), layout_rect, bg_color)
+        layout = UILayout(self.origin, layout_rect, bg_color)
 
         self.add_game_init_layout(layout)
         self.add_ai_init_layout(layout)
@@ -77,9 +74,9 @@ class AILabScene(Scene):
         ai_list: List[str] = self.ai_manager.get_ai_list()
         x_offset, y_offset, each_row_num = 0.35, 0.35, 3
         for idx, ai_name in enumerate(ai_list):
-            ai_init_layout.add_button(RelativeRect(x_offset * (idx % each_row_num), y_offset * (idx // each_row_num), 0.3, 0.3), ai_name, partial(self.set_selected_ai, ai_init_layout, ai_name), ['-'])
+            ai_init_layout.add_button(RelativeRect(x_offset * (idx % each_row_num), y_offset * (idx // each_row_num), 0.3, 0.3), ai_name, partial(self.set_selected_ai, ai_init_layout, ai_name, idx), ['-'])
             if idx == 0:
-                self.set_selected_ai(ai_init_layout, ai_name)
+                self.set_selected_ai(ai_init_layout, ai_name, idx)
 
     def initialize_ai(self):
         # Initialize the ai with the given settings
@@ -93,17 +90,11 @@ class AILabScene(Scene):
         self.player_move_delay = MOVE_DELAY * (11 - player_speed * 2) # min: 1, max: 9
         feed_amount: int = int(settings['Feed Amount'])
         clear_goal: float = settings['Clear Goal (%)'] / 100.0
-        self.game = AIPilotGame(self, self.ai, self.player_move_delay, grid_size, feed_amount, clear_goal)
+        game_rect = pygame.Rect(self.rect)
+        self.game = AIPilotGame(self, game_rect, self.ai, self.target_ai_name, self.player_move_delay, grid_size, feed_amount, clear_goal)
         self.ai.set_current_game(self.game)
 
     def init_plt(self):
-        pixel_width = SCREEN_WIDTH
-        pixel_height = SCREEN_HEIGHT
-        dpi = 100  # dots per inch
-        
-        plt.figure(figsize=(pixel_width / dpi, pixel_height / dpi), dpi=dpi)
-        plt.ion()
-
         self.fig, self.ax = plt.subplots()
         self.epochs = []
         self.scores = []
@@ -129,6 +120,11 @@ class AILabScene(Scene):
         
         ui_state = self.get_ui_state()
         if ui_state == CONFIG:
+            for event in events:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        # back to main scene
+                        self.return_to_main_scene()
             self.config_layout.handle_events(events)
         elif ui_state == IN_GAME:
             self.game.handle_events(events)
@@ -137,6 +133,9 @@ class AILabScene(Scene):
         if state not in [CONFIG, IN_GAME]:
             ValueError("invalid UI state")
         
+        if state == CONFIG and self.fig is not None:
+            plt.close(self.fig)
+
         self.ui_state = state
     
     def get_ui_state(self):
@@ -151,16 +150,15 @@ class AILabScene(Scene):
     
     def restart_new_game(self):
         self.set_ui_state(CONFIG)
+        self.manager.finish_to_record()
         self.game = None
         self.ai = None
     
-    def set_selected_ai(self, ai_layout: UILayout, ai_name: str):
-        ai_layout.update_radio_selection(ai_name)
+    def set_selected_ai(self, ai_layout: UILayout, ai_name: str, ai_idx: int):
+        ai_layout.update_radio_selection(ai_idx)
         self.target_ai_name = ai_name
     
     def return_to_main_scene(self):
-        if self.fig is not None:
-            plt.close(self.fig)
         self.manager.set_active_scene("MainScene")
     
     def add_score_to_figure(self, epoch: int, score: int):
@@ -192,10 +190,12 @@ class AILabScene(Scene):
             self.game.update()
 
     def render(self, surf):
-        surf.fill((0, 0, 0))
+        super().render(surf)
 
         ui_state = self.get_ui_state()
         if ui_state == CONFIG:
-            self.config_layout.render(surf)
+            self.config_layout.render(self.surf)
         elif ui_state == IN_GAME:
-            self.game.render(surf)
+            self.game.render(self.surf)
+        
+        surf.blit(self.surf, self.origin)

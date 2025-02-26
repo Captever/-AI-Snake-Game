@@ -1,6 +1,6 @@
 # screen
 # SCREEN_WIDTH = 360
-# SCREEN_HEIGHT = 640
+# SCREEN_HEIGHT = 840
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 IS_LANDSCAPE = bool(SCREEN_WIDTH > SCREEN_HEIGHT)
@@ -60,22 +60,15 @@ BODY_OUTLINE_COLOR = (59, 92, 70)
 BODY_COLOR = (7, 255, 82)
 FEED_OUTLINE_COLOR = (187, 113, 40)
 FEED_COLOR = (255, 255, 15)
-DIR_COLOR = (255, 255, 255)
+DIR_COLOR = (99, 132, 110)
 
 # direction
-DIR_ARROW_RATIO = 0.5
+DIR_ARROW_RATIO = 0.3
 DIR_OFFSET_DICT = {
     'E': (1, 0),
     'W': (-1, 0),
     'S': (0, 1),
     'N': (0, -1)
-}
-DIR_ANGLE_DICT = {
-# pygame.transform.rotate operates counterclockwise
-    'E': 0,
-    'W': 180,
-    'S': 270,
-    'N': 90
 }
 
 # etc
@@ -84,5 +77,9 @@ GRID_ALPHA = 128
 GRID_THICKNESS = 1 # grid line thickness of map
 MOVE_DELAY = 3 # frame
 INIT_LENGTH = 3 # initial length of snake
-MAP_OUTERLINE_THICKNESS = 1
-GRID_OUTERLINE_THICKNESS = 3
+MAP_OUTERLINE_THICKNESS = 3
+GRID_OUTERLINE_THICKNESS = 1
+
+REPLAY_DIRECTORY = "replays"
+REPLAY_PREFIX = "replay_"
+REPLAY_EXTENSION = ".json"

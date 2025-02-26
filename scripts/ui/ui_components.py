@@ -1,6 +1,5 @@
 import pygame
 
-import re
 import warnings
 
 from constants import *
@@ -46,6 +45,18 @@ class RelativeRect:
         abs_height = int((self.relative_height - relative_inner_padding * 2) * parent_size[1])
         return pygame.Rect(abs_x, abs_y, abs_width, abs_height)
 
+class Outerline:
+    def __init__(self, rect: pygame.Rect, thickness: int = 1, color=(255, 255, 255)):
+        self.size = (rect.width + thickness * 2, rect.height + thickness * 2)
+        self.origin = (rect.left - thickness, rect.top - thickness)
+        self.rect = pygame.Rect(self.origin, self.size)
+
+        self.thickness = thickness
+        self.color = color
+
+    def render(self, surf):
+        pygame.draw.rect(surf, self.color, self.rect, max(1, self.thickness)) # minimum value of width: 1
+
 class UILayout:
     def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, bg_color=UI_LAYOUT["default_color"]):
         """
@@ -61,6 +72,14 @@ class UILayout:
         self.bg_color = bg_color
         self.elements = []
         self.layouts: Dict[str, UILayout] = {} # sub layout
+
+        self.surf = pygame.Surface(self.rect.size, pygame.SRCALPHA)
+        self.offset = self.rect.topleft
+        
+        self.outerline: Outerline = None
+    
+    def add_outerline(self, outline_thickness: int = 1, outline_color=(255, 255, 255)):
+        self.outerline = Outerline(self.rect, outline_thickness, outline_color)
 
     def add_layout(self, name: str, relative_rect: RelativeRect, bg_color=UI_LAYOUT["default_color"]):
         """
@@ -78,6 +97,8 @@ class UILayout:
         
         self.layouts[name] = layout
 
+        return layout
+
     def add_button(self, relative_rect: RelativeRect, text: str, callback=None, auto_lined_str: List[str]=None):
         """
         Add a button to the layout with its relative position.
@@ -86,13 +107,17 @@ class UILayout:
 
         self.elements.append(button)
 
-    def add_scrollbar(self, relative_rect: RelativeRect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1):
+        return button
+
+    def add_scrollbar(self, relative_rect: RelativeRect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1, callback=None, show_max_val: bool = False):
         """
         Add a scroll bar to the layout with its relative position.
         """
-        scrollbar = ScrollBar(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, min_val, max_val, default_val, val_step)
+        scrollbar = ScrollBar(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, min_val, max_val, default_val, val_step, callback, show_max_val)
 
         self.elements.append(scrollbar)
+
+        return scrollbar
     
     def add_textbox(self, relative_rect: RelativeRect, text: str, font_color, bold: bool = False):
         """
@@ -101,14 +126,19 @@ class UILayout:
         textbox = TextBox(relative_rect.to_absolute(self.rect.size), text, font_color, bold=bold)
 
         self.elements.append(textbox)
+
+        return textbox
     
-    def update_radio_selection(self, target_text: str):
+    def update_radio_selection(self, target_btn_index: int):
+        btn_i_idx = 0
+
         for element in self.elements:
             if isinstance(element, Button):
-                if element.text == target_text:
+                if btn_i_idx == target_btn_index:
                     element.set_selected()
                 else:
                     element.set_selected(False)
+                btn_i_idx += 1
 
     def get_surface(self):
         return self.surf
@@ -140,18 +170,20 @@ class UILayout:
         Args:
             surf (pygame.Surface): Surface to render on.
         """
-        layout_surf = pygame.Surface(self.rect.size, pygame.SRCALPHA)
-        layout_surf.fill(self.bg_color)
+        self.surf.fill(self.bg_color)
         
         for layout in self.layouts.values():
-            layout.render(layout_surf)
+            layout.render(self.surf)
 
         for element in self.elements:
             if isinstance(element, Button) or isinstance(element, ScrollBar):
                 element.is_hovered(pygame.mouse.get_pos())
-            element.render(layout_surf)
+            element.render(self.surf)
         
-        surf.blit(layout_surf, self.rect.topleft)
+        surf.blit(self.surf, self.offset)
+
+        if self.outerline is not None:
+            self.outerline.render(surf)
 
 class Button:
     def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, callback=None, auto_lined_str: List[str]=None):
@@ -212,7 +244,41 @@ class Button:
         TextBox(font_rect, text, BLACK).render(surf)
 
 class ScrollBar:
-    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1):
+    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1, callback=None, display_max_val: bool = False):
+        self.rect: pygame.Rect = pygame.Rect(rect)
+        self.abs_pos: Tuple[int, int] = tuple(parent_abs_pos[i] + rect.topleft[i] for i in [0, 1])
+        self.text: str = text
+        self.callback = callback
+
+        self.min_val: int = None
+        self.max_val: int = None
+        self.value: int = None
+        self.val_step: int = None
+        self.display_max_val: bool = None
+        self.config_values(min_val=min_val, max_val=max_val, default_val=default_val, val_step=val_step, display_max_val=display_max_val)
+
+        self.bar_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height * (1.0 - UI_SCROLLBAR["bar_ratio"]), self.rect.width, self.rect.height * UI_SCROLLBAR["bar_ratio"])
+        handle_width = round(min(self.bar_rect.width * 0.05, self.bar_rect.width / ((self.max_val - self.min_val) / self.val_step)))
+        self.handle_rect = pygame.Rect((self.bar_rect.topleft) + (handle_width, self.bar_rect.height))
+        self.update_handle()
+
+        self.hovered: bool = False
+
+    def update_handle(self):
+        handle_x = int(self.bar_rect.x + ((self.value - self.min_val) / (self.max_val - self.min_val)) * self.bar_rect.width)
+        self.handle_rect.topleft = (handle_x - self.handle_rect.width // 2, self.bar_rect.y)
+    
+    def update_value(self, value: int):
+        self.value = value
+        self.update_handle()
+
+    def config_values(self, min_val: int = None, max_val: int = None, default_val: int = None, val_step: int = None, display_max_val: bool = None):
+        self.min_val = min_val if min_val is not None else self.min_val
+        self.max_val = max_val if max_val is not None else self.max_val
+        self.value = default_val if default_val is not None else self.value
+        self.val_step = val_step if val_step is not None else self.val_step
+        self.display_max_val = display_max_val if display_max_val is not None else self.display_max_val
+
         # handling exception
         if (min_val > max_val) or (default_val < min_val) or (default_val > max_val):
             error_param = []
@@ -224,7 +290,7 @@ class ScrollBar:
             if default_val > max_val:
                 error_param.append("default_val > max_val")
 
-            error_message = f"Scrollbar({text}) value error: {' / '.join(error_param)}"
+            error_message = f"Scrollbar({self.text}) value error: {' / '.join(error_param)}"
 
             raise ValueError(error_message)
 
@@ -242,24 +308,9 @@ class ScrollBar:
                 default_val = (default_val // val_step) * val_step
                 warn_param.append("default_val")
 
-            warn_message = f"Scrollbar({text}) value warning: items({', '.join(warn_param)}) does not align with the value step."
+            warn_message = f"Scrollbar({self.text}) value warning: items({', '.join(warn_param)}) does not align with the value step."
             
             warnings.warn(warn_message, UserWarning)
-
-        self.rect: pygame.Rect = pygame.Rect(rect)
-        self.abs_pos: Tuple[int, int] = tuple(parent_abs_pos[i] + rect.topleft[i] for i in [0, 1])
-        self.text: str = text
-        self.min_val: int = min_val
-        self.max_val: int = max_val
-        self.value: int = default_val
-        self.val_step: int = val_step
-        self.bar_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height * (1.0 - UI_SCROLLBAR["bar_ratio"]), self.rect.width, self.rect.height * UI_SCROLLBAR["bar_ratio"])
-        self.handle_rect = pygame.Rect((self.bar_rect.topleft) + (self.bar_rect.width * 0.05, self.bar_rect.height))
-        self.update_handle()
-
-    def update_handle(self):
-        handle_x = int(self.bar_rect.x + ((self.value - self.min_val) / (self.max_val - self.min_val)) * self.bar_rect.width)
-        self.handle_rect.topleft = (handle_x - self.handle_rect.width // 2, self.bar_rect.y)
     
     def get_abs_bar_rect(self) -> pygame.Rect:
         return pygame.Rect(
@@ -288,9 +339,11 @@ class ScrollBar:
             step_count: int = round(percentile_val * range_count / self.val_step) * self.val_step // self.val_step
             self.value = max(self.min_val, min(self.max_val, step_count * self.val_step + self.min_val))
             self.update_handle()
+            if self.callback is not None:
+                self.callback(self.value)
 
     def render(self, surf: pygame.Surface):
-        text = f"{self.text}: {int(self.value):,}"
+        text = f"{self.text}: {int(self.value):,}/{int(self.max_val):,}" if self.display_max_val else f"{self.text}: {int(self.value):,}"
         font_height = self.rect.height * UI_SCROLLBAR["font_ratio"]
         font_rect = pygame.Rect(self.rect.left, self.rect.top, self.rect.width, font_height)
         TextBox(font_rect, text, WHITE).render(surf)
@@ -306,10 +359,11 @@ class Board:
     def __init__(self, rect: pygame.Rect, title, font_color, default: int=0, format: str=None, custom_ttf_file_path=None):
         self.rect = rect
         self.title = title
-        self.surf = pygame.Surface(rect.size, pygame.SRCALPHA)
         self.font_color = font_color
         self.format = format
         self.custom_ttf_file_path = custom_ttf_file_path
+        
+        self.surf = pygame.Surface(rect.size, pygame.SRCALPHA)
 
         self.default = default
 
