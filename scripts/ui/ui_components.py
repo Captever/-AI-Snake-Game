@@ -109,11 +109,11 @@ class UILayout:
 
         return button
 
-    def add_scrollbar(self, relative_rect: RelativeRect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1, show_max_val: bool = False):
+    def add_scrollbar(self, relative_rect: RelativeRect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1, callback=None, show_max_val: bool = False):
         """
         Add a scroll bar to the layout with its relative position.
         """
-        scrollbar = ScrollBar(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, min_val, max_val, default_val, val_step, show_max_val)
+        scrollbar = ScrollBar(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, min_val, max_val, default_val, val_step, callback, show_max_val)
 
         self.elements.append(scrollbar)
 
@@ -244,10 +244,11 @@ class Button:
         TextBox(font_rect, text, BLACK).render(surf)
 
 class ScrollBar:
-    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1, display_max_val: bool = False):
+    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1, callback=None, display_max_val: bool = False):
         self.rect: pygame.Rect = pygame.Rect(rect)
         self.abs_pos: Tuple[int, int] = tuple(parent_abs_pos[i] + rect.topleft[i] for i in [0, 1])
         self.text: str = text
+        self.callback = callback
 
         self.min_val: int = None
         self.max_val: int = None
@@ -338,6 +339,8 @@ class ScrollBar:
             step_count: int = round(percentile_val * range_count / self.val_step) * self.val_step // self.val_step
             self.value = max(self.min_val, min(self.max_val, step_count * self.val_step + self.min_val))
             self.update_handle()
+            if self.callback is not None:
+                self.callback(self.value)
 
     def render(self, surf: pygame.Surface):
         text = f"{self.text}: {int(self.value):,}/{int(self.max_val):,}" if self.display_max_val else f"{self.text}: {int(self.value):,}"

@@ -91,11 +91,11 @@ class RecordScene(BaseScene):
         min_step, max_step = self.replay_game.min_step, self.replay_game.max_step
         progress_layout = layout.add_layout("progress", progress_layout_relative_rect, (20,20,20,255))
         if self.is_landscape:
-            self.progress_scrollbar = progress_layout.add_scrollbar(RelativeRect(0.06, 0.2, 0.88, 0.6), "Step", min_step, max_step, 1, show_max_val=True)
+            self.progress_scrollbar = progress_layout.add_scrollbar(RelativeRect(0.06, 0.2, 0.88, 0.6), "Step", min_step, max_step, 1, callback=self.update_step_by_scrollbar, show_max_val=True)
             progress_layout.add_button(RelativeRect(0, 0.5, 0.03, 0.5), "◀", self.go_to_prev_step)
             progress_layout.add_button(RelativeRect(0.97, 0.5, 0.03, 0.5), "▶", self.go_to_next_step)
         else:
-            self.progress_scrollbar = progress_layout.add_scrollbar(RelativeRect(0.1, 0.2, 0.8, 0.6), "Step", min_step, max_step, 1, show_max_val=True)
+            self.progress_scrollbar = progress_layout.add_scrollbar(RelativeRect(0.1, 0.2, 0.8, 0.6), "Step", min_step, max_step, 1, callback=self.update_step_by_scrollbar, show_max_val=True)
             progress_layout.add_button(RelativeRect(0, 0.5, 0.08, 0.5), "◀", self.go_to_prev_step)
             progress_layout.add_button(RelativeRect(0.92, 0.5, 0.08, 0.5), "▶", self.go_to_next_step)
 
@@ -146,6 +146,9 @@ class RecordScene(BaseScene):
 
 
     # about replay system
+    def update_step_by_scrollbar(self, step):
+        self.replay_game.go_to_step(step)
+
     def set_selected_replay(self, replay_list_layout: UILayout, replay_index: int):
         replay_list_layout.update_radio_selection(replay_index)
         self.replay_game = self.manager.get_replay_game(replay_index, self.create_replay_game_rect())
