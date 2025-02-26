@@ -378,6 +378,7 @@ class BaseGame(ABC):
         
         if self.clear_condition is not None and self.scores["score"] >= self.clear_condition:
             self.set_state(GameState.CLEAR)
+            self.add_replay_step()
 
 
     # about handler
