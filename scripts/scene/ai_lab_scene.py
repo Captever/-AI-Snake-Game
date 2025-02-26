@@ -120,6 +120,11 @@ class AILabScene(BaseScene):
         
         ui_state = self.get_ui_state()
         if ui_state == CONFIG:
+            for event in events:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        # back to main scene
+                        self.return_to_main_scene()
             self.config_layout.handle_events(events)
         elif ui_state == IN_GAME:
             self.game.handle_events(events)

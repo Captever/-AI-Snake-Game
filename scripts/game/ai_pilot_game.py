@@ -83,7 +83,7 @@ class AIPilotGame(BaseGame):
         self.set_clear_layout(layout)
 
 
-    def on_state_change(self):
+    def on_state_changed(self):
         if self.is_state(GameState.GAMEOVER):
             if isinstance(self.pilot_ai, QLearningAI):
                 self.pilot_ai.learn(-1, None)
@@ -174,7 +174,7 @@ class AIPilotGame(BaseGame):
     
     def handle_keydown(self, key):
         if self.is_state(GameState.PAUSED) or self.is_state(GameState.ACTIVE):
-            if key == pygame.K_p:
+            if key == pygame.K_p or key == pygame.K_ESCAPE:
                 self.flip_game_pause()
             if key == pygame.K_e:
                 self.flip_final_epoch_flag()

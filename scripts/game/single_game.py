@@ -96,7 +96,7 @@ class SingleGame(BaseGame):
                 self.handle_keydown(event.key)
     
     def handle_keydown(self, key):
-        if key == pygame.K_p:
+        if key == pygame.K_p or key == pygame.K_ESCAPE:
             self.flip_game_pause()
 
         elif self.is_state(GameState.ACTIVE) or self.is_state(GameState.COUNTDOWN):

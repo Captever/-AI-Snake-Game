@@ -14,7 +14,7 @@ class RecordScene(BaseScene):
     def __init__(self, manager, rect: pygame.Rect):
         super().__init__(manager, rect)
 
-        self.replay_list_layout: UILayout = self.create_replay_list_layout()
+        self.replay_list_layout: UILayout = None
         self.playback_tool_layout: UILayout = None
 
         self.replay_game: ReplayGame = None
@@ -76,10 +76,18 @@ class RecordScene(BaseScene):
             layout_relative_rect = RelativeRect(0.35, 0.72, 0.6, 0.18)
             progress_layout_relative_rect = RelativeRect(0, 0, 1, 0.35)
             tool_layout_relative_rect = RelativeRect(0.25, 0.55, 0.5, 0.45)
+
+            progress_scrollbar_relative_rect = RelativeRect(0.06, 0.2, 0.88, 0.6)
+            prev_step_button_relative_rect = RelativeRect(0, 0.5, 0.03, 0.5)
+            next_step_button_relative_rect = RelativeRect(0.97, 0.5, 0.03, 0.5)
         else:
             layout_relative_rect = RelativeRect(0.05, 0.8, 0.9, 0.15)
             progress_layout_relative_rect = RelativeRect(0, 0, 1, 0.4)
             tool_layout_relative_rect = RelativeRect(0.1, 0.65, 0.8, 0.35)
+
+            progress_scrollbar_relative_rect = RelativeRect(0.1, 0.2, 0.8, 0.6)
+            prev_step_button_relative_rect = RelativeRect(0, 0.5, 0.08, 0.5)
+            next_step_button_relative_rect = RelativeRect(0.92, 0.5, 0.08, 0.5)
 
         layout_rect: pygame.Rect = layout_relative_rect.to_absolute(self.size)
         bg_color = (50, 50, 50, 50)
@@ -90,14 +98,9 @@ class RecordScene(BaseScene):
             raise ValueError("`self.replay_game` is None")
         min_step, max_step = self.replay_game.min_step, self.replay_game.max_step
         progress_layout = layout.add_layout("progress", progress_layout_relative_rect, (20,20,20,255))
-        if self.is_landscape:
-            self.progress_scrollbar = progress_layout.add_scrollbar(RelativeRect(0.06, 0.2, 0.88, 0.6), "Step", min_step, max_step, 1, callback=self.update_step_by_scrollbar, show_max_val=True)
-            progress_layout.add_button(RelativeRect(0, 0.5, 0.03, 0.5), "◀", self.go_to_prev_step)
-            progress_layout.add_button(RelativeRect(0.97, 0.5, 0.03, 0.5), "▶", self.go_to_next_step)
-        else:
-            self.progress_scrollbar = progress_layout.add_scrollbar(RelativeRect(0.1, 0.2, 0.8, 0.6), "Step", min_step, max_step, 1, callback=self.update_step_by_scrollbar, show_max_val=True)
-            progress_layout.add_button(RelativeRect(0, 0.5, 0.08, 0.5), "◀", self.go_to_prev_step)
-            progress_layout.add_button(RelativeRect(0.92, 0.5, 0.08, 0.5), "▶", self.go_to_next_step)
+        self.progress_scrollbar = progress_layout.add_scrollbar(progress_scrollbar_relative_rect, "Step", min_step, max_step, 1, callback=self.update_step_by_scrollbar, show_max_val=True)
+        progress_layout.add_button(prev_step_button_relative_rect, "◀", self.go_to_prev_step)
+        progress_layout.add_button(next_step_button_relative_rect, "▶", self.go_to_next_step)
 
         tool_layout = layout.add_layout("tool", tool_layout_relative_rect, (20,20,20,255))
         tool_list = [  # showing text, callback function
@@ -149,11 +152,15 @@ class RecordScene(BaseScene):
     def update_step_by_scrollbar(self, step):
         self.replay_game.go_to_step(step)
 
+    def refresh_replay_list_layout(self):
+        self.replay_list_layout = self.create_replay_list_layout()
+        self.clear_replay_state()
+
     def set_selected_replay(self, replay_list_layout: UILayout, replay_index: int):
         replay_list_layout.update_radio_selection(replay_index)
         self.replay_game = self.manager.get_replay_game(replay_index, self.create_replay_game_rect())
 
-        self.playback_tool_layout: UILayout = self.create_playback_tool_layout()
+        self.playback_tool_layout = self.create_playback_tool_layout()
 
     def go_to_step(self, step: int):
         self.progress_scrollbar.update_value(step)
@@ -211,6 +218,19 @@ class RecordScene(BaseScene):
         else:
             self.step_weight *= 2
 
+    
+    # about progress
+    def return_to_main_scene(self):
+        self.manager.set_active_scene("MainScene")
+        self.clear_replay_state()
+
+    def clear_replay_state(self):
+        self.replay_game = None
+        self.playback_tool_layout = None
+
+    def on_scene_changed(self):
+        self.refresh_replay_list_layout()
+
 
     # functions to update every frame
     def update(self):
@@ -241,7 +261,10 @@ class RecordScene(BaseScene):
             self.playback_tool_layout.handle_events(events)
     
     def handle_keydown(self, key):
-        if key == pygame.K_SPACE or key == pygame.K_k:
+        if key == pygame.K_ESCAPE:
+            # back to main scene
+            self.return_to_main_scene()
+        elif key == pygame.K_SPACE or key == pygame.K_k:
             # flip play/pause
             self.flip_replay_pause()
         elif key == pygame.K_j:

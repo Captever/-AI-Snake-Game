@@ -17,6 +17,10 @@ class BaseScene(ABC):
 
         self.is_landscape: bool = self.size[0] >= self.size[1]
 
+    def on_scene_changed(self):
+        """Methods to be overridden in subclasses"""
+        pass
+
     @abstractmethod
     def handle_events(self, events):
         """Handle input events."""

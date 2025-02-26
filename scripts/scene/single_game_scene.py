@@ -46,7 +46,7 @@ class SingleGameScene(BaseScene):
         game_init_layout.add_scrollbar(RelativeRect(0, 0.84, 1, 0.15), "Clear Goal (%)", 50, 100, 90)
 
         layout.add_button(RelativeRect(0.2, 0.75, 0.25, 0.1), "Start", self.start_game)
-        layout.add_button(RelativeRect(0.55, 0.75, 0.25, 0.1), "Cancel", self.activate_main_scene)
+        layout.add_button(RelativeRect(0.55, 0.75, 0.25, 0.1), "Cancel", self.return_to_main_scene)
 
         return layout
 
@@ -66,6 +66,11 @@ class SingleGameScene(BaseScene):
         
         ui_state = self.get_ui_state()
         if ui_state == CONFIG:
+            for event in events:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        # back to main scene
+                        self.return_to_main_scene()
             self.config_layout.handle_events(events)
         elif ui_state == IN_GAME:
             self.game.handle_events(events)
@@ -89,7 +94,7 @@ class SingleGameScene(BaseScene):
         self.manager.finish_to_record() # discard replay
         self.game = None
     
-    def activate_main_scene(self):
+    def return_to_main_scene(self):
         self.manager.set_active_scene("MainScene")
 
     def update(self):

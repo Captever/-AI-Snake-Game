@@ -165,9 +165,9 @@ class BaseGame(ABC):
             raise ValueError(f"Invalid GameState on `set_state()`: {state}")
         
         self.state = state
-        self.on_state_change() # hooking
+        self.on_state_changed() # hooking
 
-    def on_state_change(self):
+    def on_state_changed(self):
         """Methods to be overridden in subclasses"""
         pass
 

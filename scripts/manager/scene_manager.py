@@ -22,6 +22,7 @@ class SceneManager:
     def set_active_scene(self, name):
         """Set the active scene by name."""
         self.active_scene = self.scenes[name]
+        self.active_scene.on_scene_changed()
 
 
     # about replay manager
