@@ -146,11 +146,16 @@ class AIPilotGame(BaseGame):
 
     
     def update_score(self, amount = 1):
-        super().update_score(amount)
+        self.scores["score"] += amount
+        self.renderer.update_board_content("score", self.scores["score"])
 
         if self.scores["score"] > self.scores["top_score"]:
             self.scores["top_score"] = self.scores["score"]
             self.renderer.update_board_content("top_score", self.scores["top_score"])
+        
+        if self.clear_condition is not None and self.scores["score"] >= self.clear_condition:
+            self.set_state(GameState.CLEAR)
+            self.add_replay_step()
     
 
     def handle_game_end(self):
