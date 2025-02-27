@@ -244,8 +244,7 @@ class RecordScene(BaseScene):
                 self.go_to_prev_step()
             else:
                 self.go_to_next_step()
-        else:
-            self.step_accum += 1
+        self.step_accum += 1
     
 
     # about every frame routine

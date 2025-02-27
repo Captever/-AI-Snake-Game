@@ -246,8 +246,7 @@ class BaseGame(ABC):
             self.add_replay_step()
             self.move_player()
             self.next_direction = None  # valid for ai pilot game
-        else:
-            self.move_accum += 1
+        self.move_accum += 1
 
 
     # about game logic
