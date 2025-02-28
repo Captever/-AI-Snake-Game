@@ -38,10 +38,11 @@ class Step:
         )
 
 class Replay:
-    def __init__(self, name: str, grid_size: Tuple[int, int], score_info_list: List[Tuple[str, str, str]], game_version: str = "1.0.0", steps: List[Step] = None):
-        self.name = name
+    def __init__(self, title: str, grid_size: Tuple[int, int], score_info_list: List[Tuple[str, str, str]], timestamp: datetime = datetime.now(), game_version: str = "1.0.0", steps: List[Step] = None):
+        self.title = title
         self.grid_size = grid_size
         self.score_info_list = score_info_list
+        self.timestamp = timestamp
         self.game_version = game_version
 
         self.steps: List[Step] = steps if steps is not None else []
@@ -148,8 +149,8 @@ class ReplayManager:
 
 
     # about recording
-    def start_to_record(self, replay_name: str, grid_size: Tuple[int, int], score_info_list: List[Tuple[int, int]]):
-        self.current_replay = Replay(replay_name, grid_size, score_info_list)
+    def start_to_record(self, replay_title: str, grid_size: Tuple[int, int], score_info_list: List[Tuple[int, int]]):
+        self.current_replay = Replay(replay_title, grid_size, score_info_list)
 
     def add_step(self, player_bodies: List[Tuple[int, int]], player_direction: str, feeds: List[Feed], scores: Dict[str, any]):
         self.current_replay.add_step(player_bodies, player_direction, feeds, scores)
@@ -184,7 +185,7 @@ class ReplayManager:
         Save the current game as a replay
         """
         formatted_date = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename: str = self.wrap_filename('_'.join([formatted_date, self.current_replay.name]))
+        filename: str = self.wrap_filename('_'.join([formatted_date, self.current_replay.title]))
 
         file_path = self.save_dir + '/' + filename
         data = self.convert_to_json(self.current_replay)
@@ -219,6 +220,8 @@ class ReplayManager:
     # about JSON converting
     def convert_to_json(self, replay: Replay):
         return {
+            "title": replay.title,
+            "timestamp": replay.timestamp,
             "grid_size": list(replay.grid_size),
             "score_info_list": [list(score_info) for score_info in replay.score_info_list],
             "game_version": replay.game_version,
@@ -226,9 +229,11 @@ class ReplayManager:
         }
 
     def convert_from_json(self, data: any) -> Replay:
+        title = data["title"]
+        timestamp = data["timestamp"]
         grid_size = data["grid_size"]
         score_info_list = data["score_info_list"]
         game_version = data["game_version"]
         steps = [Step.from_json_dict(step) for step in data["steps"]]
 
-        return Replay('', grid_size, score_info_list, game_version, steps)
+        return Replay(title, grid_size, score_info_list, timestamp=timestamp, game_version=game_version, steps=steps)
