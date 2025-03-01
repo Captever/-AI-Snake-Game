@@ -217,8 +217,8 @@ class BaseGame(ABC):
         if not self.countdown_remaining_time:
             self.set_state(GameState.ACTIVE)
     
-    def start_to_record(self, replay_name: str):
-        self.scene.manager.start_to_record(replay_name, self.grid_size, self.score_info_list)
+    def start_to_record(self, replay_title: str):
+        self.scene.manager.start_to_record(replay_title, self.grid_size, self.score_info_list)
 
     def add_replay_step(self):
         self.scene.manager.add_replay_step(self.player.get_bodies(), self.direction, self.fs.get_feeds(), self.scores.copy().items())

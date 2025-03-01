@@ -26,8 +26,8 @@ class SceneManager:
 
 
     # about replay manager
-    def start_to_record(self, replay_name: str, grid_size: Tuple[int, int], score_info_list: List[Tuple[int, int]]):
-        self.replay_manager.start_to_record(replay_name, grid_size, score_info_list)
+    def start_to_record(self, replay_title: str, grid_size: Tuple[int, int], score_info_list: List[Tuple[int, int]]):
+        self.replay_manager.start_to_record(replay_title, grid_size, score_info_list)
 
     def finish_to_record(self, is_saved: bool = False):
         self.replay_manager.finish_to_record(is_saved)
