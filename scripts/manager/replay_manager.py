@@ -104,76 +104,7 @@ class ReplayManager:
         self._save_metadata()
         print(f"New best replay cached: {temp_filename}")
 
-    def confirm_save_best_replay(self):
-        """ Move the cached top record replay file to the official storage """
-        if not self.metadata["top_replay"]:
-            print("No cached replay to save.")
-            return
-
-        cache_path = os.path.join(self.cache_dir, self.metadata["top_replay"])
-        final_filename = f"replay_{uuid.uuid4().hex}.json"
-        final_path = os.path.join(self.save_dir, final_filename)
-
-        if os.path.exists(cache_path):
-            shutil.move(cache_path, final_path)
-
-            # initialize metadata
-            self.metadata["top_replay"] = None
-            self._save_metadata()
-        else:
-            raise FileExistsError("Cached replay file not found.")
-
-    def discard_cached_replay(self):
-        """ Discard the cached replay """
-        if not self.metadata["top_replay"]:
-            print("No cached replay to discard.")
-            return
-
-        cache_path = os.path.join(self.cache_dir, self.metadata["top_replay"])
-        if os.path.exists(cache_path):
-            os.remove(cache_path)
-
-        # initialize metadata
-        self.metadata["top_replay"] = None
-        self._save_metadata()
-
-        self.metadata: Dict[str, list[str]] = None
-        self._load_metadata()
-
-    # about temporary data; metadata, cache
-    def _load_metadata(self):
-        """ Load existing metadata """
-        if os.path.exists(self.metadata_file):
-            with open(self.metadata_file, "r") as file:
-                self.metadata = json.load(file)
-        else:
-            self.metadata = {"top_replay": None}
-
-    def _save_metadata(self):
-        """ Save the current top record replay information to a metadata file """
-        with open(self.metadata_file, "w") as file:
-            json.dump(self.metadata, file)
-
-    def save_cache_replay(self, replay_data):
-        """ Save the current top record replay as a cached file in the cache directory """
-        temp_filename = f"top_replay_{uuid.uuid4().hex}.json"
-        temp_path = os.path.join(self.cache_dir, temp_filename)
-
-        with open(temp_path, "w") as file:
-            file.write(replay_data)
-
-        # delete previous cache file
-        if self.metadata["top_replay"]:
-            old_cache_path = os.path.join(self.cache_dir, self.metadata["top_replay"])
-            if os.path.exists(old_cache_path):
-                os.remove(old_cache_path)
-
-        # save metadata for the cached top record replay
-        self.metadata["top_replay"] = temp_filename
-        self._save_metadata()
-        print(f"New best replay cached: {temp_filename}")
-
-    def confirm_save_best_replay(self):
+    def confirm_save_top_replay(self):
         """ Move the cached top record replay file to the official storage """
         if not self.metadata["top_replay"]:
             print("No cached replay to save.")
@@ -250,55 +181,6 @@ class ReplayManager:
         self.update_replay_list()
 
         return self.replay_file_list
-    
-    def get_real_filename_from_uuid(self, uuid_filename):
-        for uuid, real in self.replay_cache_list:
-            if uuid == uuid_filename:
-                return real
-        return None
-    
-    def save_replay_as_cache(self) -> str:
-        """
-        Temporarily saved the current replay
-
-        Returns:
-            str: name of the cached file where the replay was saved
-        """
-        uuid_filename = uuid.uuid4().hex
-        
-        formatted_date = datetime.now().strftime("%Y%m%d_%H%M%S")
-        real_filname: str = self.wrap_filename('_'.join([formatted_date, self.current_replay.name]))
-
-        # Create directory if it does not exist
-        os.makedirs(REPLAY_CACHE_DIRECTORY, exist_ok=True)
-
-        file_path = REPLAY_CACHE_DIRECTORY + '/' + uuid_filename
-        data = self.convert_to_json(self.current_replay)
-
-        with open(file_path, "w") as f:
-            json.dump(data, f, indent=4)
-
-        # Saved file as a valid cache and added it to the cache list
-        self.replay_cache_list.append((uuid_filename, real_filname))
-
-        return uuid_filename
-
-    def save_replay_from_cache(self, uuid_filename):
-        old_path = os.path.join(REPLAY_CACHE_DIRECTORY, uuid_filename)
-        new_filename = self.get_real_filename_from_uuid(uuid_filename)
-        new_path = os.path.join(REPLAY_DIRECTORY, new_filename)
-
-        # Create directory if it does not exist
-        os.makedirs(REPLAY_DIRECTORY, exist_ok=True)
-
-        try:
-            shutil.move(old_path, new_path)  # move file
-            print(f"Replay saved as {new_filename} in {REPLAY_DIRECTORY}")
-            return new_path
-        except FileNotFoundError:
-            print("Error: The file does not exist.")
-        except Exception as e:
-            print(f"Error: {e}")
 
     def save_replay(self):
         """
