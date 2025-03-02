@@ -1,11 +1,11 @@
 import pygame
 import json
 import os
-import shutil
 import uuid
+import sqlite3
 from datetime import datetime
 
-from constants import REPLAY_DIRECTORY, REPLAY_CACHE_DIRECTORY, REPLAY_METADATA_FILE_PATH, REPLAY_PREFIX, REPLAY_EXTENSION
+from constants import REPLAY_DIRECTORY, TIMESTAMP_FORMAT
 
 from scripts.entity.feed_system import Feed
 
@@ -53,108 +53,58 @@ class Replay:
     def get_step_state(self, step: int):
         step_index: int = min(max(0, step - 1), len(self.steps))
         return self.steps[step_index]
+    
+    def get_final_score_and_epoch(self) -> Tuple[int, int]:
+        final_scores = self.steps[-1].scores.copy()
+
+        final_score: int = None
+        epoch_count: int = None
+
+        for title, score in final_scores:
+            if title == "Score":
+                final_score = score
+            elif title == "Epoch":
+                epoch_count = score
+
+        return (final_score, epoch_count)
 
 class ReplayManager:
-    def __init__(self, save_dir: str = REPLAY_DIRECTORY, cache_dir: str = REPLAY_CACHE_DIRECTORY, metadata_file_path: str = REPLAY_METADATA_FILE_PATH):
+    def __init__(self, save_dir: str = REPLAY_DIRECTORY):
         self.save_dir = save_dir
-        self.cache_dir = cache_dir
-        self.metadata_file = metadata_file_path
-        
+        self.db_path = os.path.join(save_dir, "metadata.db")
         # Create a new directory if it does not exist
         os.makedirs(save_dir, exist_ok=True)
-        os.makedirs(cache_dir, exist_ok=True)
+        
+        self.replay_file_list: List[Tuple] = None  # uuid, title, timestamp, steps_num, score
 
         self.current_replay: Replay = None
 
-        self.replay_cache_list: List[Tuple[str, str]] = []  # uuid filename, real filename
+        self.initialize_db()
 
-        self.metadata: Dict[str, list[str]] = None
-        self._load_metadata()
-
-    # about temporary data; metadata, cache
-    def _load_metadata(self):
-        """ Load existing metadata """
-        if os.path.exists(self.metadata_file):
-            with open(self.metadata_file, "r") as file:
-                self.metadata = json.load(file)
-        else:
-            self.metadata = {"top_replay": None}
-
-    def _save_metadata(self):
-        """ Save the current top record replay information to a metadata file """
-        with open(self.metadata_file, "w") as file:
-            json.dump(self.metadata, file)
-
-    def save_cache_replay(self, replay_data):
-        """ Save the current top record replay as a cached file in the cache directory """
-        temp_filename = f"top_replay_{uuid.uuid4().hex}.json"
-        temp_path = os.path.join(self.cache_dir, temp_filename)
-
-        with open(temp_path, "w") as file:
-            file.write(replay_data)
-
-        # delete previous cache file
-        if self.metadata["top_replay"]:
-            old_cache_path = os.path.join(self.cache_dir, self.metadata["top_replay"])
-            if os.path.exists(old_cache_path):
-                os.remove(old_cache_path)
-
-        # save metadata for the cached top record replay
-        self.metadata["top_replay"] = temp_filename
-        self._save_metadata()
-        print(f"New best replay cached: {temp_filename}")
-
-    def confirm_save_top_replay(self):
-        """ Move the cached top record replay file to the official storage """
-        if not self.metadata["top_replay"]:
-            print("No cached replay to save.")
-            return
-
-        cache_path = os.path.join(self.cache_dir, self.metadata["top_replay"])
-        final_filename = f"replay_{uuid.uuid4().hex}.json"
-        final_path = os.path.join(self.save_dir, final_filename)
-
-        if os.path.exists(cache_path):
-            shutil.move(cache_path, final_path)
-
-            # initialize metadata
-            self.metadata["top_replay"] = None
-            self._save_metadata()
-        else:
-            raise FileExistsError("Cached replay file not found.")
-
-    def discard_cached_replay(self):
-        """ Discard the cached replay """
-        if not self.metadata["top_replay"]:
-            print("No cached replay to discard.")
-            return
-
-        cache_path = os.path.join(self.cache_dir, self.metadata["top_replay"])
-        if os.path.exists(cache_path):
-            os.remove(cache_path)
-
-        # initialize metadata
-        self.metadata["top_replay"] = None
-        self._save_metadata()
-
-        self.replay_cache_list: List[Tuple[str, str]] = []  # uuid filename, real filename
-
-
-    # about filename
-    def wrap_filename(self, filename):
-        return REPLAY_PREFIX + filename + REPLAY_EXTENSION
-
-    def unwrap_filename(self, filename):
-        start_idx = len(REPLAY_PREFIX)
-        end_idx = len(REPLAY_EXTENSION)
-        return filename[start_idx:][:-end_idx]
+    def initialize_db(self):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # create table 'replays' to db if not exists
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS replays (
+                uuid TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                steps_num INTEGER NOT NULL,
+                final_score INTEGER NOT NULL
+            )
+        """)
+        
+        conn.commit()
+        conn.close()
 
 
     # about recording
     def start_to_record(self, replay_title: str, grid_size: Tuple[int, int], score_info_list: List[Tuple[int, int]]):
         self.current_replay = Replay(replay_title, grid_size, score_info_list)
 
-    def add_step(self, player_bodies: List[Tuple[int, int]], player_direction: str, feeds: List[Feed], scores: Dict[str, any]):
+    def add_step(self, player_bodies: List[Tuple[int, int]], player_direction: str, feeds: List[Feed], scores: List[Tuple[str, any]]):
         self.current_replay.add_step(player_bodies, player_direction, feeds, scores)
 
     def finish_to_record(self, is_saved: bool):
@@ -169,10 +119,13 @@ class ReplayManager:
         """
         Update the replay file list
         """
-        self.replay_file_list = [
-            self.unwrap_filename(f) for f in os.listdir(self.save_dir)
-            if f.startswith(REPLAY_PREFIX) and f.endswith(REPLAY_EXTENSION)
-        ]
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT uuid, title, timestamp, steps_num, final_score FROM replays")
+        self.replay_file_list = cursor.fetchall()
+
+        conn.close()
     
     def get_replay_list(self):
         """
@@ -186,22 +139,38 @@ class ReplayManager:
         """
         Saved replay using the cached game replay file
         """
-        formatted_date = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename: str = self.wrap_filename('_'.join([formatted_date, self.current_replay.title]))
+        current_uuid = uuid.uuid4().hex
+        filename = f"{current_uuid}.json"
+        file_path = os.path.join(self.save_dir, filename)
 
-        file_path = self.save_dir + '/' + filename
         data = self.convert_to_json(self.current_replay)
 
         with open(file_path, "w") as f:
             json.dump(data, f, indent=4)
 
+        # add replay info to metadata
+        title = self.current_replay.title
+        timestamp = self.current_replay.timestamp
+        steps_num = len(self.current_replay.steps)
+        final_score = self.current_replay.get_final_score_and_epoch()[0]
+
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+    
+        try:
+            cursor.execute("INSERT INTO replays (uuid, title, timestamp, steps_num, final_score) VALUES (?, ?, ?, ?, ?)", (current_uuid, title, timestamp, steps_num, final_score))
+            conn.commit()
+        except sqlite3.IntegrityError:
+            print(f"UUID {current_uuid} already exists in the database.")  # prevent duplicate
+        finally:
+            conn.close()
+
     def load_replay(self, index: int):
         """
         Load a specific replay
         """
-        filename = self.wrap_filename(self.replay_file_list[index])
-
-        file_path = self.save_dir + '/' + filename
+        filename = f"{self.replay_file_list[index][0]}.json"
+        file_path = os.path.join(self.save_dir, filename)
 
         try:
             with open(file_path, "r") as f:
@@ -223,7 +192,7 @@ class ReplayManager:
     def convert_to_json(self, replay: Replay):
         return {
             "title": replay.title,
-            "timestamp": replay.timestamp,
+            "timestamp": replay.timestamp.strftime(TIMESTAMP_FORMAT),
             "grid_size": list(replay.grid_size),
             "score_info_list": [list(score_info) for score_info in replay.score_info_list],
             "game_version": replay.game_version,
@@ -232,7 +201,7 @@ class ReplayManager:
 
     def convert_from_json(self, data: any) -> Replay:
         title = data["title"]
-        timestamp = data["timestamp"]
+        timestamp = datetime.strptime(data["timestamp"], TIMESTAMP_FORMAT)
         grid_size = data["grid_size"]
         score_info_list = data["score_info_list"]
         game_version = data["game_version"]
