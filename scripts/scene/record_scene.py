@@ -3,10 +3,12 @@ import pygame
 from constants import *
 
 from .base_scene import BaseScene
-from scripts.ui.ui_components import UILayout, RelativeRect, ScrollBar
+from scripts.ui.ui_components import UILayout, RelativeRect, ScrollBar, ScrollArea
 from scripts.manager.state_manager import ReplayState
 
 from scripts.game.replay_game import ReplayGame
+
+from typing import Tuple
 
 from functools import partial
 
@@ -14,7 +16,7 @@ class RecordScene(BaseScene):
     def __init__(self, manager, rect: pygame.Rect):
         super().__init__(manager, rect)
 
-        self.replay_list_layout: UILayout = None
+        self.replay_list_area: UILayout = None
         self.playback_tool_layout: UILayout = None
 
         self.replay_game: ReplayGame = None
@@ -28,33 +30,33 @@ class RecordScene(BaseScene):
 
 
     # about creation ui object
-    def create_replay_list_layout(self):
-        layout_relative_rect: RelativeRect
+    def create_replay_list_area(self):
+        area_relative_rect: RelativeRect
 
         if self.is_landscape:
-            layout_relative_rect = RelativeRect(0.05, 0.05, 0.25, 0.9)
+            area_relative_rect = RelativeRect(0.05, 0.05, 0.25, 0.9)
             replay_button_relative_y_offset, replay_button_relative_height = 0.07, 0.06
         else:
-            layout_relative_rect = RelativeRect(0.15, 0.45, 0.7, 0.3)
+            area_relative_rect = RelativeRect(0.15, 0.45, 0.7, 0.3)
             replay_button_relative_y_offset, replay_button_relative_height = 0.15, 0.13
 
-        layout_rect: pygame.Rect = layout_relative_rect.to_absolute(self.size)
+        replay_list = self.manager.get_replay_list()  # uuid, title, timestamp, steps_num, final_score
+        replay_num = len(replay_list)
+
+        scroll_area_rect: pygame.Rect = area_relative_rect.to_absolute(self.size)
+        scroll_area_content_height = replay_button_relative_y_offset * replay_num * self.size[1]
+        scroll_area_content_size: Tuple[int, int] = (self.size[0], scroll_area_content_height)
         bg_color = (50, 50, 50, 50)
 
-        layout = UILayout(self.origin, layout_rect, bg_color)
+        scroll_area = ScrollArea(self.origin, scroll_area_rect, scroll_area_content_size, bg_color)
 
         outerline_thickness = 1
-        layout.add_outerline(outerline_thickness)
+        scroll_area.add_outerline(outerline_thickness)
 
-        replay_list = self.manager.get_replay_list()
+        for idx, (_, title, timestamp, steps_num, final_score) in enumerate(replay_list):
+            scroll_area.add_button(RelativeRect(0, replay_button_relative_y_offset * idx, 1, replay_button_relative_height), '_'.join((title, timestamp[:8], str(steps_num), str(final_score))), partial(self.set_selected_replay, scroll_area, idx))
 
-        for idx, replay_name in enumerate(replay_list):
-            layout.add_button(RelativeRect(0, replay_button_relative_y_offset * idx, 1, replay_button_relative_height), replay_name, partial(self.set_selected_replay, layout, idx))
-        
-        # TODO: Add ScrollArea which is for showing replay list
-        #     + Add replays as button into scrollArea & accept `set_selected_replay` function to button's callback
-
-        return layout
+        return scroll_area
     
     def create_replay_game_rect(self) -> pygame.Rect:
         game_relative_rect: RelativeRect
@@ -152,11 +154,11 @@ class RecordScene(BaseScene):
         self.replay_game.go_to_step(step)
 
     def refresh_replay_list_layout(self):
-        self.replay_list_layout = self.create_replay_list_layout()
+        self.replay_list_area = self.create_replay_list_area()
         self.clear_replay_state()
 
-    def set_selected_replay(self, replay_list_layout: UILayout, replay_index: int):
-        replay_list_layout.update_radio_selection(replay_index)
+    def set_selected_replay(self, replay_list_area: ScrollArea, replay_index: int):
+        replay_list_area.update_radio_selection(replay_index)
         self.replay_game = self.manager.get_replay_game(replay_index, self.create_replay_game_rect())
 
         self.playback_tool_layout = self.create_playback_tool_layout()
@@ -268,7 +270,7 @@ class RecordScene(BaseScene):
             if event.type == pygame.KEYDOWN:
                 self.handle_keydown(event.key)
                 
-        self.replay_list_layout.handle_events(events)
+        self.replay_list_area.handle_events(events)
         if self.replay_game is not None:
             self.playback_tool_layout.handle_events(events)
     
@@ -295,7 +297,7 @@ class RecordScene(BaseScene):
     def render(self, surf):
         super().render(surf)
 
-        self.replay_list_layout.render(self.surf)
+        self.replay_list_area.render(self.surf)
         if self.replay_game is not None:
             self.replay_game.render(self.surf)
             self.playback_tool_layout.render(self.surf)

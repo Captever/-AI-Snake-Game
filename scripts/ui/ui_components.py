@@ -140,9 +140,6 @@ class UILayout:
                     element.set_selected(False)
                 btn_i_idx += 1
 
-    def get_surface(self):
-        return self.surf
-
     def get_scrollbar_values(self) -> Dict[str, any]:
         scrollbar_values = {}
         for element in self.elements:
@@ -356,36 +353,69 @@ class ScrollBar:
             pygame.draw.rect(surf, UI_SCROLLBAR["handle_default_color"], self.handle_rect)
 
 class ScrollArea:
-    def __init__(self, rect: pygame.Rect, content_size: Tuple[int, int], bg_color=UI_LAYOUT["default_color"]):
+    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, content_size: Tuple[int, int], bg_color=UI_LAYOUT["default_color"]):
         """
         Scrollable area that allows displaying more elements than the visible area.
 
         Args:
+            parent_abs_pos (Tuple[int, int]): Absolute position of the parent element
             rect (pygame.Rect): The visible area (container).
             content_size (Tuple[int, int]): The total size of the scrollable content.
             bg_color (Tuple[int, int, int]): Background color.
         """
-        self.rect = rect
-        self.content_size = content_size
+        self.rect: pygame.Rect = rect
+        self.abs_pos: Tuple[int, int] = tuple(parent_abs_pos[i] + rect.topleft[i] for i in [0, 1])
         self.bg_color = bg_color
+        self.elements = []
 
         # Create the full surface to hold all content
+        self.content_size = content_size
         self.content_surface = pygame.Surface(content_size)
         self.content_surface.fill(bg_color)
+
+        # Viewport mask
+        self.viewport = pygame.Surface(self.rect.size)
+        self.viewport_offset = self.rect.topleft
 
         # Scroll variables
         self.scroll_offset = 0
         self.scroll_speed = 30
+        
+        self.outerline: Outerline = None
+    
+    def add_outerline(self, outline_thickness: int = 1, outline_color=(255, 255, 255)):
+        self.outerline = Outerline(self.rect, outline_thickness, outline_color)
 
-        # Viewport mask
-        self.viewport = pygame.Surface(self.rect.size)
+    def add_button(self, relative_rect: RelativeRect, text: str, callback=None, auto_lined_str: List[str]=None):
+        """
+        Add a button to the layout with its relative position.
+        """
+        button = Button(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, callback, auto_lined_str)
 
-        # UI elements (Buttons, Text, etc.)
-        self.elements = []
+        self.elements.append(button)
 
-    def add_element(self, element):
-        """Add UI elements to the scrollable area."""
-        self.elements.append(element)
+        return button
+    
+    def add_textbox(self, relative_rect: RelativeRect, text: str, font_color, bold: bool = False):
+        """
+        Add a text box to the layout with its relative position.
+        """
+        textbox = TextBox(relative_rect.to_absolute(self.rect.size), text, font_color, bold=bold)
+
+        self.elements.append(textbox)
+
+        return textbox
+    
+    def update_radio_selection(self, target_btn_index: int):
+        btn_i_idx = 0
+
+        for element in self.elements:
+            if isinstance(element, Button):
+                if btn_i_idx == target_btn_index:
+                    element.set_selected()
+                else:
+                    element.set_selected(False)
+                btn_i_idx += 1
 
     def handle_events(self, events):
         """Handle scrolling and button events."""
@@ -398,10 +428,10 @@ class ScrollArea:
                     self.scroll_offset = min(self.scroll_offset + self.scroll_speed, max_scroll)
 
             for element in self.elements:
-                if isinstance(element, Button) or isinstance(element, ScrollBar):
+                if isinstance(element, Button):
                     element.handle_event(event)
 
-    def render(self, surface: pygame.Surface):
+    def render(self, surf: pygame.Surface):
         """Render the visible portion of the scrollable area."""
         self.content_surface.fill(self.bg_color)  # Reset background
 
@@ -418,7 +448,10 @@ class ScrollArea:
         self.viewport.blit(self.content_surface, (0, -self.scroll_offset), visible_rect)
 
         # Blit the viewport to the main screen
-        surface.blit(self.viewport, self.rect.topleft)
+        surf.blit(self.viewport, self.rect.topleft)
+
+        if self.outerline is not None:
+            self.outerline.render(surf)
 
 class Board:
     def __init__(self, rect: pygame.Rect, title, font_color, default: int=0, format: str=None, custom_ttf_file_path=None):
