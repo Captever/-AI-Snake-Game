@@ -60,10 +60,10 @@ class Replay:
         final_score: int = None
         epoch_count: int = None
 
-        for title, score in final_scores:
-            if title == "Score":
+        for key, score in final_scores:
+            if key == "score":
                 final_score = score
-            elif title == "Epoch":
+            elif key == "epoch":
                 epoch_count = score
 
         return (final_score, epoch_count)
@@ -160,8 +160,8 @@ class ReplayManager:
         try:
             cursor.execute("INSERT INTO replays (uuid, title, timestamp, steps_num, final_score) VALUES (?, ?, ?, ?, ?)", (current_uuid, title, timestamp, steps_num, final_score))
             conn.commit()
-        except sqlite3.IntegrityError:
-            print(f"UUID {current_uuid} already exists in the database.")  # prevent duplicate
+        except sqlite3.IntegrityError as e:  # prevent duplicate
+            print(f"sqlite3 IntegrityError Occured: {e}")
         finally:
             conn.close()
 
