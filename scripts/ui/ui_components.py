@@ -355,6 +355,71 @@ class ScrollBar:
             pygame.draw.rect(surf, UI_SCROLLBAR["bar_default_color"], self.bar_rect)
             pygame.draw.rect(surf, UI_SCROLLBAR["handle_default_color"], self.handle_rect)
 
+class ScrollArea:
+    def __init__(self, rect: pygame.Rect, content_size: Tuple[int, int], bg_color=UI_LAYOUT["default_color"]):
+        """
+        Scrollable area that allows displaying more elements than the visible area.
+
+        Args:
+            rect (pygame.Rect): The visible area (container).
+            content_size (Tuple[int, int]): The total size of the scrollable content.
+            bg_color (Tuple[int, int, int]): Background color.
+        """
+        self.rect = rect
+        self.content_size = content_size
+        self.bg_color = bg_color
+
+        # Create the full surface to hold all content
+        self.content_surface = pygame.Surface(content_size)
+        self.content_surface.fill(bg_color)
+
+        # Scroll variables
+        self.scroll_offset = 0
+        self.scroll_speed = 30
+
+        # Viewport mask
+        self.viewport = pygame.Surface(self.rect.size)
+
+        # UI elements (Buttons, Text, etc.)
+        self.elements = []
+
+    def add_element(self, element):
+        """Add UI elements to the scrollable area."""
+        self.elements.append(element)
+
+    def handle_events(self, events):
+        """Handle scrolling and button events."""
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 4:  # Scroll up
+                    self.scroll_offset = max(self.scroll_offset - self.scroll_speed, 0)
+                elif event.button == 5:  # Scroll down
+                    max_scroll = max(0, self.content_size[1] - self.rect.height)
+                    self.scroll_offset = min(self.scroll_offset + self.scroll_speed, max_scroll)
+
+            for element in self.elements:
+                if isinstance(element, Button) or isinstance(element, ScrollBar):
+                    element.handle_event(event)
+
+    def render(self, surface: pygame.Surface):
+        """Render the visible portion of the scrollable area."""
+        self.content_surface.fill(self.bg_color)  # Reset background
+
+        # Render elements inside the scroll area
+        for element in self.elements:
+            current_mouse_pos = pygame.mouse.get_pos()
+            adjusted_mouse_pos = (current_mouse_pos[0], current_mouse_pos[1] + self.scroll_offset)
+            if isinstance(element, Button) or isinstance(element, ScrollBar):
+                element.is_hovered(adjusted_mouse_pos)
+            element.render(self.content_surface)
+
+        # Define viewport clipping region
+        visible_rect = pygame.Rect(0, self.scroll_offset, self.rect.width, self.rect.height)
+        self.viewport.blit(self.content_surface, (0, -self.scroll_offset), visible_rect)
+
+        # Blit the viewport to the main screen
+        surface.blit(self.viewport, self.rect.topleft)
+
 class Board:
     def __init__(self, rect: pygame.Rect, title, font_color, default: int=0, format: str=None, custom_ttf_file_path=None):
         self.rect = rect
