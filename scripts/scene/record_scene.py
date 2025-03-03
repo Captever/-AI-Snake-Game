@@ -20,13 +20,12 @@ class RecordScene(BaseScene):
         self.replay_game: ReplayGame = None
         self.progress_scrollbar: ScrollBar = None
 
-        self.state: ReplayState = None
+        self.state: ReplayState = ReplayState.PAUSE  # Start in a paused state
 
         self.step_delay: int = 16  # Ensure that 2x, 4x, 8x, and 16x speeds all divide evenly
         self.step_weight: int = 1
         self.step_accum: int = 0  # accumulate value for stepping
 
-        self.state = ReplayState.PLAY  # TODO: Changed replay to switch to PLAY when a start signal is given
 
     # about creation ui object
     def create_replay_list_layout(self):
@@ -124,8 +123,8 @@ class RecordScene(BaseScene):
         self.on_state_change() # hooking
 
     def on_state_change(self):
-        if self.state == ReplayState.PLAY:
-            self.step_weight = 1
+        if self.is_state(ReplayState.PAUSE):
+            self.step_weight = 1  # Reset playback speed to 1x immediately after transitioning to pause state
 
 
     # about getter
@@ -137,7 +136,7 @@ class RecordScene(BaseScene):
 
     def is_on_step(self) -> bool:
         is_on_delay: bool = self.step_accum >= abs(self.step_delay / self.step_weight)
-        return is_on_delay and self.replay_game.is_stepable(self.step_weight < 0)
+        return is_on_delay
 
 
     # flip
@@ -161,6 +160,8 @@ class RecordScene(BaseScene):
         self.replay_game = self.manager.get_replay_game(replay_index, self.create_replay_game_rect())
 
         self.playback_tool_layout = self.create_playback_tool_layout()
+
+        self.set_state(ReplayState.PLAY)  # Switch to PLAY state when a replay is selected
 
     def go_to_step(self, step: int):
         self.progress_scrollbar.update_value(step)
@@ -201,22 +202,30 @@ class RecordScene(BaseScene):
             return
 
         if self.step_weight == 1:
+            self.set_state(ReplayState.REWIND)  # transition state when changing to reverse speed
             self.step_weight = -1
         elif self.step_weight < 0:
             self.step_weight *= 2
         else:
             self.step_weight //= 2
 
+            if self.step_weight == 1:  # transition state when changing to 1x speed
+                self.set_state(ReplayState.PLAY)
+
     def fastforward(self):
-        if self.step_weight >= 16 :
+        if self.step_weight >= 16:
             return
 
         if self.step_weight == -1:
+            self.set_state(ReplayState.PLAY)  # transition state when changing to 1x speed
             self.step_weight = 1
         elif self.step_weight < 0:
             self.step_weight //= 2
         else:
             self.step_weight *= 2
+
+            if self.step_weight == 2:  # transition state when changing to 2x speed
+                self.set_state(ReplayState.FASTFORWARD)
 
     
     # about progress
@@ -234,17 +243,21 @@ class RecordScene(BaseScene):
 
     # functions to update every frame
     def update(self):
-        if self.is_state(ReplayState.PLAY) and self.replay_game is not None:
+        if not self.is_state(ReplayState.PAUSE) and self.replay_game is not None:
             self.step_sequence()
 
     def step_sequence(self):
-        if self.is_on_step():
-            self.step_accum = 0
-            if self.step_weight < 0:
-                self.go_to_prev_step()
-            else:
-                self.go_to_next_step()
-        self.step_accum += 1
+        to_reverse: bool = self.step_weight < 0
+        if self.replay_game.is_stepable(to_reverse=to_reverse):
+            if self.is_on_step():
+                self.step_accum = 0
+                if to_reverse:
+                    self.go_to_prev_step()
+                else:
+                    self.go_to_next_step()
+            self.step_accum += 1
+        elif not self.is_state(ReplayState.PAUSE):
+            self.set_state(ReplayState.PAUSE)
     
 
     # about every frame routine

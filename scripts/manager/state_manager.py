@@ -12,4 +12,4 @@ class ReplayState(Enum):
     PLAY = 1
     PAUSE = 2
     REWIND = 3
-    FAST_FORWARD = 4
+    FASTFORWARD = 4
