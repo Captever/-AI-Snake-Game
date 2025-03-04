@@ -99,21 +99,21 @@ class UILayout:
 
         return layout
 
-    def add_button(self, relative_rect: RelativeRect, text: str, callback=None, auto_lined_str: List[str]=None):
+    def add_button(self, relative_rect: RelativeRect, title: str, callback=None, auto_lined_str: List[str]=None):
         """
         Add a button to the layout with its relative position.
         """
-        button = Button(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, callback, auto_lined_str)
+        button = Button(self.abs_pos, relative_rect.to_absolute(self.rect.size), title, callback, auto_lined_str)
 
         self.elements.append(button)
 
         return button
 
-    def add_scrollbar(self, relative_rect: RelativeRect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1, callback=None, show_max_val: bool = False):
+    def add_scrollbar(self, relative_rect: RelativeRect, title: str, min_val: int, max_val: int, default_val: int, val_step: int = 1, callback=None, show_max_val: bool = False):
         """
         Add a scroll bar to the layout with its relative position.
         """
-        scrollbar = ScrollBar(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, min_val, max_val, default_val, val_step, callback, show_max_val)
+        scrollbar = ScrollBar(self.abs_pos, relative_rect.to_absolute(self.rect.size), title, min_val, max_val, default_val, val_step, callback, show_max_val)
 
         self.elements.append(scrollbar)
 
@@ -144,7 +144,7 @@ class UILayout:
         scrollbar_values = {}
         for element in self.elements:
             if isinstance(element, ScrollBar):
-                scrollbar_values[element.text] = element.value
+                scrollbar_values[element.title] = element.value
         
         for layout in self.layouts.values():
             scrollbar_values.update(layout.get_scrollbar_values())
@@ -183,15 +183,20 @@ class UILayout:
             self.outerline.render(surf)
 
 class Button:
-    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, callback=None, auto_lined_str: List[str]=None):
+    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, title: str, callback=None, auto_lined_str: List[str]=None):
         self.rect: pygame.Rect = pygame.Rect(rect)
         self.abs_pos: Tuple[int, int] = tuple(parent_abs_pos[i] + rect.topleft[i] for i in [0, 1])
-        self.text: str = text
+        self.title: str = self.to_auto_lined_text(title, auto_lined_str) if auto_lined_str is not None else title
         self.callback = callback
-        self.auto_lined_str = auto_lined_str
 
         self.hovered: bool = False
         self.selected: bool = False
+
+        self.init_title_textbox()
+
+    def init_title_textbox(self):
+        font_rect = self.rect.scale_by(UI_BUTTON["font_ratio"], UI_BUTTON["font_ratio"])
+        self.title_textbox = TextBox(font_rect, self.title, BLACK)
     
     def handle_event(self, event):
         if self.is_clicked(event) and not self.selected:
@@ -230,21 +235,15 @@ class Button:
         Args:
             surf (pygame.Surface): Surface to render on.
         """
-        if self.auto_lined_str is not None:
-            text = self.to_auto_lined_text(self.text, self.auto_lined_str)
-        else:
-            text = self.text
-
         pygame.draw.rect(surf, UI_BUTTON["selected_color"] if self.selected else (UI_BUTTON["hover_color"] if self.hovered else UI_BUTTON["default_color"]), self.rect)
-
-        font_rect = self.rect.scale_by(UI_BUTTON["font_ratio"], UI_BUTTON["font_ratio"])
-        TextBox(font_rect, text, BLACK).render(surf)
+        
+        self.title_textbox.render(surf)
 
 class ScrollBar:
-    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, text: str, min_val: int, max_val: int, default_val: int, val_step: int = 1, callback=None, display_max_val: bool = False):
+    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, title: str, min_val: int, max_val: int, default_val: int, val_step: int = 1, callback=None, display_max_val: bool = False):
         self.rect: pygame.Rect = pygame.Rect(rect)
         self.abs_pos: Tuple[int, int] = tuple(parent_abs_pos[i] + rect.topleft[i] for i in [0, 1])
-        self.text: str = text
+        self.title: str = title
         self.callback = callback
 
         self.min_val: int = None
@@ -260,6 +259,13 @@ class ScrollBar:
         self.update_handle()
 
         self.hovered: bool = False
+
+        self.init_title_textbox()
+
+    def init_title_textbox(self):
+        font_height = self.rect.height * UI_SCROLLBAR["font_ratio"]
+        font_rect = pygame.Rect(self.rect.left, self.rect.top, self.rect.width, font_height)
+        self.title_textbox = TextBox(font_rect, self.title, WHITE)
 
     def update_handle(self):
         handle_x = int(self.bar_rect.x + ((self.value - self.min_val) / (self.max_val - self.min_val)) * self.bar_rect.width)
@@ -287,7 +293,7 @@ class ScrollBar:
             if default_val > max_val:
                 error_param.append("default_val > max_val")
 
-            error_message = f"Scrollbar({self.text}) value error: {' / '.join(error_param)}"
+            error_message = f"Scrollbar({self.title}) value error: {' / '.join(error_param)}"
 
             raise ValueError(error_message)
 
@@ -305,7 +311,7 @@ class ScrollBar:
                 default_val = (default_val // val_step) * val_step
                 warn_param.append("default_val")
 
-            warn_message = f"Scrollbar({self.text}) value warning: items({', '.join(warn_param)}) does not align with the value step."
+            warn_message = f"Scrollbar({self.title}) value warning: items({', '.join(warn_param)}) does not align with the value step."
             
             warnings.warn(warn_message, UserWarning)
     
@@ -340,10 +346,8 @@ class ScrollBar:
                 self.callback(self.value)
 
     def render(self, surf: pygame.Surface):
-        text = f"{self.text}: {int(self.value):,}/{int(self.max_val):,}" if self.display_max_val else f"{self.text}: {int(self.value):,}"
-        font_height = self.rect.height * UI_SCROLLBAR["font_ratio"]
-        font_rect = pygame.Rect(self.rect.left, self.rect.top, self.rect.width, font_height)
-        TextBox(font_rect, text, WHITE).render(surf)
+        self.title_textbox.update_content(f"{self.title}: {int(self.value):,}/{int(self.max_val):,}" if self.display_max_val else f"{self.title}: {int(self.value):,}")
+        self.title_textbox.render(surf)
 
         if self.hovered:
             pygame.draw.rect(surf, UI_SCROLLBAR["bar_hover_color"], self.bar_rect)
