@@ -44,7 +44,7 @@ class RecordScene(BaseScene):
         replay_num = len(replay_list)
 
         scroll_area_rect: pygame.Rect = area_relative_rect.to_absolute(self.size)
-        scroll_area_content_height = replay_button_relative_y_offset * replay_num * self.size[1]
+        scroll_area_content_height = replay_button_relative_y_offset * replay_num * scroll_area_rect.height
         scroll_area_content_size: Tuple[int, int] = (self.size[0], scroll_area_content_height)
         bg_color = (50, 50, 50, 50)
 

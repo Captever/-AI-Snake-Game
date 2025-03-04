@@ -436,16 +436,16 @@ class ScrollArea:
         self.content_surface.fill(self.bg_color)  # Reset background
 
         # Render elements inside the scroll area
+        current_mouse_pos = pygame.mouse.get_pos()
+        adjusted_mouse_pos = (current_mouse_pos[0], current_mouse_pos[1] + self.scroll_offset)
         for element in self.elements:
-            current_mouse_pos = pygame.mouse.get_pos()
-            adjusted_mouse_pos = (current_mouse_pos[0], current_mouse_pos[1] + self.scroll_offset)
-            if isinstance(element, Button) or isinstance(element, ScrollBar):
+            if isinstance(element, Button):
                 element.is_hovered(adjusted_mouse_pos)
             element.render(self.content_surface)
 
         # Define viewport clipping region
-        visible_rect = pygame.Rect(0, self.scroll_offset, self.rect.width, self.rect.height)
-        self.viewport.blit(self.content_surface, (0, -self.scroll_offset), visible_rect)
+        visible_rect = pygame.Rect(0, -self.scroll_offset, self.rect.width, self.rect.height)
+        self.viewport.blit(self.content_surface, visible_rect)
 
         # Blit the viewport to the main screen
         surf.blit(self.viewport, self.rect.topleft)
