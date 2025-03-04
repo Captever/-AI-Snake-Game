@@ -1,6 +1,7 @@
 import pygame
-
 import warnings
+
+from datetime import datetime
 
 from constants import *
 
@@ -57,130 +58,86 @@ class Outerline:
     def render(self, surf):
         pygame.draw.rect(surf, self.color, self.rect, max(1, self.thickness)) # minimum value of width: 1
 
-class UILayout:
-    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, bg_color=UI_LAYOUT["default_color"]):
-        """
-        A layout for managing UI elements relative to the surface size.
-        
-        Args:
-            parent_abs_pos (Tuple[int, int]): Absolute position of the parent element
-            rect (pygame.Rect): Position and size
-            bg_color (Tuple[int, int, int]): Background color of the surface.
-        """
-        self.rect: pygame.Rect = rect
-        self.abs_pos: Tuple[int, int] = tuple(parent_abs_pos[i] + rect.topleft[i] for i in [0, 1])
-        self.bg_color = bg_color
-        self.elements = []
-        self.layouts: Dict[str, UILayout] = {} # sub layout
+class TextBox:
+    center_align = 1
+    left_align = 2
+    right_align = 3
 
-        self.surf = pygame.Surface(self.rect.size, pygame.SRCALPHA)
-        self.offset = self.rect.topleft
-        
-        self.outerline: Outerline = None
+    def __init__(self, rect: pygame.Rect, content: str, font_color, align: int = center_align, ttf_file_path: str = "resources/fonts/NanumSquareB.ttf", bold: bool = False):
+        self.rect = rect
+        self.content = self.get_lined_content(content)
+        self.align = align
+        self.font_color = font_color
+        self.font_size = round(rect.height / len(self.content))
+        self.font = pygame.font.Font(ttf_file_path, self.font_size)
+        self.font.set_bold(bold)
+
+    def get_lined_content(self, content: str):
+        return content.split('\n')
     
-    def add_outerline(self, outline_thickness: int = 1, outline_color=(255, 255, 255)):
-        self.outerline = Outerline(self.rect, outline_thickness, outline_color)
-
-    def add_layout(self, name: str, relative_rect: RelativeRect, bg_color=UI_LAYOUT["default_color"]):
-        """
-        Add a layout to the layout with its relative position.
-        
-        Args:
-            relative_rect (pygame.Rect): Relative position and size as a fraction of the layout size.
-            bg_color (Tuple[int, int, int]): Background color of the layout surface.
-        """
-        if name in self.layouts:
-            ValueError(f"Layout name[{name}] already exists")
-            return
-
-        layout = UILayout(self.abs_pos, relative_rect.to_absolute(self.rect.size), bg_color)
-        
-        self.layouts[name] = layout
-
-        return layout
-
-    def add_button(self, relative_rect: RelativeRect, title: str, callback=None, auto_lined_str: List[str]=None):
-        """
-        Add a button to the layout with its relative position.
-        """
-        button = Button(self.abs_pos, relative_rect.to_absolute(self.rect.size), title, callback, auto_lined_str)
-
-        self.elements.append(button)
-
-        return button
-
-    def add_scrollbar(self, relative_rect: RelativeRect, title: str, min_val: int, max_val: int, default_val: int, val_step: int = 1, callback=None, show_max_val: bool = False):
-        """
-        Add a scroll bar to the layout with its relative position.
-        """
-        scrollbar = ScrollBar(self.abs_pos, relative_rect.to_absolute(self.rect.size), title, min_val, max_val, default_val, val_step, callback, show_max_val)
-
-        self.elements.append(scrollbar)
-
-        return scrollbar
+    def update_content(self, content):
+        self.content = self.get_lined_content(content)
     
-    def add_textbox(self, relative_rect: RelativeRect, text: str, font_color, bold: bool = False):
-        """
-        Add a text box to the layout with its relative position.
-        """
-        textbox = TextBox(relative_rect.to_absolute(self.rect.size), text, font_color, bold=bold)
-
-        self.elements.append(textbox)
-
-        return textbox
-    
-    def update_radio_selection(self, target_btn_index: int):
-        btn_i_idx = 0
-
-        for element in self.elements:
-            if isinstance(element, Button):
-                if btn_i_idx == target_btn_index:
-                    element.set_selected()
-                else:
-                    element.set_selected(False)
-                btn_i_idx += 1
-
-    def get_scrollbar_values(self) -> Dict[str, any]:
-        scrollbar_values = {}
-        for element in self.elements:
-            if isinstance(element, ScrollBar):
-                scrollbar_values[element.title] = element.value
-        
-        for layout in self.layouts.values():
-            scrollbar_values.update(layout.get_scrollbar_values())
-
-        return scrollbar_values
-    
-    def handle_events(self, events):
-        for event in events:
-            for element in self.elements:
-                if isinstance(element, Button) or isinstance(element, ScrollBar):
-                    element.handle_event(event)
-            
-        for layout in self.layouts.values():
-            layout.handle_events(events)
-
     def render(self, surf: pygame.Surface):
-        """
-        Render all elements on the layout's surface.
-        
-        Args:
-            surf (pygame.Surface): Surface to render on.
-        """
-        self.surf.fill(self.bg_color)
-        
-        for layout in self.layouts.values():
-            layout.render(self.surf)
+        for idx, line in enumerate(self.content):
+            font_surf = self.font.render(line, True, self.font_color)
+            top = self.rect.top + (self.rect.height - (len(self.content) * self.font_size)) // 2 + idx * self.font_size
+            if self.align == TextBox.center_align:
+                font_rect = font_surf.get_rect(centerx=self.rect.centerx, top=top)
+            elif self.align == TextBox.left_align:
+                font_rect = font_surf.get_rect(left=self.rect.left, top=top)
+            elif self.align == TextBox.right_align:
+                font_rect = font_surf.get_rect(right=self.rect.right, top=top)
+            surf.blit(font_surf, font_rect)
 
-        for element in self.elements:
-            if isinstance(element, Button) or isinstance(element, ScrollBar):
-                element.is_hovered(pygame.mouse.get_pos())
-            element.render(self.surf)
+class Board:
+    def __init__(self, rect: pygame.Rect, title: str, font_color, default: int=0, format: str=None, custom_ttf_file_path=None):
+        self.rect = rect
+        self.title = title
+        self.font_color = font_color
+        self.format = format
+        self.custom_ttf_file_path = custom_ttf_file_path
         
-        surf.blit(self.surf, self.offset)
+        self.surf = pygame.Surface(rect.size, pygame.SRCALPHA)
 
-        if self.outerline is not None:
-            self.outerline.render(surf)
+        self.default = default
+
+        self.init_font()
+
+    def init_font(self):
+        font_area_rect = RelativeRect().to_absolute_with_inner_padding(self.rect.size, UI_BOARD["inner_padding"])
+
+        title_rect_height = round(font_area_rect.height * UI_BOARD["title_ratio"])
+        content_rect_height = round(font_area_rect.height * UI_BOARD["content_ratio"])
+
+        title_rect = pygame.Rect(font_area_rect.x, font_area_rect.y, font_area_rect.width, title_rect_height)
+        content_rect = pygame.Rect(font_area_rect.x, font_area_rect.y + font_area_rect.height - content_rect_height, font_area_rect.width, content_rect_height)
+
+        if self.custom_ttf_file_path != None:
+            self.title_textbox = TextBox(title_rect, self.title, self.font_color, ttf_file_path=self.custom_ttf_file_path, bold=True)
+            self.content_textbox = TextBox(content_rect, "", self.font_color, ttf_file_path=self.custom_ttf_file_path)
+        else:
+            self.title_textbox = TextBox(title_rect, self.title, self.font_color, bold=True)
+            self.content_textbox = TextBox(content_rect, "", self.font_color)
+        
+        self.update_content(self.default)
+    
+    def reset(self):
+        self.update_content(self.default)
+    
+    def update_content(self, content):
+        if self.format != None:
+            content = self.format.format(content)
+        else:
+            content = str(content)
+        self.content_textbox.update_content(content)
+
+    def render(self, surf):
+        self.surf.fill((0, 0, 0, 0))
+        self.title_textbox.render(self.surf)
+        self.content_textbox.render(self.surf)
+
+        surf.blit(self.surf, self.rect)
 
 class Button:
     def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, title: str, callback=None, auto_lined_str: List[str]=None):
@@ -356,6 +313,165 @@ class ScrollBar:
             pygame.draw.rect(surf, UI_SCROLLBAR["bar_default_color"], self.bar_rect)
             pygame.draw.rect(surf, UI_SCROLLBAR["handle_default_color"], self.handle_rect)
 
+class UILayout:
+    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, bg_color=UI_LAYOUT["default_color"]):
+        """
+        A layout for managing UI elements relative to the surface size.
+        
+        Args:
+            parent_abs_pos (Tuple[int, int]): Absolute position of the parent element
+            rect (pygame.Rect): Position and size
+            bg_color (Tuple[int, int, int]): Background color of the surface.
+        """
+        self.rect: pygame.Rect = rect
+        self.abs_pos: Tuple[int, int] = tuple(parent_abs_pos[i] + rect.topleft[i] for i in [0, 1])
+        self.bg_color = bg_color
+        self.elements = []
+        self.layouts: Dict[str, UILayout] = {} # sub layout
+
+        self.surf = pygame.Surface(self.rect.size, pygame.SRCALPHA)
+        self.offset = self.rect.topleft
+        
+        self.outerline: Outerline = None
+    
+    def add_outerline(self, outline_thickness: int = 1, outline_color=(255, 255, 255)):
+        self.outerline = Outerline(self.rect, outline_thickness, outline_color)
+
+    def add_layout(self, name: str, relative_rect: RelativeRect, bg_color=UI_LAYOUT["default_color"]):
+        """
+        Add a layout to the layout with its relative position.
+        
+        Args:
+            relative_rect (pygame.Rect): Relative position and size as a fraction of the layout size.
+            bg_color (Tuple[int, int, int]): Background color of the layout surface.
+        """
+        if name in self.layouts:
+            ValueError(f"Layout name[{name}] already exists")
+            return
+
+        layout = UILayout(self.abs_pos, relative_rect.to_absolute(self.rect.size), bg_color)
+        
+        self.layouts[name] = layout
+
+        return layout
+
+    def add_button(self, relative_rect: RelativeRect, title: str, callback=None, auto_lined_str: List[str]=None):
+        """
+        Add a button to the layout with its relative position.
+        """
+        button = Button(self.abs_pos, relative_rect.to_absolute(self.rect.size), title, callback, auto_lined_str)
+
+        self.elements.append(button)
+
+        return button
+
+    def add_scrollbar(self, relative_rect: RelativeRect, title: str, min_val: int, max_val: int, default_val: int, val_step: int = 1, callback=None, show_max_val: bool = False):
+        """
+        Add a scroll bar to the layout with its relative position.
+        """
+        scrollbar = ScrollBar(self.abs_pos, relative_rect.to_absolute(self.rect.size), title, min_val, max_val, default_val, val_step, callback, show_max_val)
+
+        self.elements.append(scrollbar)
+
+        return scrollbar
+    
+    def add_textbox(self, relative_rect: RelativeRect, text: str, font_color, align: int = TextBox.center_align, bold: bool = False):
+        """
+        Add a text box to the layout with its relative position.
+        """
+        textbox = TextBox(relative_rect.to_absolute(self.rect.size), text, font_color, align=align, bold=bold)
+
+        self.elements.append(textbox)
+
+        return textbox
+    
+    def update_radio_selection(self, target_btn_index: int):
+        btn_i_idx = 0
+
+        for element in self.elements:
+            if isinstance(element, Button):
+                if btn_i_idx == target_btn_index:
+                    element.set_selected()
+                else:
+                    element.set_selected(False)
+                btn_i_idx += 1
+
+    def get_scrollbar_values(self) -> Dict[str, any]:
+        scrollbar_values = {}
+        for element in self.elements:
+            if isinstance(element, ScrollBar):
+                scrollbar_values[element.title] = element.value
+        
+        for layout in self.layouts.values():
+            scrollbar_values.update(layout.get_scrollbar_values())
+
+        return scrollbar_values
+    
+    def handle_events(self, events):
+        for event in events:
+            for element in self.elements:
+                if isinstance(element, Button) or isinstance(element, ScrollBar):
+                    element.handle_event(event)
+            
+        for layout in self.layouts.values():
+            layout.handle_events(events)
+
+    def render(self, surf: pygame.Surface):
+        """
+        Render all elements on the layout's surface.
+        
+        Args:
+            surf (pygame.Surface): Surface to render on.
+        """
+        self.surf.fill(self.bg_color)
+        
+        for layout in self.layouts.values():
+            layout.render(self.surf)
+
+        for element in self.elements:
+            if isinstance(element, Button) or isinstance(element, ScrollBar):
+                element.is_hovered(pygame.mouse.get_pos())
+            element.render(self.surf)
+        
+        surf.blit(self.surf, self.offset)
+
+        if self.outerline is not None:
+            self.outerline.render(surf)
+
+
+# Use in the replay list of RecordScene
+class ReplayButton(Button):
+    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, title: str, timestamp: str, steps_num: int = None, final_score: int = None, callback=None):
+        self.timestamp = timestamp
+        self.steps_num = steps_num
+        self.final_score = final_score
+
+        title = f"{title}({final_score} points)" if final_score is not None else title
+        title = f"{title} - {steps_num} steps" if steps_num is not None else title
+        super().__init__(parent_abs_pos, rect, title, callback)
+
+    def init_title_textbox(self):
+        main_font_height = self.rect.height * UI_REPLAY_BUTTON["font_ratio"]
+        main_font_rect = pygame.Rect(self.rect.left, self.rect.bottom - main_font_height * 1.5, self.rect.width, main_font_height)
+        self.title_textbox = TextBox(main_font_rect, self.title, BLACK)
+
+        timestamp_font_width, timestamp_font_height = self.rect.width * UI_REPLAY_BUTTON["sub_font_ratio"], self.rect.height * UI_REPLAY_BUTTON["sub_font_ratio"]
+        timestamp_font_rect = pygame.Rect(self.rect.left + timestamp_font_height * 0.1, self.rect.top + timestamp_font_height * 0.1, timestamp_font_width, timestamp_font_height)
+        self.timestamp_textbox = TextBox(timestamp_font_rect, f"Saved on {datetime.strptime(self.timestamp, TIMESTAMP_FORMAT).strftime("%B %d, %Y").replace(" 0", " ")}", BLACK, TextBox.left_align) if self.timestamp is not None else None
+
+    def render(self, surf: pygame.Surface):
+        """
+        Render the button on the given surface at the specified rect.
+        
+        Args:
+            surf (pygame.Surface): Surface to render on.
+        """
+        pygame.draw.rect(surf, UI_BUTTON["selected_color"] if self.selected else (UI_BUTTON["hover_color"] if self.hovered else UI_BUTTON["default_color"]), self.rect)
+        
+        self.title_textbox.render(surf)
+        if self.timestamp_textbox is not None:
+            self.timestamp_textbox.render(surf)
+
 class ScrollArea:
     def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, content_size: Tuple[int, int], bg_color=UI_LAYOUT["default_color"]):
         """
@@ -390,21 +506,31 @@ class ScrollArea:
     def add_outerline(self, outline_thickness: int = 1, outline_color=(255, 255, 255)):
         self.outerline = Outerline(self.rect, outline_thickness, outline_color)
 
-    def add_button(self, relative_rect: RelativeRect, text: str, callback=None, auto_lined_str: List[str]=None):
+    def add_button(self, relative_rect: RelativeRect, title: str, callback=None, auto_lined_str: List[str]=None):
         """
         Add a button to the layout with its relative position.
         """
-        button = Button(self.abs_pos, relative_rect.to_absolute(self.rect.size), text, callback, auto_lined_str)
+        button = Button(self.abs_pos, relative_rect.to_absolute(self.rect.size), title, callback, auto_lined_str)
 
         self.elements.append(button)
 
         return button
     
-    def add_textbox(self, relative_rect: RelativeRect, text: str, font_color, bold: bool = False):
+    def add_replay_button(self, relative_rect: RelativeRect, title: str, timestamp: str, steps_num: int = None, final_score: int = None, callback=None):
+        """
+        Add a replay button to the layout with its relative position.
+        """
+        replay_button = ReplayButton(self.abs_pos, relative_rect.to_absolute(self.rect.size), title, timestamp, steps_num, final_score, callback)
+
+        self.elements.append(replay_button)
+
+        return replay_button
+    
+    def add_textbox(self, relative_rect: RelativeRect, text: str, font_color, align: int = TextBox.center_align, bold: bool = False):
         """
         Add a text box to the layout with its relative position.
         """
-        textbox = TextBox(relative_rect.to_absolute(self.rect.size), text, font_color, bold=bold)
+        textbox = TextBox(relative_rect.to_absolute(self.rect.size), text, font_color, align=align, bold=bold)
 
         self.elements.append(textbox)
 
@@ -456,74 +582,3 @@ class ScrollArea:
 
         if self.outerline is not None:
             self.outerline.render(surf)
-
-class Board:
-    def __init__(self, rect: pygame.Rect, title, font_color, default: int=0, format: str=None, custom_ttf_file_path=None):
-        self.rect = rect
-        self.title = title
-        self.font_color = font_color
-        self.format = format
-        self.custom_ttf_file_path = custom_ttf_file_path
-        
-        self.surf = pygame.Surface(rect.size, pygame.SRCALPHA)
-
-        self.default = default
-
-        self.init_font()
-
-    def init_font(self):
-        font_area_rect = RelativeRect().to_absolute_with_inner_padding(self.rect.size, UI_BOARD["inner_padding"])
-
-        title_rect_height = round(font_area_rect.height * UI_BOARD["title_ratio"])
-        content_rect_height = round(font_area_rect.height * UI_BOARD["content_ratio"])
-
-        title_rect = pygame.Rect(font_area_rect.x, font_area_rect.y, font_area_rect.width, title_rect_height)
-        content_rect = pygame.Rect(font_area_rect.x, font_area_rect.y + font_area_rect.height - content_rect_height, font_area_rect.width, content_rect_height)
-
-        if self.custom_ttf_file_path != None:
-            self.title_textbox = TextBox(title_rect, self.title, self.font_color, ttf_file_path=self.custom_ttf_file_path, bold=True)
-            self.content_textbox = TextBox(content_rect, "", self.font_color, ttf_file_path=self.custom_ttf_file_path)
-        else:
-            self.title_textbox = TextBox(title_rect, self.title, self.font_color, bold=True)
-            self.content_textbox = TextBox(content_rect, "", self.font_color)
-        
-        self.update_content(self.default)
-    
-    def reset(self):
-        self.update_content(self.default)
-    
-    def update_content(self, content):
-        if self.format != None:
-            content = self.format.format(content)
-        else:
-            content = str(content)
-        self.content_textbox.update_content(content)
-
-    def render(self, surf):
-        self.surf.fill((0, 0, 0, 0))
-        self.title_textbox.render(self.surf)
-        self.content_textbox.render(self.surf)
-
-        surf.blit(self.surf, self.rect)
-
-class TextBox:
-    def __init__(self, rect: pygame.Rect, content: str, font_color, ttf_file_path: str = "resources/fonts/NanumSquareB.ttf", bold: bool = False):
-        self.rect = rect
-        self.content = self.get_lined_content(content)
-        self.font_color = font_color
-        self.font_size = round(rect.height / len(self.content))
-        self.font = pygame.font.Font(ttf_file_path, self.font_size)
-        self.font.set_bold(bold)
-
-    def get_lined_content(self, content: str):
-        return content.split('\n')
-    
-    def update_content(self, content):
-        self.content = self.get_lined_content(content)
-    
-    def render(self, surf: pygame.Surface):
-        for idx, line in enumerate(self.content):
-            font_surf = self.font.render(line, True, self.font_color)
-            top = self.rect.top + (self.rect.height - (len(self.content) * self.font_size)) // 2 + idx * self.font_size
-            font_rect = font_surf.get_rect(centerx=self.rect.centerx, top=top)
-            surf.blit(font_surf, font_rect)

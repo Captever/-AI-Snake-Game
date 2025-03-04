@@ -150,7 +150,7 @@ class ReplayManager:
 
         # add replay info to metadata
         title = self.current_replay.title
-        timestamp = self.current_replay.timestamp
+        timestamp = self.current_replay.timestamp.strftime(TIMESTAMP_FORMAT)
         steps_num = len(self.current_replay.steps)
         final_score = self.current_replay.get_final_score_and_epoch()[0]
 

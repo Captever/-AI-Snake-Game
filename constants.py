@@ -45,6 +45,13 @@ UI_SCROLLBAR = {
     "bar_ratio": 0.2,
     "font_ratio": 0.5,
 }
+UI_REPLAY_BUTTON = {
+    "default_color": WHITE,
+    "hover_color": LIGHT_GRAY,
+    "selected_color": GRAY,
+    "font_ratio": 0.4,
+    "sub_font_ratio": 0.28,
+}
 
 # object
 OBJECT_DICT = {

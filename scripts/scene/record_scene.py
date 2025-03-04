@@ -54,7 +54,7 @@ class RecordScene(BaseScene):
         scroll_area.add_outerline(outerline_thickness)
 
         for idx, (_, title, timestamp, steps_num, final_score) in enumerate(replay_list):
-            scroll_area.add_button(RelativeRect(0, replay_button_relative_y_offset * idx, 1, replay_button_relative_height), '_'.join((title, timestamp[:8], str(steps_num), str(final_score))), partial(self.set_selected_replay, scroll_area, idx))
+            scroll_area.add_replay_button(RelativeRect(0, replay_button_relative_y_offset * idx, 1, replay_button_relative_height), title, timestamp, int(steps_num), int(final_score), partial(self.set_selected_replay, scroll_area, idx))
 
         return scroll_area
     
@@ -111,7 +111,7 @@ class RecordScene(BaseScene):
             ("▶▶", self.fastforward),
             ("▶I", self.go_to_last_step)]
         for idx, (text, callback) in enumerate(tool_list):
-            tool_layout.add_button(RelativeRect(idx * 0.2125, 0, 0.15, 1), text=text, callback=callback)
+            tool_layout.add_button(RelativeRect(idx * 0.2125, 0, 0.15, 1), title=text, callback=callback)
 
         return layout
 
