@@ -140,31 +140,39 @@ class Board:
         surf.blit(self.surf, self.rect)
 
 class Button:
-    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, title: str, callback=None, auto_lined_str: List[str]=None):
+    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, title: str, callback=None, auto_lined_str: List[str]=None, font_ratio=UI_BUTTON["font_ratio"]):
         self.rect: pygame.Rect = pygame.Rect(rect)
         self.abs_pos: Tuple[int, int] = tuple(parent_abs_pos[i] + rect.topleft[i] for i in [0, 1])
         self.title: str = self.to_auto_lined_text(title, auto_lined_str) if auto_lined_str is not None else title
         self.callback = callback
+        self.auto_lined_str = auto_lined_str
+        self.font_ratio = font_ratio
 
         self.hovered: bool = False
         self.selected: bool = False
+        self.toggle_selected: bool = False
+        self.deactivated: bool = False
 
         self.init_title_textbox()
 
     def init_title_textbox(self):
-        font_rect = self.rect.scale_by(UI_BUTTON["font_ratio"], UI_BUTTON["font_ratio"])
+        font_rect = self.rect.scale_by(self.font_ratio, self.font_ratio)
         self.title_textbox = TextBox(font_rect, self.title, BLACK)
-    
-    def handle_event(self, event):
-        if self.is_clicked(event) and not self.selected:
-            if self.callback:
-                self.callback()
+
+    def flip_toggle_selected(self):
+        self.toggle_selected = not self.toggle_selected
     
     def set_selected(self, is_selected: bool = True):
         self.selected = is_selected
+
+    def deactivate(self, to_deactivated: bool = True):
+        self.deactivated = to_deactivated
     
     def get_abs_rect(self) -> pygame.Rect:
         return pygame.Rect(self.abs_pos + self.rect.size)
+    
+    def is_activated(self) -> bool:
+        return not self.deactivated
 
     def is_hovered(self, m_pos: Tuple[int, int]):
         """
@@ -173,8 +181,8 @@ class Button:
         Args:
             pos (Tuple[int, int]): Mouse position.
         """
-        self.hovered = self.get_abs_rect().collidepoint(m_pos)
-        return self.hovered
+        if self.is_activated():
+            self.hovered = self.get_abs_rect().collidepoint(m_pos)
 
     def is_clicked(self, event):
         return self.hovered and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1
@@ -184,6 +192,11 @@ class Button:
             text = text.replace(target, '\n')
 
         return text
+    
+    def handle_event(self, event):
+        if self.is_activated() and self.is_clicked(event) and not self.selected:
+            if self.callback:
+                self.callback()
 
     def render(self, surf: pygame.Surface):
         """
@@ -192,9 +205,15 @@ class Button:
         Args:
             surf (pygame.Surface): Surface to render on.
         """
-        pygame.draw.rect(surf, UI_BUTTON["selected_color"] if self.selected else (UI_BUTTON["hover_color"] if self.hovered else UI_BUTTON["default_color"]), self.rect)
-        
-        self.title_textbox.render(surf)
+        if self.is_activated():
+            button_color = None
+            if self.toggle_selected:
+                button_color = UI_BUTTON["hover_color"] if self.hovered else UI_BUTTON["selected_color"]
+            else:
+                button_color = UI_BUTTON["selected_color"] if self.selected else (UI_BUTTON["hover_color"] if self.hovered else UI_BUTTON["default_color"])
+            pygame.draw.rect(surf, button_color, self.rect)
+            
+            self.title_textbox.render(surf)
 
 class ScrollBar:
     def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, title: str, min_val: int, max_val: int, default_val: int, val_step: int = 1, callback=None, display_max_val: bool = False):
@@ -328,6 +347,7 @@ class UILayout:
         self.bg_color = bg_color
         self.elements = []
         self.layouts: Dict[str, UILayout] = {} # sub layout
+        self.scrollareas: Dict[str, ScrollArea] = {} # sub scrollarea
 
         self.surf = pygame.Surface(self.rect.size, pygame.SRCALPHA)
         self.offset = self.rect.topleft
@@ -357,6 +377,24 @@ class UILayout:
         self.layouts[name] = layout
 
         return layout
+
+    def add_scrollarea(self, name: str, relative_rect: RelativeRect, content_size: Tuple[int, int], bg_color=UI_LAYOUT["default_color"]):
+        """
+        Add a layout to the layout with its relative position.
+        
+        Args:
+            relative_rect (pygame.Rect): Relative position and size as a fraction of the layout size.
+            bg_color (Tuple[int, int, int]): Background color of the layout surface.
+        """
+        if name in self.scrollareas:
+            ValueError(f"ScrollArea name[{name}] already exists")
+            return
+
+        scrollarea = ScrollArea(self.abs_pos, relative_rect.to_absolute(self.rect.size), content_size, bg_color)
+        
+        self.scrollareas[name] = scrollarea
+
+        return scrollarea
 
     def add_button(self, relative_rect: RelativeRect, title: str, callback=None, auto_lined_str: List[str]=None):
         """
@@ -415,6 +453,9 @@ class UILayout:
             
         for layout in self.layouts.values():
             layout.handle_events(events)
+            
+        for scrollarea in self.scrollareas.values():
+            scrollarea.handle_events(events)
 
     def render(self, surf: pygame.Surface):
         """
@@ -427,6 +468,9 @@ class UILayout:
         
         for layout in self.layouts.values():
             layout.render(self.surf)
+        
+        for scrollarea in self.scrollareas.values():
+            scrollarea.render(self.surf)
 
         for element in self.elements:
             if isinstance(element, Button) or isinstance(element, ScrollBar):
