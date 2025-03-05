@@ -4,7 +4,9 @@ from .base_ai import BaseAI
 
 from constants import DIR_OFFSET_DICT
 
-from typing import Tuple
+from typing import Tuple, List, TYPE_CHECKING
+if TYPE_CHECKING:
+    from scripts.entity.feed_system import Feed
 
 def is_in_bound(coord: Tuple[int, int], grid_size):
     x, y = coord
@@ -33,12 +35,12 @@ def flood_fill_safety_check(coord: Tuple[int, int], p_bodies, grid_size):
 
     return count
 
-def get_closest_dist_with_feed(coord: Tuple[int, int], feeds):
+def get_closest_dist_with_feed(coord: Tuple[int, int], feeds: List["Feed"]):
     closest_feed = None
     min_dist = maxsize
 
     for feed in feeds:
-        dist = get_dist(coord, feed)
+        dist = get_dist(coord, feed.get_coord())
 
         if dist < min_dist:
             closest_feed = feed
