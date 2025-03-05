@@ -105,7 +105,7 @@ class AIPilotGame(BaseGame):
     def is_on_move(self) -> bool:
         return self.is_on_move_delay() and self.is_decided_next_direction()
     
-    def is_ended_process(self) -> bool:
+    def is_final_epoch(self) -> bool:
         # If final_epoch_flag is true, terminate at the current epoch
         return self.final_epoch_flag
     
@@ -125,6 +125,7 @@ class AIPilotGame(BaseGame):
     def restart_game(self):
         self.scores["score"] = 0
         self.renderer.reset_board_content("score")
+        self.set_save_buttons_selected(False)
         self.start_game()
     
     def update(self):
@@ -168,7 +169,7 @@ class AIPilotGame(BaseGame):
         self.renderer.update_board_content("avg_score_last_100", self.scores["avg_score_last_100"])
         self.renderer.update_board_content("overall_avg_score", self.scores["overall_avg_score"])
 
-        if not self.is_ended_process():
+        if not self.is_final_epoch():
             self.restart_game()
     
     def handle_events(self, events):
