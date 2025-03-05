@@ -23,8 +23,10 @@ class AIPilotGame(BaseGame):
         self.pilot_ai_name = pilot_ai_name
         self.potg_num = potg_num
 
-        self.final_epoch_flag: bool = False # If true, terminate at the current epoch
-        self.enable_speed_limit_flag: bool = False # If true, enable speed restriction
+        self.final_epoch_flag: bool = False  # If `True`, terminate at the current epoch
+        self.enable_speed_limit_flag: bool = False  # If `True`, enable speed restriction
+
+        self.save_as_replay: bool = False  # If `True`, save as a replay when the current game ends
         
         self.curr_direction: str = None
 
@@ -153,6 +155,7 @@ class AIPilotGame(BaseGame):
 
         if self.scores["score"] > self.scores["top_score"]:
             self.scores["top_score"] = self.scores["score"]
+            self.save_as_replay = True
             self.renderer.update_board_content("top_score", self.scores["top_score"])
         
         if self.clear_condition is not None and self.scores["score"] >= self.clear_condition:
@@ -161,6 +164,10 @@ class AIPilotGame(BaseGame):
     
 
     def handle_game_end(self):
+        if self.save_as_replay:  # Save if the current game is eligible for replay
+            self.save_as_replay = False
+            self.save_game()
+
         self.scene.add_score_to_figure(self.scores["epoch"], self.scores["score"])
 
         self.scores["avg_score_last_100"] = self.scene.get_last_average_score_last_100()

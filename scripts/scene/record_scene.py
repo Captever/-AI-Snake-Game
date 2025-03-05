@@ -16,7 +16,7 @@ class RecordScene(BaseScene):
     def __init__(self, manager, rect: pygame.Rect):
         super().__init__(manager, rect)
 
-        self.replay_list_area: UILayout = None
+        self.replay_list_layout: UILayout = None
         self.playback_tool_layout: UILayout = None
 
         self.replay_game: ReplayGame = None
@@ -28,35 +28,58 @@ class RecordScene(BaseScene):
         self.step_weight: int = 1
         self.step_accum: int = 0  # accumulate value for stepping
 
+        self.is_on_delete: bool = False
 
     # about creation ui object
-    def create_replay_list_area(self):
-        area_relative_rect: RelativeRect
+    def create_replay_list_layout(self):
+        layout_relative_rect: RelativeRect
+        replay_list_scrollarea_relative_rect: RelativeRect
 
         if self.is_landscape:
-            area_relative_rect = RelativeRect(0.05, 0.05, 0.25, 0.9)
+            layout_relative_rect = RelativeRect(0.05, 0.05, 0.25, 0.9)
+            toolbox_layout_relative_rect = RelativeRect(0, 0, 1, 0.05)
+            delete_mode_button_relative_rect = RelativeRect(0.81, 0.1, 0.18, 0.8)
+            delete_confirm_button_relative_rect = RelativeRect(0.60, 0.1, 0.19, 0.8)
+            delete_cancel_button_relative_rect = RelativeRect(0.81, 0.1, 0.18, 0.8)
+            replay_list_scrollarea_relative_rect = RelativeRect(0, 0.05, 1, 0.95)
             replay_button_relative_y_offset, replay_button_relative_height = 0.07, 0.06
         else:
-            area_relative_rect = RelativeRect(0.15, 0.45, 0.7, 0.3)
+            layout_relative_rect = RelativeRect(0.15, 0.45, 0.7, 0.3)
+            toolbox_layout_relative_rect = RelativeRect(0, 0, 1, 0.1)
+            delete_mode_button_relative_rect = RelativeRect(0.81, 0.05, 0.18, 0.9)
+            delete_confirm_button_relative_rect = RelativeRect(0.60, 0.05, 0.19, 0.9)
+            delete_cancel_button_relative_rect = RelativeRect(0.81, 0.05, 0.18, 0.9)
+            replay_list_scrollarea_relative_rect = RelativeRect(0, 0.1, 1, 0.9)
             replay_button_relative_y_offset, replay_button_relative_height = 0.15, 0.13
 
         replay_list = self.manager.get_replay_list()  # uuid, title, timestamp, steps_num, final_score
         replay_num = len(replay_list)
 
-        scroll_area_rect: pygame.Rect = area_relative_rect.to_absolute(self.size)
-        scroll_area_content_height = replay_button_relative_y_offset * replay_num * scroll_area_rect.height
-        scroll_area_content_size: Tuple[int, int] = (self.size[0], scroll_area_content_height)
-        bg_color = (50, 50, 50, 50)
+        layout_rect: pygame.Rect = layout_relative_rect.to_absolute(self.size)
+        layout_bg_color = (50, 50, 50, 50)
+        layout = UILayout(self.origin, layout_rect, layout_bg_color)
+        layout_outerline_thickness = 1
+        layout.add_outerline(layout_outerline_thickness)
 
-        scroll_area = ScrollArea(self.origin, scroll_area_rect, scroll_area_content_size, bg_color)
+        toolbox_layout = layout.add_layout("toolbox", toolbox_layout_relative_rect)
+        self.delete_mode_button = toolbox_layout.add_button(delete_mode_button_relative_rect, "DELETE", self.set_delete_mode)
+        self.delete_confirm_button = toolbox_layout.add_button(delete_confirm_button_relative_rect, "Confirm", self.confirm_delete_replay)
+        self.delete_cancel_button = toolbox_layout.add_button(delete_cancel_button_relative_rect, "Cancel", self.cancel_delete_replay)
+        self.delete_confirm_button.deactivate()
+        self.delete_cancel_button.deactivate()
 
-        outerline_thickness = 1
-        scroll_area.add_outerline(outerline_thickness)
+        replay_list_scrollarea_rect: pygame.Rect = replay_list_scrollarea_relative_rect.to_absolute(layout_rect.size)
+        replay_list_scrollarea_content_height = replay_button_relative_y_offset * replay_num * replay_list_scrollarea_rect.height
+        replay_list_scrollarea_content_size: Tuple[int, int] = (self.size[0], replay_list_scrollarea_content_height)
+        replay_list_bg_color = (50, 50, 50, 50)
+        replay_list_scrollarea = layout.add_scrollarea("replay_list", replay_list_scrollarea_relative_rect, replay_list_scrollarea_content_size, replay_list_bg_color)
 
-        for idx, (_, title, timestamp, steps_num, final_score) in enumerate(replay_list):
-            scroll_area.add_replay_button(RelativeRect(0, replay_button_relative_y_offset * idx, 1, replay_button_relative_height), title, timestamp, int(steps_num), int(final_score), partial(self.set_selected_replay, scroll_area, idx))
+        base_idx = replay_list_scrollarea.get_next_element_index()
+        for idx, (replay_uuid, title, timestamp, steps_num, final_score) in enumerate(replay_list):
+            element_idx = base_idx + idx
+            replay_list_scrollarea.add_replay_button(RelativeRect(0, replay_button_relative_y_offset * idx, 1, replay_button_relative_height), replay_uuid, title, timestamp, int(steps_num), int(final_score), partial(self.set_selected_replay, replay_list_scrollarea, replay_uuid, element_idx))
 
-        return scroll_area
+        return layout
     
     def create_replay_game_rect(self) -> pygame.Rect:
         game_relative_rect: RelativeRect
@@ -154,13 +177,20 @@ class RecordScene(BaseScene):
         self.replay_game.go_to_step(step)
 
     def refresh_replay_list_layout(self):
-        self.replay_list_area = self.create_replay_list_area()
+        self.replay_list_layout = self.create_replay_list_layout()
         self.clear_replay_state()
 
-    def set_selected_replay(self, replay_list_area: ScrollArea, replay_index: int):
-        replay_list_area.update_radio_selection(replay_index)
-        self.replay_game = self.manager.get_replay_game(replay_index, self.create_replay_game_rect())
+    def set_selected_replay(self, replay_list_area: ScrollArea, replay_uuid: str, element_idx: int):
+        if self.is_on_delete:
+            replay_list_area.toggle_selection(element_idx)
+        else:
+            replay_list_area.update_radio_selection(element_idx)
 
+        # play replay
+        if self.replay_game is not None:
+            self.clear_replay_state()
+
+        self.replay_game = self.manager.get_replay_game(replay_uuid, self.create_replay_game_rect())
         self.playback_tool_layout = self.create_playback_tool_layout()
 
         self.set_state(ReplayState.PLAY)  # Switch to PLAY state when a replay is selected
@@ -229,7 +259,7 @@ class RecordScene(BaseScene):
             if self.step_weight == 2:  # transition state when changing to 2x speed
                 self.set_state(ReplayState.FASTFORWARD)
 
-    
+
     # about progress
     def return_to_main_scene(self):
         self.manager.set_active_scene("MainScene")
@@ -238,6 +268,7 @@ class RecordScene(BaseScene):
     def clear_replay_state(self):
         self.replay_game = None
         self.playback_tool_layout = None
+        self.set_state(ReplayState.PAUSE)
 
     def on_scene_changed(self):
         self.refresh_replay_list_layout()
@@ -260,7 +291,7 @@ class RecordScene(BaseScene):
             self.step_accum += 1
         elif not self.is_state(ReplayState.PAUSE):
             self.set_state(ReplayState.PAUSE)
-    
+
 
     # about every frame routine
     def handle_events(self, events):
@@ -269,11 +300,11 @@ class RecordScene(BaseScene):
         for event in events:
             if event.type == pygame.KEYDOWN:
                 self.handle_keydown(event.key)
-                
-        self.replay_list_area.handle_events(events)
+
+        self.replay_list_layout.handle_events(events)
         if self.replay_game is not None:
             self.playback_tool_layout.handle_events(events)
-    
+
     def handle_keydown(self, key):
         if key == pygame.K_ESCAPE:
             # back to main scene
@@ -297,7 +328,7 @@ class RecordScene(BaseScene):
     def render(self, surf):
         super().render(surf)
 
-        self.replay_list_area.render(self.surf)
+        self.replay_list_layout.render(self.surf)
         if self.replay_game is not None:
             self.replay_game.render(self.surf)
             self.playback_tool_layout.render(self.surf)

@@ -122,7 +122,7 @@ class ReplayManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        cursor.execute("SELECT uuid, title, timestamp, steps_num, final_score FROM replays")
+        cursor.execute("SELECT uuid, title, timestamp, steps_num, final_score FROM replays ORDER BY timestamp DESC")
         self.replay_file_list = cursor.fetchall()
 
         conn.close()
@@ -165,11 +165,12 @@ class ReplayManager:
         finally:
             conn.close()
 
-    def load_replay(self, index: int):
+    def load_replay(self, replay_uuid: str):
         """
         Load a specific replay
         """
-        filename = f"{self.replay_file_list[index][0]}.json"
+
+        filename = f"{replay_uuid}.json"
         file_path = os.path.join(self.save_dir, filename)
 
         try:
@@ -179,11 +180,11 @@ class ReplayManager:
         except FileNotFoundError:
             print(f"File({filename}) not found")
 
-    def get_replay_game(self, replay_index: int, rect: pygame.Rect) -> ReplayGame:
+    def get_replay_game(self, replay_uuid: str, rect: pygame.Rect) -> ReplayGame:
         """
         Show the loaded replay
         """
-        self.load_replay(replay_index)
+        self.load_replay(replay_uuid)
 
         return ReplayGame(rect, self.current_replay)
     

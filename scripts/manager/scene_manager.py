@@ -38,8 +38,8 @@ class SceneManager:
     def get_replay_list(self):
         return self.replay_manager.get_replay_list()
 
-    def get_replay_game(self, replay_index: int, rect: Rect):
-        return self.replay_manager.get_replay_game(replay_index, rect)
+    def get_replay_game(self, replay_uuid: str, rect: Rect):
+        return self.replay_manager.get_replay_game(replay_uuid, rect)
 
 
     # functions to update every frame
