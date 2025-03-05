@@ -38,11 +38,11 @@ class Step:
         )
 
 class Replay:
-    def __init__(self, title: str, grid_size: Tuple[int, int], score_info_list: List[Tuple[str, str, str]], timestamp: datetime = datetime.now(), game_version: str = "1.0.0", steps: List[Step] = None):
+    def __init__(self, title: str, grid_size: Tuple[int, int], score_info_list: List[Tuple[str, str, str]], timestamp: datetime = None, game_version: str = "1.0.0", steps: List[Step] = None):
         self.title = title
         self.grid_size = grid_size
         self.score_info_list = score_info_list
-        self.timestamp = timestamp
+        self.timestamp = datetime.now() if timestamp is None else timestamp
         self.game_version = game_version
 
         self.steps: List[Step] = steps if steps is not None else []
@@ -110,8 +110,7 @@ class ReplayManager:
     def finish_to_record(self, is_saved: bool):
         if is_saved:
             self.save_replay()
-        else:
-            self.current_replay = None
+        self.current_replay = None
 
 
     # about replay management
