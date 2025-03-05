@@ -169,6 +169,8 @@ class Button:
 
     def deactivate(self, to_deactivated: bool = True):
         self.deactivated = to_deactivated
+        if not to_deactivated:
+            self.hovered = False
     
     def get_abs_rect(self) -> pygame.Rect:
         return pygame.Rect(self.abs_pos + self.rect.size)
@@ -176,7 +178,7 @@ class Button:
     def is_activated(self) -> bool:
         return not self.deactivated
 
-    def is_hovered(self, m_pos: Tuple[int, int]):
+    def check_hovered(self, m_pos: Tuple[int, int]):
         """
         Check if the button is hovered based on the mouse position.
         
@@ -187,7 +189,7 @@ class Button:
             self.hovered = self.get_abs_rect().collidepoint(m_pos)
 
     def is_clicked(self, event):
-        return self.hovered and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1
+        return self.hovered and event.type == pygame.MOUSEBUTTONUP and event.button == 1
 
     def to_auto_lined_text(self, text: str, auto_lined_str: List[str]) -> str:
         for target in auto_lined_str:
@@ -208,7 +210,6 @@ class Button:
             surf (pygame.Surface): Surface to render on.
         """
         if self.is_activated():
-            button_color = None
             if self.toggle_selected:
                 button_color = UI_BUTTON["hover_color"] if self.hovered else UI_BUTTON["toggled_color"]
             else:
@@ -298,7 +299,7 @@ class ScrollBar:
             tuple(self.abs_pos[i] + self.bar_rect.topleft[i] - self.rect.topleft[i] for i in [0, 1])
               + self.bar_rect.size)
 
-    def is_hovered(self, m_pos: Tuple[int, int]):
+    def check_hovered(self, m_pos: Tuple[int, int]):
         """
         Check if the scrollbar is hovered based on the mouse position.
         
@@ -482,7 +483,7 @@ class UILayout:
 
         for element in self.elements:
             if isinstance(element, Button) or isinstance(element, ScrollBar):
-                element.is_hovered(pygame.mouse.get_pos())
+                element.check_hovered(pygame.mouse.get_pos())
             element.render(self.surf)
         
         surf.blit(self.surf, self.offset)
@@ -642,7 +643,7 @@ class ScrollArea:
         adjusted_mouse_pos = (current_mouse_pos[0], current_mouse_pos[1] + self.scroll_offset)
         for element in self.elements:
             if isinstance(element, Button):
-                element.is_hovered(adjusted_mouse_pos)
+                element.check_hovered(adjusted_mouse_pos)
             element.render(self.content_surface)
 
         # Define viewport clipping region
