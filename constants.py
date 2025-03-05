@@ -35,6 +35,7 @@ UI_BUTTON = {
     "default_color": WHITE,
     "hover_color": LIGHT_GRAY,
     "selected_color": GRAY,
+    "toggled_color": (255, 160, 160),
     "font_ratio": 0.4,
 }
 UI_SCROLLBAR = {

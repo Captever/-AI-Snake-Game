@@ -164,6 +164,8 @@ class Button:
     
     def set_selected(self, is_selected: bool = True):
         self.selected = is_selected
+        if not is_selected:  # Set `toggle_selected` to deselect when `False`
+            self.toggle_selected = is_selected
 
     def deactivate(self, to_deactivated: bool = True):
         self.deactivated = to_deactivated
@@ -208,7 +210,7 @@ class Button:
         if self.is_activated():
             button_color = None
             if self.toggle_selected:
-                button_color = UI_BUTTON["hover_color"] if self.hovered else UI_BUTTON["selected_color"]
+                button_color = UI_BUTTON["hover_color"] if self.hovered else UI_BUTTON["toggled_color"]
             else:
                 button_color = UI_BUTTON["selected_color"] if self.selected else (UI_BUTTON["hover_color"] if self.hovered else UI_BUTTON["default_color"])
             pygame.draw.rect(surf, button_color, self.rect)
@@ -356,6 +358,12 @@ class UILayout:
     
     def get_next_element_index(self):
         return len(self.elements)
+    
+    def get_element(self, element_idx: int):
+        if 0 <= element_idx < len(self.elements):
+            return self.elements[element_idx]
+        else:
+            raise ValueError("Invalid value access on `get_element`: element_idx")
     
     def add_outerline(self, outline_thickness: int = 1, outline_color=(255, 255, 255)):
         self.outerline = Outerline(self.rect, outline_thickness, outline_color)
@@ -551,6 +559,12 @@ class ScrollArea:
     def get_next_element_index(self):
         return len(self.elements)
     
+    def get_element(self, element_idx: int):
+        if 0 <= element_idx < len(self.elements):
+            return self.elements[element_idx]
+        else:
+            raise ValueError("Invalid access on `get_element`: element_idx")
+    
     def add_outerline(self, outline_thickness: int = 1, outline_color=(255, 255, 255)):
         self.outerline = Outerline(self.rect, outline_thickness, outline_color)
 
@@ -584,13 +598,26 @@ class ScrollArea:
 
         return textbox
     
-    def update_radio_selection(self, element_idx: str):
+    def update_radio_selection(self, element_idx: int):
         for idx, element in enumerate(self.elements):
             if isinstance(element, Button):
                 if idx == element_idx:
                     element.set_selected()
                 else:
                     element.set_selected(False)
+    
+    def deselect_all_replay_button(self):
+        for element in self.elements:
+            if isinstance(element, ReplayButton):
+                element.set_selected(False)
+
+    def toggle_selection(self, element_idx: int):
+        current_element = self.get_element(element_idx)
+
+        if not isinstance(current_element, Button):
+            raise ValueError("Invalid access on `toggle_selection`: Attempting to toggle a non-button element.")
+
+        current_element.flip_toggle_selected()
 
     def handle_events(self, events):
         """Handle scrolling and button events."""
