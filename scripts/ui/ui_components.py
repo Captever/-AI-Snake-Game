@@ -441,7 +441,8 @@ class UILayout:
 
 # Use in the replay list of RecordScene
 class ReplayButton(Button):
-    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, title: str, timestamp: str, steps_num: int = None, final_score: int = None, callback=None):
+    def __init__(self, parent_abs_pos: Tuple[int, int], rect: pygame.Rect, replay_uuid: str, title: str, timestamp: str, steps_num: int = None, final_score: int = None, callback=None, callback_delete=None):
+        self.replay_uuid = replay_uuid
         self.timestamp = timestamp
         self.steps_num = steps_num
         self.final_score = final_score
@@ -457,7 +458,8 @@ class ReplayButton(Button):
 
         timestamp_font_width, timestamp_font_height = self.rect.width * UI_REPLAY_BUTTON["sub_font_ratio"], self.rect.height * UI_REPLAY_BUTTON["sub_font_ratio"]
         timestamp_font_rect = pygame.Rect(self.rect.left + timestamp_font_height * 0.1, self.rect.top + timestamp_font_height * 0.1, timestamp_font_width, timestamp_font_height)
-        self.timestamp_textbox = TextBox(timestamp_font_rect, f"Saved on {datetime.strptime(self.timestamp, TIMESTAMP_FORMAT).strftime("%B %d, %Y").replace(" 0", " ")}", BLACK, TextBox.left_align) if self.timestamp is not None else None
+        replay_timestamp_format = "%B %d, %Y"
+        self.timestamp_textbox = TextBox(timestamp_font_rect, f"Saved on {datetime.strptime(self.timestamp, TIMESTAMP_FORMAT).strftime(replay_timestamp_format).replace(" 0", " ")}", BLACK, TextBox.left_align) if self.timestamp is not None else None
 
     def render(self, surf: pygame.Surface):
         """
@@ -466,9 +468,8 @@ class ReplayButton(Button):
         Args:
             surf (pygame.Surface): Surface to render on.
         """
-        pygame.draw.rect(surf, UI_BUTTON["selected_color"] if self.selected else (UI_BUTTON["hover_color"] if self.hovered else UI_BUTTON["default_color"]), self.rect)
-        
-        self.title_textbox.render(surf)
+        super().render(surf)
+
         if self.timestamp_textbox is not None:
             self.timestamp_textbox.render(surf)
 
@@ -519,11 +520,11 @@ class ScrollArea:
 
         return button
     
-    def add_replay_button(self, relative_rect: RelativeRect, title: str, timestamp: str, steps_num: int = None, final_score: int = None, callback=None):
+    def add_replay_button(self, relative_rect: RelativeRect, replay_uuid: str, title: str, timestamp: str, steps_num: int = None, final_score: int = None, callback=None, callback_delete=None):
         """
         Add a replay button to the layout with its relative position.
         """
-        replay_button = ReplayButton(self.abs_pos, relative_rect.to_absolute(self.rect.size), title, timestamp, steps_num, final_score, callback)
+        replay_button = ReplayButton(self.abs_pos, relative_rect.to_absolute(self.rect.size), replay_uuid, title, timestamp, steps_num, final_score, callback, callback_delete)
 
         self.elements.append(replay_button)
 
