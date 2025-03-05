@@ -31,6 +31,9 @@ class SceneManager:
 
     def finish_to_record(self, is_saved: bool = False):
         self.replay_manager.finish_to_record(is_saved)
+    
+    def delete_replay(self, replay_uuid: str):
+        self.replay_manager.delete_replay(replay_uuid)
 
     def add_replay_step(self, player_bodies: List[Tuple[int, int]], player_direction: str, feeds: List["Feed"], scores: List[Tuple[str, any]]):
         self.replay_manager.add_step(player_bodies, player_direction, feeds, scores)

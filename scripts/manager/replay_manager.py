@@ -180,6 +180,46 @@ class ReplayManager:
         except FileNotFoundError:
             print(f"File({filename}) not found")
 
+    def delete_replay(self, replay_uuid: str):
+        """
+        Delete a specific replay file
+        """
+        try:
+            # Connect to the SQLite database
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+
+            # Retrieve the filename before deleting from the database
+            cursor.execute("SELECT uuid FROM replays WHERE uuid = ?", (replay_uuid,))
+            result = cursor.fetchone()
+
+            if result is None:
+                print(f"No matching record found in the database for UUID: {replay_uuid}")
+            else:
+                filename = f"{replay_uuid}.json"
+                file_path = os.path.join(self.save_dir, filename)
+
+                # Check if the file exists before attempting to delete it
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    print(f"Replay deleted successfully: {file_path}")
+                else:
+                    print(f"Replay does not exist: {file_path}")
+
+                # Delete the corresponding entry in the database
+                cursor.execute("DELETE FROM replays WHERE uuid = ?", (replay_uuid,))
+                conn.commit()
+                print(f"Database record deleted for UUID: {replay_uuid}")
+
+            # Close the database connection
+            conn.close()
+        except PermissionError:
+            print(f"Failed to delete file: Permission denied. ({file_path})")
+        except sqlite3.Error as e:
+            print(f"Database error occurred: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+
     def get_replay_game(self, replay_uuid: str, rect: pygame.Rect) -> ReplayGame:
         """
         Show the loaded replay

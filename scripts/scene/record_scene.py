@@ -3,7 +3,7 @@ import pygame
 from constants import *
 
 from .base_scene import BaseScene
-from scripts.ui.ui_components import UILayout, RelativeRect, ScrollBar, ScrollArea
+from scripts.ui.ui_components import UILayout, RelativeRect, ScrollBar, ScrollArea, ReplayButton
 from scripts.manager.state_manager import ReplayState
 
 from scripts.game.replay_game import ReplayGame
@@ -180,6 +180,9 @@ class RecordScene(BaseScene):
         self.replay_list_layout = self.create_replay_list_layout()
         self.clear_replay_state()
 
+    def deselect_all_replay_button(self):
+        self.replay_list_layout.scrollareas["replay_list"].deselect_all_replay_button()
+
     def set_selected_replay(self, replay_list_area: ScrollArea, replay_uuid: str, element_idx: int):
         if self.is_on_delete:
             replay_list_area.toggle_selection(element_idx)
@@ -194,6 +197,38 @@ class RecordScene(BaseScene):
         self.playback_tool_layout = self.create_playback_tool_layout()
 
         self.set_state(ReplayState.PLAY)  # Switch to PLAY state when a replay is selected
+
+    def set_delete_mode(self):
+        self.is_on_delete = True
+
+        self.deselect_all_replay_button()
+        if self.replay_game is not None:
+            self.clear_replay_state()
+        
+        self.delete_mode_button.deactivate()
+        self.delete_confirm_button.deactivate(False)
+        self.delete_cancel_button.deactivate(False)
+
+    def confirm_delete_replay(self):
+        self.is_on_delete = False
+
+        for element in self.replay_list_layout.scrollareas["replay_list"].elements:
+            if isinstance(element, ReplayButton):
+                if element.toggle_selected:
+                    self.manager.delete_replay(element.replay_uuid)
+
+        self.refresh_replay_list_layout()
+
+    def cancel_delete_replay(self):
+        self.is_on_delete = False
+
+        self.deselect_all_replay_button()
+        if self.replay_game is not None:
+            self.clear_replay_state()
+
+        self.delete_mode_button.deactivate(False)
+        self.delete_confirm_button.deactivate()
+        self.delete_cancel_button.deactivate()
 
     def go_to_step(self, step: int):
         self.progress_scrollbar.update_value(step)
