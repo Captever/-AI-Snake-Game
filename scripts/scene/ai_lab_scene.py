@@ -74,10 +74,12 @@ class AILabScene(BaseScene):
 
         ai_list: List[str] = self.ai_manager.get_ai_list()
         x_offset, y_offset, each_row_num = 0.35, 0.35, 3
+        base_idx = ai_init_layout.get_next_element_index()
         for idx, ai_name in enumerate(ai_list):
-            ai_init_layout.add_button(RelativeRect(x_offset * (idx % each_row_num), y_offset * (idx // each_row_num), 0.3, 0.3), ai_name, partial(self.set_selected_ai, ai_init_layout, ai_name, idx), ['-'])
+            element_idx = base_idx + idx
+            ai_init_layout.add_button(RelativeRect(x_offset * (idx % each_row_num), y_offset * (idx // each_row_num), 0.3, 0.3), ai_name, partial(self.set_selected_ai, ai_init_layout, ai_name, element_idx), ['-'])
             if idx == 0:
-                self.set_selected_ai(ai_init_layout, ai_name, idx)
+                self.set_selected_ai(ai_init_layout, ai_name, element_idx)
 
     def initialize_ai(self):
         # Initialize the ai with the given settings
@@ -156,8 +158,8 @@ class AILabScene(BaseScene):
         self.game = None
         self.ai = None
     
-    def set_selected_ai(self, ai_layout: UILayout, ai_name: str, ai_idx: int):
-        ai_layout.update_radio_selection(ai_idx)
+    def set_selected_ai(self, ai_layout: UILayout, ai_name: str, element_idx: int):
+        ai_layout.update_radio_selection(element_idx)
         self.target_ai_name = ai_name
     
     def return_to_main_scene(self):

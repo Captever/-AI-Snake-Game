@@ -334,6 +334,9 @@ class UILayout:
         
         self.outerline: Outerline = None
     
+    def get_next_element_index(self):
+        return len(self.elements)
+    
     def add_outerline(self, outline_thickness: int = 1, outline_color=(255, 255, 255)):
         self.outerline = Outerline(self.rect, outline_thickness, outline_color)
 
@@ -385,16 +388,13 @@ class UILayout:
 
         return textbox
     
-    def update_radio_selection(self, target_btn_index: int):
-        btn_i_idx = 0
-
-        for element in self.elements:
+    def update_radio_selection(self, element_idx: int):
+        for idx, element in enumerate(self.elements):
             if isinstance(element, Button):
-                if btn_i_idx == target_btn_index:
+                if idx == element_idx:
                     element.set_selected()
                 else:
                     element.set_selected(False)
-                btn_i_idx += 1
 
     def get_scrollbar_values(self) -> Dict[str, any]:
         scrollbar_values = {}
@@ -503,6 +503,9 @@ class ScrollArea:
         
         self.outerline: Outerline = None
     
+    def get_next_element_index(self):
+        return len(self.elements)
+    
     def add_outerline(self, outline_thickness: int = 1, outline_color=(255, 255, 255)):
         self.outerline = Outerline(self.rect, outline_thickness, outline_color)
 
@@ -536,16 +539,13 @@ class ScrollArea:
 
         return textbox
     
-    def update_radio_selection(self, target_btn_index: int):
-        btn_i_idx = 0
-
-        for element in self.elements:
+    def update_radio_selection(self, element_idx: str):
+        for idx, element in enumerate(self.elements):
             if isinstance(element, Button):
-                if btn_i_idx == target_btn_index:
+                if idx == element_idx:
                     element.set_selected()
                 else:
                     element.set_selected(False)
-                btn_i_idx += 1
 
     def handle_events(self, events):
         """Handle scrolling and button events."""
