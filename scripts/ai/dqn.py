@@ -128,22 +128,22 @@ class DQNAI(BaseAI):
         self.last_score = None
         self.last_action = None
 
-    def get_collision_values(self, head):
+    def get_collision_mapping_values(self, head, mapping_dict):
         collision_values = []
 
         for dir_offset in self.dir_offset_list:
             predicted_coord = (head[0] + dir_offset[0], head[1] + dir_offset[1])
             predicted_collision = self.game.check_collision(predicted_coord)[0]
-            collision_values.append(predicted_collision)
+            collision_values.append(mapping_dict[predicted_collision])
         
         return collision_values
     
-    def get_neck_dir(self, head, neck):
+    def get_neck_dir_mapping_value(self, head, neck):  # E: 0, W: 1, S: 2, N: 3
         neck_offset = (neck[0] - head[0], neck[1] - head[1])
-
-        for dir, dir_offset in DIR_OFFSET_DICT.items():
+        
+        for idx, dir_offset in enumerate(DIR_OFFSET_DICT.values()):
             if neck_offset == dir_offset:
-                return dir
+                return idx
     
     def get_dists_from_wall(self, head, grid_size):
         return [grid_size[0]-1 - head[0], grid_size[1]-1 - head[1], head[0], head[1]]
@@ -156,10 +156,11 @@ class DQNAI(BaseAI):
         neck = bodies[1]
         feed = self.game.fs.get_nearest_feed_coord(head)
 
+        collision_mapping = {'none': 0, 'wall': 1, 'body': 2, 'feed': 3}
         # Define current state
         state = get_relative_x_y_dist(head, feed, grid_size) + \
-                tuple(self.get_collision_values(head)) + \
-                (self.get_neck_dir(head, neck), len(bodies)) + \
+                tuple(self.get_collision_mapping_values(head, collision_mapping),) + \
+                (self.get_neck_dir_mapping_value(head, neck), len(bodies)) + \
                 tuple(self.get_dists_from_wall(head, grid_size))
         
         feed_dist = get_dist(head, feed)
