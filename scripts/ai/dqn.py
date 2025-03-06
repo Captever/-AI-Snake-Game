@@ -1,19 +1,125 @@
 import random
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import numpy as np
+from collections import deque
 
 from .base_ai import BaseAI
-
 from constants import DIR_OFFSET_DICT
 from scripts.plugin.custom_func import get_dist, get_relative_x_y_dist
 
-from collections import defaultdict
-
 from typing import Tuple
-    
-class QLearningAI(BaseAI):
-    def __init__(self, alpha=0.1, gamma=0.9, epsilon=0.9):
-        self.actions = list(DIR_OFFSET_DICT.keys())
 
-        self.agent = QLearningAgent(self.actions, alpha, gamma, epsilon)
+
+# Define Neural Network (DQN Model)
+class DQN(nn.Module):
+    def __init__(self, state_size, action_size):
+        super(DQN, self).__init__()
+        self.fc1 = nn.Linear(state_size, 128)
+        self.fc2 = nn.Linear(128, 128)
+        self.fc3 = nn.Linear(128, action_size)
+
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
+        return self.fc3(x)  # Return Q-values
+
+
+# Experience Replay Buffer
+class ReplayBuffer:
+    def __init__(self, capacity):
+        self.buffer = deque(maxlen=capacity)
+
+    def push(self, state, action, reward, next_state, done):
+        self.buffer.append((state, action, reward, next_state, done))
+
+    def sample(self, batch_size):
+        batch = random.sample(self.buffer, batch_size)
+        states, actions, rewards, next_states, dones = zip(*batch)
+        return np.array(states), actions, np.array(rewards), np.array(next_states), np.array(dones)
+
+    def __len__(self):
+        return len(self.buffer)
+
+
+# DQN Agent Definition
+class DQNAgent:
+    def __init__(self, state_size, action_size, lr=0.001, gamma=0.9, epsilon=0.9, epsilon_min=0.01, epsilon_decay=0.995, buffer_size=10000, batch_size=32):
+        self.state_size = state_size
+        self.action_size = action_size
+        self.gamma = gamma  # Discount factor
+        self.epsilon = epsilon  # Exploration probability
+        self.epsilon_min = epsilon_min
+        self.epsilon_decay = epsilon_decay
+        self.batch_size = batch_size
+
+        # Policy Network (Current training network)
+        self.policy_net = DQN(state_size, action_size)
+        # Target Network (For stable learning)
+        self.target_net = DQN(state_size, action_size)
+        self.target_net.load_state_dict(self.policy_net.state_dict())
+        self.target_net.eval()  # Target network does not train
+
+        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=lr)
+        self.criterion = nn.MSELoss()
+
+        self.memory = ReplayBuffer(buffer_size)
+        self.update_target_counter = 0
+
+    def choose_action(self, state):
+        if random.uniform(0, 1) < self.epsilon:
+            return random.randint(0, self.action_size - 1)  # Exploration
+        else:
+            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+            with torch.no_grad():
+                q_values = self.policy_net(state_tensor)
+            return torch.argmax(q_values).item()  # Select action with max Q-value
+
+    def learn(self):
+        if len(self.memory) < self.batch_size:
+            return  # Do not train if not enough data
+
+        states, actions, rewards, next_states, dones = self.memory.sample(self.batch_size)
+
+        states = torch.tensor(states, dtype=torch.float32)
+        actions = torch.tensor(actions, dtype=torch.int64).unsqueeze(1)
+        rewards = torch.tensor(rewards, dtype=torch.float32)
+        next_states = torch.tensor(next_states, dtype=torch.float32)
+        dones = torch.tensor(dones, dtype=torch.float32)
+
+        # Compute Q(s, a)
+        q_values = self.policy_net(states).gather(1, actions).squeeze(1)
+
+        # Compute Q_target(s', a') using target network
+        with torch.no_grad():
+            max_next_q_values = self.target_net(next_states).max(1)[0]
+            target_q_values = rewards + (1 - dones) * self.gamma * max_next_q_values
+
+        loss = self.criterion(q_values, target_q_values)
+
+        # Update neural network
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        # Decrease epsilon (Reduce exploration)
+        self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
+
+        # Update target network periodically
+        self.update_target_counter += 1
+        if self.update_target_counter % 100 == 0:
+            self.target_net.load_state_dict(self.policy_net.state_dict())
+
+
+# DQN-based Snake AI
+class DQNAI(BaseAI):
+    def __init__(self):
+        self.actions = list(DIR_OFFSET_DICT.keys())  # ['E', 'W', 'S', 'N']
+        self.action_size = len(self.actions)
+        self.state_size = 12
+        
+        self.agent = DQNAgent(self.state_size, self.action_size)
 
         self.dir_offset_list = list(DIR_OFFSET_DICT.values())
 
@@ -50,59 +156,28 @@ class QLearningAI(BaseAI):
         neck = bodies[1]
         feed = self.game.fs.get_nearest_feed_coord(head)
 
+        # Define current state
         state = get_relative_x_y_dist(head, feed, grid_size) + \
                 tuple(self.get_collision_values(head)) + \
                 (self.get_neck_dir(head, neck), len(bodies)) + \
                 tuple(self.get_dists_from_wall(head, grid_size))
+        
         feed_dist = get_dist(head, feed)
         score = self.game.scores["score"]
-        action = self.agent.choose_action(state)
+
+        action_index = self.agent.choose_action(state)
 
         if self.last_state is not None:
             reward = score - self.last_score
             if reward == 0:
                 # feedback based on distance
                 reward = 0.1 if feed_dist < self.last_feed_dist else -0.1
-            self.learn(reward, state)
+            self.agent.memory.push(self.last_state, self.last_action, reward, state, False)
+            self.agent.learn()
 
         self.last_state = state
         self.last_feed_dist = feed_dist
         self.last_score = score
-        self.last_action = action
+        self.last_action = action_index
 
-        return action
-    
-    def learn(self, reward, next_state):
-        self.agent.learn(self.last_state, self.last_action, reward, next_state)
-
-class QLearningAgent:
-    def __init__(self, actions, alpha, gamma, epsilon):
-        """
-        Initialize Q-Learning Agent
-        :param actions: list of possible actions (['N', 'E', 'S', 'W'])
-        :param alpha: learning rate
-        :param gamma: discount factor
-        :param epsilon: exploration probability (ε-greedy)
-        """
-        self.q_table = defaultdict(float)  # Q-value storage table
-        self.actions = actions
-        self.alpha = alpha
-        self.gamma = gamma
-        self.epsilon = epsilon
-
-    def choose_action(self, state: Tuple[int, int]) -> str:
-        if random.uniform(0, 1) < self.epsilon:
-            return random.choice(self.actions)  # exploration
-        else:
-            # exploitation
-            q_values = [self.q_table[(state, action)] for action in self.actions]
-            max_q = max(q_values)
-            return random.choice([action for action, q in zip(self.actions, q_values) if q == max_q])
-
-    def learn(self, state, action, reward, next_state):
-        current_q = self.q_table[(state, action)]
-        max_next_q = max([self.q_table[(next_state, a)] for a in self.actions])
-        new_q = current_q + self.alpha * (reward + self.gamma * max_next_q - current_q)
-        self.q_table[(state, action)] = new_q
-
-        self.epsilon = max(0.01, self.epsilon * 0.995)  # gradually increase greedy behavior
+        return self.actions[action_index]
