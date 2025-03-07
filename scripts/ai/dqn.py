@@ -35,13 +35,16 @@ class ReplayBuffer:
         self.buffer.append((state, action, reward, next_state, done))
 
     def sample(self, batch_size):
-        probs = np.linspace(1, len(self.buffer), len(self.buffer))  # Assign weight to the latest data
-        probs = probs / probs.sum()
-        indices = np.random.choice(len(self.buffer), batch_size, p=probs)
+        indices = np.arange(len(self.buffer))  # Assign weight to the latest data
         
-        batch = [self.buffer[idx] for idx in indices]
+        # Apply log weighting for better balance between old and new data
+        probs = np.log(indices + 1)
+        probs /= probs.sum()  # Normalize to probabilities
+        
+        sampled_indices = np.random.choice(indices, batch_size, p=probs)
+        batch = [self.buffer[i] for i in sampled_indices]
+        
         states, actions, rewards, next_states, dones = zip(*batch)
-        
         return np.array(states), actions, np.array(rewards), np.array(next_states), np.array(dones)
 
     def __len__(self):
@@ -50,7 +53,7 @@ class ReplayBuffer:
 
 # DQN Agent Definition
 class DQNAgent:
-    def __init__(self, state_size, action_size, lr=0.001, gamma=0.9, epsilon=0.9, epsilon_min=0.01, epsilon_decay=0.999, epsilon_update_period=5000, tar_net_update_period=500, buffer_size=10000, batch_size=32):
+    def __init__(self, state_size, action_size, lr=0.001, gamma=0.9, epsilon=0.9, epsilon_min=0.01, epsilon_decay=0.995, epsilon_update_period=1000, tar_net_update_period=500, buffer_size=10000, batch_size=32):
         self.state_size = state_size
         self.action_size = action_size
         self.gamma = gamma  # Discount factor
@@ -174,11 +177,11 @@ class DQNAI(BaseAI):
         if self.last_state is not None:
             reward = score - self.last_score
             if reward == 0:
-                # If moving towards the food, +0.1; if moving away, -0.1
-                reward = 0.1 if feed_dist < self.last_feed_dist else -0.1
+                # If moving towards the food, increase reward; if moving away, decrease reward
+                reward = 0.5 if feed_dist < self.last_feed_dist else -0.5
 
                 # Additional reward: Encouraging survival
-                reward += 0.01  # Small reward for staying alive each turn
+                reward += 0.1  # Small reward for staying alive each turn
             self.learn(reward, state, False)
 
         self.last_state = state
