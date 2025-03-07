@@ -12,6 +12,7 @@ from scripts.manager.state_manager import GameState
 from typing import Tuple, TYPE_CHECKING
 
 from scripts.ai.q_learning import QLearningAI
+from scripts.ai.dqn import DQNAI
 
 if TYPE_CHECKING:
     from scripts.scene.base_scene import BaseScene
@@ -87,7 +88,7 @@ class AIPilotGame(BaseGame):
 
     def on_state_changed(self):
         if self.is_state(GameState.GAMEOVER):
-            if isinstance(self.pilot_ai, QLearningAI):
+            if isinstance(self.pilot_ai, QLearningAI) or isinstance(self.pilot_ai, DQNAI):
                 self.pilot_ai.learn(-1, None)
             self.handle_game_end()
 

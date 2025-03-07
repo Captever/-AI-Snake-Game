@@ -35,8 +35,13 @@ class ReplayBuffer:
         self.buffer.append((state, action, reward, next_state, done))
 
     def sample(self, batch_size):
-        batch = random.sample(self.buffer, batch_size)
+        probs = np.linspace(1, len(self.buffer), len(self.buffer))  # Assign weight to the latest data
+        probs = probs / probs.sum()
+        indices = np.random.choice(len(self.buffer), batch_size, p=probs)
+        
+        batch = [self.buffer[idx] for idx in indices]
         states, actions, rewards, next_states, dones = zip(*batch)
+        
         return np.array(states), actions, np.array(rewards), np.array(next_states), np.array(dones)
 
     def __len__(self):
@@ -45,13 +50,15 @@ class ReplayBuffer:
 
 # DQN Agent Definition
 class DQNAgent:
-    def __init__(self, state_size, action_size, lr=0.001, gamma=0.9, epsilon=0.9, epsilon_min=0.01, epsilon_decay=0.995, buffer_size=10000, batch_size=32):
+    def __init__(self, state_size, action_size, lr=0.001, gamma=0.9, epsilon=0.9, epsilon_min=0.01, epsilon_decay=0.999, epsilon_update_period=5000, tar_net_update_period=500, buffer_size=10000, batch_size=32):
         self.state_size = state_size
         self.action_size = action_size
         self.gamma = gamma  # Discount factor
         self.epsilon = epsilon  # Exploration probability
         self.epsilon_min = epsilon_min
         self.epsilon_decay = epsilon_decay
+        self.epsilon_update_period = epsilon_update_period
+        self.tar_net_update_period = tar_net_update_period
         self.batch_size = batch_size
 
         # Policy Network (Current training network)
@@ -103,12 +110,14 @@ class DQNAgent:
         loss.backward()
         self.optimizer.step()
 
-        # Decrease epsilon (Reduce exploration)
-        self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
+        self.update_target_counter += 1
+
+        # Decrease epsilon every epsilon_update_period (Reduce exploration)
+        if self.epsilon > self.epsilon_min and self.update_target_counter % self.epsilon_update_period == 0:
+            self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
 
         # Update target network periodically
-        self.update_target_counter += 1
-        if self.update_target_counter % 100 == 0:
+        if self.update_target_counter % self.tar_net_update_period == 0:
             self.target_net.load_state_dict(self.policy_net.state_dict())
 
 
@@ -171,8 +180,11 @@ class DQNAI(BaseAI):
         if self.last_state is not None:
             reward = score - self.last_score
             if reward == 0:
-                # feedback based on distance
+                # If moving towards the food, +0.1; if moving away, -0.1
                 reward = 0.1 if feed_dist < self.last_feed_dist else -0.1
+
+                # Additional reward: Encouraging survival
+                reward += 0.01  # Small reward for staying alive each turn
             self.agent.memory.push(self.last_state, self.last_action, reward, state, False)
             self.agent.learn()
 
