@@ -88,8 +88,10 @@ class AIPilotGame(BaseGame):
 
     def on_state_changed(self):
         if self.is_state(GameState.GAMEOVER):
-            if isinstance(self.pilot_ai, QLearningAI) or isinstance(self.pilot_ai, DQNAI):
+            if isinstance(self.pilot_ai, QLearningAI):
                 self.pilot_ai.learn(-1, None)
+            elif isinstance(self.pilot_ai, DQNAI):
+                self.pilot_ai.learn(-1, None, True)
             self.handle_game_end()
 
         elif self.is_state(GameState.CLEAR):

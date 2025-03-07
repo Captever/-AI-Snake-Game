@@ -126,7 +126,7 @@ class DQNAI(BaseAI):
     def __init__(self):
         self.actions = list(DIR_OFFSET_DICT.keys())  # ['E', 'W', 'S', 'N']
         self.action_size = len(self.actions)
-        self.state_size = 12
+        self.state_size = 11
         
         self.agent = DQNAgent(self.state_size, self.action_size)
 
@@ -147,13 +147,6 @@ class DQNAI(BaseAI):
         
         return collision_values
     
-    def get_neck_dir_mapping_value(self, head, neck):  # E: 0, W: 1, S: 2, N: 3
-        neck_offset = (neck[0] - head[0], neck[1] - head[1])
-        
-        for idx, dir_offset in enumerate(DIR_OFFSET_DICT.values()):
-            if neck_offset == dir_offset:
-                return idx
-    
     def get_dists_from_wall(self, head, grid_size):
         return [grid_size[0]-1 - head[0], grid_size[1]-1 - head[1], head[0], head[1]]
 
@@ -162,14 +155,13 @@ class DQNAI(BaseAI):
 
         bodies = self.game.player.get_bodies()
         head = bodies[0]
-        neck = bodies[1]
         feed = self.game.fs.get_nearest_feed_coord(head)
 
         collision_mapping = {'none': 0, 'wall': 1, 'body': 2, 'feed': 3}
         # Define current state
         state = get_relative_x_y_dist(head, feed, grid_size) + \
                 tuple(self.get_collision_mapping_values(head, collision_mapping),) + \
-                (self.get_neck_dir_mapping_value(head, neck), len(bodies)) + \
+                (len(bodies),) + \
                 tuple(self.get_dists_from_wall(head, grid_size))
         
         feed_dist = get_dist(head, feed)
@@ -185,8 +177,7 @@ class DQNAI(BaseAI):
 
                 # Additional reward: Encouraging survival
                 reward += 0.01  # Small reward for staying alive each turn
-            self.agent.memory.push(self.last_state, self.last_action, reward, state, False)
-            self.agent.learn()
+            self.learn(reward, state, False)
 
         self.last_state = state
         self.last_feed_dist = feed_dist
@@ -194,3 +185,11 @@ class DQNAI(BaseAI):
         self.last_action = action_index
 
         return self.actions[action_index]
+    
+    def learn(self, reward, next_state, done: bool):
+        # If game over, set next_state as a zero vector (same shape as state)
+        if done or next_state is None:
+            next_state = np.zeros_like(self.last_state)  # Zero vector with same shape
+
+        self.agent.memory.push(self.last_state, self.last_action, reward, next_state, done)
+        self.agent.learn()
