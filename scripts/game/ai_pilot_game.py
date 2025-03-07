@@ -168,6 +168,7 @@ class AIPilotGame(BaseGame):
     def handle_game_end(self):
         if self.save_as_replay:  # Save if the current game is eligible for replay
             self.save_as_replay = False
+            print(f"new game saved: {self.scores["score"]} points on {self.scores["epoch"]} epoch")
             self.save_game()
 
         self.scene.add_score_to_figure(self.scores["epoch"], self.scores["score"])

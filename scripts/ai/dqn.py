@@ -114,7 +114,9 @@ class DQNAgent:
 
         # Decrease epsilon every epsilon_update_period (Reduce exploration)
         if self.epsilon > self.epsilon_min and self.update_target_counter % self.epsilon_update_period == 0:
+            prev_epsilon = self.epsilon
             self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
+            print(f"epsilon decrease: {prev_epsilon} -> {self.epsilon}")
 
         # Update target network periodically
         if self.update_target_counter % self.tar_net_update_period == 0:
