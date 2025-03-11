@@ -4,6 +4,7 @@ from scripts.ai.rule_based_ai import RuleBasedAI
 from scripts.ai.greedy_ai import GreedyAI
 from scripts.ai.q_learning import QLearningAI
 from scripts.ai.dqn import DQNAI
+from scripts.ai.policy_gradient import PolicyGradientAI
 
 class AIManager:
     def __init__(self):
@@ -15,7 +16,7 @@ class AIManager:
         self.ai_list["Greedy-Algorithm"] = GreedyAI()
         self.ai_list["Q-Learning"] = QLearningAI()
         self.ai_list["DQN"] = DQNAI()
-        # self.ai_list["Policy-Gradient"] = PolicyGradient()
+        self.ai_list["Policy-Gradient"] = PolicyGradientAI()
         # self.ai_list["PPO"] = PPO()
     
     def get_ai_list(self) -> List[str]:
