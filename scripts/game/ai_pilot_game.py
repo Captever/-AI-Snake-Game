@@ -13,6 +13,7 @@ from typing import Tuple, TYPE_CHECKING
 
 from scripts.ai.q_learning import QLearningAI
 from scripts.ai.dqn import DQNAI
+from scripts.ai.policy_gradient import PolicyGradientAI
 
 if TYPE_CHECKING:
     from scripts.scene.base_scene import BaseScene
@@ -92,9 +93,15 @@ class AIPilotGame(BaseGame):
                 self.pilot_ai.learn(-1, None)
             elif isinstance(self.pilot_ai, DQNAI):
                 self.pilot_ai.learn(-1, None, True)
+            elif isinstance(self.pilot_ai, PolicyGradientAI):
+                self.pilot_ai.learn(-1, True)
             self.handle_game_end()
 
         elif self.is_state(GameState.CLEAR):
+            if isinstance(self.pilot_ai, DQNAI):
+                self.pilot_ai.learn(5, None, True)
+            elif isinstance(self.pilot_ai, PolicyGradientAI):
+                self.pilot_ai.learn(5, True)
             self.handle_game_end()
 
     
