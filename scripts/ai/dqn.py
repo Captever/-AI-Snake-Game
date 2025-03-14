@@ -9,8 +9,6 @@ from .base_ai import BaseAI
 from constants import DIR_OFFSET_DICT
 from scripts.plugin.custom_func import get_dist, get_relative_x_y_dist
 
-from typing import Tuple
-
 
 # Define Neural Network (DQN Model)
 class DQN(nn.Module):
