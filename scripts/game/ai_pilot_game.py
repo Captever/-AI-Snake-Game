@@ -59,7 +59,7 @@ class AIPilotGame(BaseGame):
         layout.layouts[button_layout_name].add_button(RelativeRect(0.3, 0, 0.4, 1), "New", self.scene.restart_new_game)
 
         self.set_paused_layout(layout)
-    
+
     def init_gameover_layout(self, rect):
         layout: UILayout = UILayout(self.origin, rect, (0, 0, 0, 0))
 
@@ -72,7 +72,7 @@ class AIPilotGame(BaseGame):
         self.save_buttons.append(layout.layouts[button_layout_name].add_button(RelativeRect(0.675, 0, 0.3, 1), "Save", self.save_game))
 
         self.set_gameover_layout(layout)
-    
+
     def init_clear_layout(self, rect):
         layout: UILayout = UILayout(self.origin, rect, (0, 0, 0, 0))
 
