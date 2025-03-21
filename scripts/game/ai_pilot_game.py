@@ -28,7 +28,7 @@ class AIPilotGame(BaseGame):
         self.enable_speed_limit_flag: bool = False  # If `True`, enable speed restriction
 
         self.save_as_replay: bool = False  # If `True`, save as a replay when the current game ends
-        
+
         self.curr_direction: str = None
 
         self.start_game()
@@ -41,7 +41,7 @@ class AIPilotGame(BaseGame):
             ("avg_score_last_100", "Average Last 100", "{:,.3f}"),
             ("overall_avg_score", "Overall Average", "{:,.3f}")
         ]
-    
+
     def init_instruction_list(self):
         self.instruction_list = [ # key, act
             ("P", "Pause"),
@@ -130,7 +130,7 @@ class AIPilotGame(BaseGame):
         self.start_to_record(self.pilot_ai_name)
 
         self.final_epoch_flag = False
-        
+
         self.set_state(GameState.ACTIVE)
 
     def restart_game(self):
@@ -138,7 +138,7 @@ class AIPilotGame(BaseGame):
         self.renderer.reset_board_content("score")
         self.set_save_buttons_selected(False)
         self.start_game()
-    
+
     def update(self):
         super().update()
 
@@ -149,7 +149,7 @@ class AIPilotGame(BaseGame):
             else: # No need to reset when maintaining the same direction
                 self.curr_direction = self.next_direction
                 self.set_direction(self.next_direction, False)
-    
+
 
     def flip_final_epoch_flag(self):
         self.final_epoch_flag = not self.final_epoch_flag
@@ -157,7 +157,7 @@ class AIPilotGame(BaseGame):
     def flip_speed_limit_flag(self):
         self.enable_speed_limit_flag = not self.enable_speed_limit_flag
 
-    
+
     def update_score(self, amount = 1):
         self.scores["score"] += amount
         self.renderer.update_board_content("score", self.scores["score"])
@@ -166,11 +166,11 @@ class AIPilotGame(BaseGame):
             self.scores["top_score"] = self.scores["score"]
             self.save_as_replay = True
             self.renderer.update_board_content("top_score", self.scores["top_score"])
-        
+
         if self.clear_condition is not None and self.scores["score"] >= self.clear_condition:
             self.set_state(GameState.CLEAR)
             self.add_replay_step()
-    
+
 
     def handle_game_end(self):
         if self.save_as_replay:  # Save if the current game is eligible for replay
@@ -188,7 +188,7 @@ class AIPilotGame(BaseGame):
 
         if not self.is_final_epoch():
             self.restart_game()
-    
+
     def handle_events(self, events):
         super().handle_events(events)
 
