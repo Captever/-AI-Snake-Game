@@ -104,23 +104,23 @@ class AIPilotGame(BaseGame):
                 self.pilot_ai.learn(5, True)
             self.handle_game_end()
 
-    
+
     def is_on_move_delay(self) -> bool:
         is_on_delay: bool = self.move_accum >= self.player_move_delay
         # If enable_speed_limit_flag is true, enable speed restriction
         return not self.enable_speed_limit_flag or is_on_delay
-    
+
     def is_decided_next_direction(self) -> bool:
         return self.next_direction is not None
 
     def is_on_move(self) -> bool:
         return self.is_on_move_delay() and self.is_decided_next_direction()
-    
+
     def is_final_epoch(self) -> bool:
         # If final_epoch_flag is true, terminate at the current epoch
         return self.final_epoch_flag
-    
-    
+
+
     def start_game(self):
         super().start_game()
 
@@ -132,7 +132,7 @@ class AIPilotGame(BaseGame):
         self.final_epoch_flag = False
         
         self.set_state(GameState.ACTIVE)
-    
+
     def restart_game(self):
         self.scores["score"] = 0
         self.renderer.reset_board_content("score")
