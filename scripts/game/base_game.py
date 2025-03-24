@@ -50,7 +50,7 @@ class BaseGame(ABC):
 
         self.init_score_info_list()
         self.init_scores()
-        
+
         self.init_instruction_list()
 
         self.state_layouts: Dict[int, UILayout] = {}
@@ -64,7 +64,7 @@ class BaseGame(ABC):
         self.move_accum: int = 0
         self.direction: str = 'E'
         self.next_direction: str = None  # use for ai pilot game
-    
+
     @abstractmethod
     def init_score_info_list(self):
         pass
