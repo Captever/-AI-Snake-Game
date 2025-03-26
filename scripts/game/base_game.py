@@ -126,11 +126,11 @@ class BaseGame(ABC):
     def create_map(self, map_side_len: int, grid_size: Tuple[int, int], map_outerline_thickness: int = 3, map_outerline_color = (255, 255, 255, 255), grid_outerline_thickness: int = 1, grid_outerline_color=(255, 255, 255, 255), grid_thickness: int = 1, grid_color = (255, 255, 255, 128)) -> Tuple[Map, pygame.Surface]:
         map_rect = pygame.Rect(0, 0, map_side_len, map_side_len)
         map = Map(map_rect, grid_size, map_outerline_thickness, map_outerline_color, grid_outerline_thickness, grid_outerline_color, grid_thickness, grid_color)
-        
+
         surf_size = (map_side_len, map_side_len)
         map_surface = pygame.Surface(surf_size, pygame.SRCALPHA)
         return (map, map_surface)
-    
+
     def create_boards(self, relative_rect: RelativeRect, relative_offset: Tuple[float, float]):
         boards: Dict[str, "Board"] = {}
 
@@ -140,7 +140,7 @@ class BaseGame(ABC):
             board_rect = curr_board_relative_rect.to_absolute(self.size)
 
             boards[key] = Board(board_rect, board_title, WHITE, format=board_format)
-        
+
         return boards
 
     def create_instruction(self, relative_rect: RelativeRect, title: str, instruction_list: List[Tuple[str, str]]):
@@ -159,11 +159,11 @@ class BaseGame(ABC):
 
     def set_clear_layout(self, layout: UILayout):
         self.state_layouts[GameState.CLEAR] = layout
-    
+
     def set_state(self, state: GameState):
         if state not in GameState:
             raise ValueError(f"Invalid GameState on `set_state()`: {state}")
-        
+
         self.state = state
         self.on_state_changed() # hooking
 
@@ -175,16 +175,16 @@ class BaseGame(ABC):
     # about getter
     def get_state_layout_rect(self):
         return RelativeRect(0, 0.3, 1, 0.35).to_absolute(self.rect.size)
-    
+
     def is_state(self, state: GameState) -> bool:
         if state not in GameState:
             raise ValueError(f"Invalid GameState on `is_state()`: {state}")
-        
+
         return self.state == state
-    
+
     def is_in_bound(self, coord) -> bool:
         return self.map.is_inside(coord)
-    
+
     @abstractmethod
     def is_on_move(self) -> bool:
         pass
@@ -196,7 +196,7 @@ class BaseGame(ABC):
             self.set_state(GameState.ACTIVE)
         elif self.is_state(GameState.ACTIVE):
             self.set_state(GameState.PAUSED)
-    
+
 
     # about progress
     def start_game(self):
@@ -209,20 +209,20 @@ class BaseGame(ABC):
         self.set_state(GameState.COUNTDOWN)
         self.countdown_remaining_time = count_ms / 1000.0
         self.countdown_end_ticks = (pygame.time.get_ticks() + count_ms) / 1000.0
-    
+
     def countdown(self):
         current_ticks = pygame.time.get_ticks() / 1000.0
         self.countdown_remaining_time = max(0.0, self.countdown_end_ticks - current_ticks)
         self.countdown_textbox.update_content(str(round(self.countdown_remaining_time, 1)))
         if not self.countdown_remaining_time:
             self.set_state(GameState.ACTIVE)
-    
+
     def start_to_record(self, replay_title: str):
         self.scene.manager.start_to_record(replay_title, self.grid_size, self.score_info_list)
 
     def add_replay_step(self):
         self.scene.manager.add_replay_step(self.player.get_bodies(), self.direction, self.fs.get_feeds(), list(self.scores.copy().items()))
-    
+
     def save_game(self):
         self.set_save_buttons_selected()
         self.scene.manager.finish_to_record(True) # save replay
@@ -239,7 +239,7 @@ class BaseGame(ABC):
             self.move_sequence()
         elif self.is_state(GameState.COUNTDOWN):
             self.countdown()
-        
+
     def move_sequence(self):
         if self.is_on_move():
             self.move_accum = 0
@@ -256,7 +256,7 @@ class BaseGame(ABC):
         rand_coord = (random.randint(0, grid_num[0] - 1), random.randint(0, grid_num[1] - 1))
         ret = [rand_coord]
         self.cell_manager.mark_cell_used(rand_coord)
-        
+
         dirs = ['E', 'W', 'S', 'N']
         for _ in range(length - 1):
             prev_body_coord = ret[-1]
@@ -285,32 +285,32 @@ class BaseGame(ABC):
                     break
                 else:
                     dirs_copy.remove(dir)
-        
+
         return ret
 
     def set_direction(self, dir: str, with_validate: bool = True):
         if dir not in DIR_OFFSET_DICT:
             raise ValueError("parameter(dir) must be the one of [EWSN]")
-        
+
         if with_validate and not self.validate_direction(dir):
             return
-        
+
         self.direction = dir
-    
+
     def validate_direction(self, dir: str) -> bool:
         next_head = self.player.get_next_head(dir)
         neck = self.player.get_neck()
 
         # restrict movement towards walls or the neck direction
         return self.is_in_bound(next_head) and next_head != neck
-    
+
     def is_player_body_collision(self, coord: Tuple[int, int]) -> bool:
         """
         Check if the given coordinate collides with the player's body
         (excluding the tail).
         """
         return coord in self.player.get_bodies_without_tail()
-    
+
     def move_player(self):
         tail = self.player.get_tail()
         next_head = self.player.get_next_head(self.direction)
@@ -324,7 +324,7 @@ class BaseGame(ABC):
             self.eat_feed(next_head, curr_feed)
         else:
             self.basic_movement(next_head, tail)
-    
+
     def eat_feed(self, new_head: Tuple[int, int], feed: "Feed"):
         self.player.add_head(new_head)
         self.fs.remove_feed(feed.get_coord())
@@ -348,7 +348,7 @@ class BaseGame(ABC):
     def add_feed(self, coord: Tuple[int, int], feed_type: str = 'normal'):
         self.fs.add_feed(coord, feed_type)
         self.cell_manager.mark_cell_used(coord)
-    
+
     def add_feed_random_coord(self, k: int, feed_type: str = 'normal'):
         if k < 1:
             return
@@ -374,7 +374,7 @@ class BaseGame(ABC):
     def update_score(self, amount: int = 1):
         self.scores["score"] += amount
         self.renderer.update_board_content("score", self.scores["score"])
-        
+
         if self.clear_condition is not None and self.scores["score"] >= self.clear_condition:
             self.set_state(GameState.CLEAR)
             self.add_replay_step()
@@ -388,7 +388,7 @@ class BaseGame(ABC):
     def handle_state_events(self, events):
         if self.state in [GameState.PAUSED, GameState.GAMEOVER, GameState.CLEAR]:
             self.state_layouts[self.state].handle_events(events)
-    
+
 
     # about renderer
     def render(self, surf: pygame.Surface):
@@ -422,6 +422,6 @@ class BaseGame(ABC):
     def render_state_objects(self, surf):
         if self.state in [GameState.PAUSED, GameState.CLEAR, GameState.GAMEOVER]:
             self.state_layouts[self.state].render(surf)
-            
+
         elif self.is_state(GameState.COUNTDOWN):
             self.countdown_textbox.render(surf)
